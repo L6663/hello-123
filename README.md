@@ -21,7 +21,8 @@ Normalization rules are conservative:
 - identity links may not cross source boundaries;
 - actor/place type conflicts block unsafe merges;
 - unresolved factual conflicts remain contested instead of being overwritten;
-- explicit earlier/later language creates temporal variants only when source order supports the transition;
+- explicit earlier/later language creates temporal variants only when every adjacent state change is evidence-supported;
+- a single temporal marker cannot resolve unrelated third or later values;
 - Phase 4 never grants final freeze authority.
 
 ## Usage
@@ -60,7 +61,7 @@ python -m compileall -q tkr tests
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs Python 3.10, 3.11, and 3.12 matrices for Phase 2, Phase 3, and Phase 4.
+GitHub Actions checks out the event revision and runs Python 3.10, 3.11, and 3.12 matrices for Phase 2, Phase 3, and Phase 4. The current full stack contains 120 regression tests after the temporal-transition review fix.
 
 ## Deliberate limits
 
