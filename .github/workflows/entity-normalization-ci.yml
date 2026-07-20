@@ -1,0 +1,83 @@
+name: entity-normalization-ci
+
+on:
+  push:
+    branches:
+      - feature/entity-normalization-v5.4-alpha1
+  pull_request:
+    paths:
+      - "tkr/entity_normalization.py"
+      - "tkr/entity_cli.py"
+      - "tests/test_entity_normalization*.py"
+      - "pyproject.toml"
+      - ".github/workflows/entity-normalization-ci.yml"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: python -m pip install .
+      - name: Run compile and Phase 4 tests
+        id: validation
+        shell: bash
+        run: |
+          set +e
+          python -m compileall -q tkr tests > entity-compile.log 2>&1
+          compile_exit=$?
+          if [ "$compile_exit" -eq 0 ]; then
+            python -m unittest discover -s tests -p 'test_entity_normalization*.py' -v > entity-tests.log 2>&1
+            test_exit=$?
+          else
+            : > entity-tests.log
+            test_exit=99
+          fi
+          echo "compile_exit=$compile_exit" >> "$GITHUB_OUTPUT"
+          echo "test_exit=$test_exit" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Preserve validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: entity-normalization-python-${{ matrix.python-version }}
+          path: |
+            entity-compile.log
+            entity-tests.log
+          if-no-files-found: error
+      - name: Report Python 3.11 failure
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11' && (steps.validation.outputs.compile_exit != '0' || steps.validation.outputs.test_exit != '0')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Phase 4 CI failure (Python 3.11)'
+            echo
+            echo '#### compile'
+            echo '```text'
+            cat entity-compile.log
+            echo '```'
+            echo
+            echo '#### tests'
+            echo '```text'
+            cat entity-tests.log
+            echo '```'
+          } > entity-ci-comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file entity-ci-comment.md
+      - name: Enforce validation gate
+        if: always()
+        run: |
+          test "${{ steps.validation.outputs.compile_exit }}" = "0"
+          test "${{ steps.validation.outputs.test_exit }}" = "0"
