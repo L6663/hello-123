@@ -44,8 +44,9 @@ jobs:
             set -euo pipefail
             cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
             cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
-            python -c 'from pathlib import Path; import re; p=Path("tkr/entity_normalization.py"); t=p.read_text(encoding="utf-8"); g=Path(".phase4-upload/repair-block.txt").read_text(encoding="utf-8"); t,n=re.subn(r"    facts: list\{Fact\] = \[\]\s+source_id=fact\.source_id,",g,t,count=1); assert n==1,n; t=t.replace("dict{","dict[").replace("list{","list["); p.write_text(t,encoding="utf-8")'
+            python -c 'from pathlib import Path; import re; p=Path("tkr/entity_normalization.py"); t=p.read_text(encoding="utf-8"); g=Path(".phase4-upload/repair-block.txt").read_text(encoding="utf-8"); t,n=re.subn(r"    facts: list\{Fact\] = \[\]\s+source_id=fact\.source_id,",g,t,count=1); assert n==1,n; t=t.replace("dict{","dict[").replace("list{","list[").replace("set{","set[").replace("frozenset{","frozenset[").replace("Conflict}","Conflict]"); p.write_text(t,encoding="utf-8")'
             sha256sum tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
+            echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
             echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
             python -m pip install .
             python -m compileall -q tkr tests
@@ -163,7 +164,7 @@ jobs:
             echo '```text'
             cat entity-tests.log
             echo '```'
-          } > entity-ci-comment.md
+          } > phase4-ci-comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file phase4-ci-comment.md
       - name: Enforce validation gate
         if: always()
