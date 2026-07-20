@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-knowledge-reader-chunking"
+version = "5.2.0a1"
+description = "Auditable deterministic chunking stage for Text Knowledge Reader"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Text Knowledge Reader project"}]
+dependencies = []
+
+[project.scripts]
+tkr-chunk = "tkr.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tkr*"]
