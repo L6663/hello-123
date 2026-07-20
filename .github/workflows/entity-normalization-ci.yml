@@ -11,100 +11,50 @@ on:
       - "tests/test_entity_normalization*.py"
       - "pyproject.toml"
       - ".github/workflows/entity-normalization-ci.yml"
+      - ".phase4-review-fix.patch"
 
 permissions:
   contents: write
-  issues: write
   pull-requests: write
 
 jobs:
-  materialize:
+  apply_review_fix:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.materialize.outputs.changed }}
+      changed: ${{ steps.apply.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/entity-normalization-v5.4-alpha1
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Materialize and validate Phase 4 payload
-        id: materialize
-        shell: bash
-        run: |
-          set +e
-          if [ ! -f .phase4-upload/repair-block.txt ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "status=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          (
-            set -euo pipefail
-            cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
-            cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
-            python -c 'from pathlib import Path; import re; p=Path("tkr/entity_normalization.py"); t=p.read_text(encoding="utf-8"); g=Path(".phase4-upload/repair-block.txt").read_text(encoding="utf-8"); t,n=re.subn(r"    facts: list\{Fact\] = \[\]\s+source_id=fact\.source_id,",g,t,count=1); assert n==1,n; t=t.replace("dict{","dict[").replace("list{","list[").replace("set{","set[").replace("frozenset{","frozenset[").replace("Conflict}","Conflict]"); p.write_text(t,encoding="utf-8")'
-            sha256sum tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
-            echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
-            echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
-            python -m pip install .
-            python -m compileall -q tkr tests
-            python -m unittest discover -s tests -v
-          ) > phase4-entity-materialize.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          if [ "$status" -eq 0 ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-          exit 0
-      - name: Preserve materialization log and source
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase4-entity-materialize-log
-          path: |
-            phase4-entity-materialize.log
-            tkr/entity_normalization.py
-            tests/test_entity_normalization_adversarial.py
-          if-no-files-found: ignore
-      - name: Report materialization failure
-        if: steps.materialize.outputs.status != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          {
-            echo '### Phase 4 entity materialization failure'
-            echo
-            echo '```text'
-            cat phase4-entity-materialize.log
-            echo '```'
-          } > phase4-entity-materialize-comment.md
-          gh pr comment 3 --body-file phase4-entity-materialize-comment.md
-      - name: Commit materialized implementation
-        if: steps.materialize.outputs.status == '0' && steps.materialize.outputs.changed == 'true'
+      - name: Apply reviewed Phase 4 correction
+        id: apply
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -f .phase4-review-fix.patch ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git apply --check .phase4-review-fix.patch
+          git apply .phase4-review-fix.patch
+          python -m pip install .
+          python -m compileall -q tkr tests
+          python -m unittest discover -s tests -v
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
-          git rm -r .phase4-upload
-          if git ls-files --error-unmatch .github/workflows/phase4-materialize.yml >/dev/null 2>&1; then
-            git rm .github/workflows/phase4-materialize.yml
-          fi
-          git commit -m "feat(entities): harden Phase 4 normalization and adversarial tests"
+          git rm .phase4-review-fix.patch
+          git commit -m "fix(entities): require evidence for every temporal transition"
           git push origin HEAD:feature/entity-normalization-v5.4-alpha1
-      - name: Enforce materialization gate
-        if: always()
-        run: test "${{ steps.materialize.outputs.status }}" = "0"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
   test:
-    needs: materialize
-    if: needs.materialize.outputs.changed != 'true'
+    needs: apply_review_fix
+    if: always() && (github.event_name == 'pull_request' || (needs.apply_review_fix.result == 'success' && needs.apply_review_fix.outputs.changed != 'true'))
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -112,8 +62,6 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feature/entity-normalization-v5.4-alpha1
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -153,6 +101,7 @@ jobs:
         if: github.event_name == 'pull_request' && matrix.python-version == '3.11' && (steps.validation.outputs.compile_exit != '0' || steps.validation.outputs.test_exit != '0')
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           {
             echo '### Phase 4 CI failure (Python 3.11)'
