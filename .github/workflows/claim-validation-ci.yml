@@ -8,7 +8,7 @@ on:
     paths:
       - "tkr/claim_validation.py"
       - "tkr/claim_cli.py"
-      - "tests/test_claim_validation.py"
+      - "tests/test_claim_validation*.py"
       - "pyproject.toml"
       - ".github/workflows/claim-validation-ci.yml"
 
@@ -39,7 +39,7 @@ jobs:
           python -m compileall -q tkr tests > claim-compile.log 2>&1
           compile_exit=$?
           if [ "$compile_exit" -eq 0 ]; then
-            python -m unittest tests.test_claim_validation -v > claim-tests.log 2>&1
+            python -m unittest discover -s tests -p 'test_claim_validation*.py' -v > claim-tests.log 2>&1
             test_exit=$?
           else
             : > claim-tests.log
