@@ -1,0 +1,43 @@
+name: phase5-materialize
+
+on:
+  push:
+    branches:
+      - feature/hybrid-retrieval-v5.5-alpha1
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Materialize Phase 5 source and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .phase5-upload
+          cat .phase5-upload/hybrid_* > tkr/hybrid_retrieval.py
+          cat .phase5-upload/test_main_* > tests/test_hybrid_retrieval.py
+          cat .phase5-upload/test_adv_00 .phase5-upload/test_adv_tail.txt > tests/test_hybrid_retrieval_adversarial.py
+          python -m pip install .
+          python -m compileall -q tkr tests
+          python -m unittest discover -s tests -v
+      - name: Commit validated Phase 5 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/hybrid_retrieval.py tests/test_hybrid_retrieval.py tests/test_hybrid_retrieval_adversarial.py
+          git rm -r .phase5-upload
+          git rm .github/workflows/phase5-materialize.yml
+          git commit -m "feat(retrieval): materialize audited Phase 5 implementation"
+          git push origin HEAD:feature/hybrid-retrieval-v5.5-alpha1
