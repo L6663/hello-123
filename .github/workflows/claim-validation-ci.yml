@@ -5,12 +5,6 @@ on:
     branches:
       - feature/claim-validation-v5.3-alpha1
   pull_request:
-    paths:
-      - "tkr/claim_validation.py"
-      - "tkr/claim_cli.py"
-      - "tests/test_claim_validation*.py"
-      - "pyproject.toml"
-      - ".github/workflows/claim-validation-ci.yml"
 
 permissions:
   contents: read
