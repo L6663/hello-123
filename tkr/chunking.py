@@ -22,7 +22,7 @@ _MIN_BOUNDARY_RATIO = 0.55
 _PARAGRAPH_RE = re.compile(r"\n[ \t]*\n+")
 _SENTENCE_MARKS = frozenset("。！？!?；;…")
 _CLAUSE_MARKS = frozenset("，、：,:")
-_CLOSING_MARKS = frozenset("”’』」】）》〉\"')]}）")
+_CLOSING_MARKS = frozenset(("”", "’", "』", "」", "】", "》", "〉", '"', "'", ")", "]", "}", "）"))
 _BOUNDARY_PRIORITY = {
     "paragraph": 0,
     "sentence": 1,
@@ -267,8 +267,6 @@ def _choose_next_start(
     if desired_start >= cut:
         return cut, "contiguous"
 
-    # Search only a small distance forward. This preserves most of the overlap
-    # budget while avoiding a tokenizer or language-model dependency.
     slack = min(64, max(1, overlap_chars // 3))
     upper = min(cut, desired_start + slack)
     candidates = _candidate_boundaries(text, desired_start, upper)
@@ -290,14 +288,7 @@ def _chunk_id(
     text_sha256: str,
 ) -> str:
     payload = "\0".join(
-        (
-            CHUNK_SCHEMA_VERSION,
-            source_id,
-            unit_id,
-            str(start),
-            str(end),
-            text_sha256,
-        )
+        (CHUNK_SCHEMA_VERSION, source_id, unit_id, str(start), str(end), text_sha256)
     )
     return "chk_" + sha256(payload.encode("utf-8")).hexdigest()[:24]
 
@@ -311,13 +302,11 @@ def iter_chunks(
 
     active = config or ChunkConfig()
     ordered_units = _validate_units(text, units)
-
     for unit in ordered_units:
         start = unit.start
         ordinal = 1
         previous_end: int | None = None
         start_boundary = "unit_start"
-
         while start < unit.end:
             hard_end = min(start + active.max_chars, unit.end)
             minimum_cut = start + 1 if previous_end is None else previous_end + 1
@@ -355,7 +344,6 @@ def iter_chunks(
                 text_sha256=digest,
                 text=chunk_text,
             )
-
             if cut >= unit.end:
                 break
 
@@ -388,8 +376,7 @@ def _validate_chunk_record(chunk: Chunk, text: str, config: ChunkConfig) -> None
         raise ChunkValidationError(f"length/span mismatch: {chunk.chunk_id}")
     if chunk.norm_start < 0 or chunk.norm_end > len(text):
         raise ChunkValidationError(f"chunk outside normalized text: {chunk.chunk_id}")
-    expected_text = text[chunk.norm_start : chunk.norm_end]
-    if chunk.text != expected_text:
+    if chunk.text != text[chunk.norm_start : chunk.norm_end]:
         raise ChunkValidationError(f"text/span mismatch: {chunk.chunk_id}")
     expected_digest = sha256(chunk.text.encode("utf-8")).hexdigest()
     if chunk.text_sha256 != expected_digest:
@@ -443,13 +430,12 @@ def validate_chunks(
     units: Sequence[UnitSpan],
     config: ChunkConfig | None = None,
 ) -> None:
-    """Independently verify all hard chunking invariants for an in-memory set."""
+    """Independently verify all hard invariants for an in-memory chunk set."""
 
     active = config or ChunkConfig()
     ordered_units = _validate_units(text, units)
     by_unit: dict[tuple[str, str], list[Chunk]] = defaultdict(list)
     ids: set[str] = set()
-
     for chunk in chunks:
         if chunk.chunk_id in ids:
             raise ChunkValidationError(f"duplicate chunk_id: {chunk.chunk_id}")
@@ -460,7 +446,6 @@ def validate_chunks(
     expected_keys = {(unit.source_id, unit.unit_id) for unit in ordered_units}
     if set(by_unit) != expected_keys:
         raise ChunkValidationError("chunks do not cover exactly the supplied units")
-
     for unit in ordered_units:
         unit_chunks = sorted(by_unit[(unit.source_id, unit.unit_id)], key=lambda item: item.ordinal)
         previous: Chunk | None = None
@@ -482,13 +467,11 @@ def validate_chunk_file(
 
     active = config or ChunkConfig()
     ordered_units = _validate_units(text, units)
-    path = Path(chunks_path)
     unit_index = 0
     previous: Chunk | None = None
     expected_ordinal = 1
     stats = _ChunkStats()
-
-    with path.open("r", encoding="utf-8") as handle:
+    with Path(chunks_path).open("r", encoding="utf-8") as handle:
         for line_number, raw_line in enumerate(handle, start=1):
             if not raw_line.strip():
                 raise ChunkValidationError(f"blank JSONL record at line {line_number}")
@@ -513,8 +496,7 @@ def validate_chunk_file(
                 if unit_index >= len(ordered_units):
                     raise ChunkValidationError("chunk file contains unexpected extra units")
                 unit = ordered_units[unit_index]
-                unit_key = (unit.source_id, unit.unit_id)
-                if chunk_key != unit_key:
+                if chunk_key != (unit.source_id, unit.unit_id):
                     raise ChunkValidationError(f"unexpected unit order at line {line_number}")
                 previous = None
                 expected_ordinal = 1
@@ -610,7 +592,7 @@ def stream_chunk_artifacts(
     config: ChunkConfig | None,
     outdir: str | Path,
 ) -> tuple[Path, Path, dict[str, object]]:
-    """Generate, validate, and atomically publish chunk artifacts in streaming mode."""
+    """Generate, validate, and atomically publish artifacts in streaming mode."""
 
     active = config or ChunkConfig()
     ordered_units = _validate_units(text, units)
@@ -620,7 +602,6 @@ def stream_chunk_artifacts(
     report_path = directory / "chunking-report.json"
     chunks_tmp = directory / ".chunks.jsonl.tmp"
     report_tmp = directory / ".chunking-report.json.tmp"
-
     try:
         with chunks_tmp.open("w", encoding="utf-8", newline="\n") as handle:
             for chunk in iter_chunks(text, ordered_units, active):
@@ -637,5 +618,4 @@ def stream_chunk_artifacts(
         chunks_tmp.unlink(missing_ok=True)
         report_tmp.unlink(missing_ok=True)
         raise
-
     return chunks_path, report_path, report
