@@ -46,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--units",
         type=Path,
-        help="optional unit index in CSV, JSON, or JSONL format; required for strict unit binding",
+        required=True,
+        help="required unit index in CSV, JSON, or JSONL format",
     )
     parser.add_argument("--source-id", default="source")
     parser.add_argument("--outdir", type=Path, required=True)
@@ -56,7 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _publish(
     source_text: str,
     candidates_path: Path,
-    units_path: Path | None,
+    units_path: Path,
     source_id: str,
     outdir: Path,
 ) -> dict[str, object]:
@@ -71,7 +72,7 @@ def _publish(
     report_tmp = outdir / ".claim-validation-report.json.tmp"
     report_path = outdir / "claim-validation-report.json"
 
-    units = _load_units(units_path, len(source_text), source_id) if units_path else []
+    units = _load_units(units_path, len(source_text), source_id)
     unit_lookup = {(unit.source_id, unit.unit_id): unit for unit in units}
     counts: Counter[str] = Counter()
     reasons: Counter[str] = Counter()
@@ -89,7 +90,7 @@ def _publish(
                 candidate,
                 source_text,
                 unit_span=unit,
-                require_unit=units_path is not None,
+                require_unit=True,
             )
             counts[result.status] += 1
             reasons.update(result.reason_codes)
@@ -110,20 +111,20 @@ def _publish(
             path.unlink(missing_ok=True)
         raise ClaimValidationError("candidate JSONL is empty")
 
-    source_hash = sha256(source_text.encode("utf-8")).hexdigest()
-    candidate_hash = sha256(candidates_path.read_bytes()).hexdigest()
     report: dict[str, object] = {
         "validator_version": VALIDATOR_VERSION,
         "status": "completed",
-        "source_sha256": source_hash,
-        "candidates_sha256": candidate_hash,
-        "unit_binding_required": units_path is not None,
+        "source_sha256": sha256(source_text.encode("utf-8")).hexdigest(),
+        "candidates_sha256": sha256(candidates_path.read_bytes()).hexdigest(),
+        "unit_index_sha256": sha256(units_path.read_bytes()).hexdigest(),
+        "unit_binding_required": True,
         "unit_count": len(units),
         "candidate_count": candidate_count,
         "accepted_count": counts["accepted"],
         "rejected_count": counts["rejected"],
         "review_count": counts["review"],
         "may_index_count": counts["accepted"],
+        "may_freeze_count": 0,
         "reason_counts": dict(sorted(reasons.items())),
     }
     report_tmp.write_text(
