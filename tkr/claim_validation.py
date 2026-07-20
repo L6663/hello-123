@@ -9,6 +9,7 @@ not acceptance signals.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 import json
@@ -27,9 +28,9 @@ _STATUS_ACCEPTED = "accepted"
 _STATUS_REJECTED = "rejected"
 _STATUS_REVIEW = "review"
 
-# Directional relation validators do not cross these clause boundaries. This is
-# intentionally conservative: false negatives enter review/re-extraction, while
-# a false positive could contaminate the canonical knowledge base.
+# Directional validators do not cross these clause boundaries. This is
+# intentionally conservative: false negatives can be reviewed, while a false
+# positive can contaminate the canonical knowledge base.
 _RELATION_GAP = r"[^\n。！？!?；;，,:：]{0,24}?"
 _CLAUSE_BREAK_RE = re.compile(r"[\n。！？!?；;]+")
 _NEGATION_RE = re.compile(
@@ -39,6 +40,14 @@ _NEGATION_RE = re.compile(
     r"\bmay not\b|\bmust not\b)",
     re.IGNORECASE,
 )
+_MODALITY_RE = re.compile(
+    r"(?:据说|传闻|听说|或许|可能|似乎|也许|假如|如果|倘若|若是|"
+    r"声称|宣称|谎称|自称|预计|计划|准备|将要|即将|"
+    r"\breportedly\b|\ballegedly\b|\bperhaps\b|\bmaybe\b|"
+    r"\bif\b|\bclaimed\b|\bclaims\b|\bwill\b|\bwould\b)",
+    re.IGNORECASE,
+)
+_QUESTION_RE = re.compile(r"[？?]")
 
 _ALIAS_MARKERS = (
     "改称",
@@ -277,6 +286,21 @@ def _negated_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[s
     return [match for match in pattern.finditer(evidence) if _NEGATION_RE.search(match.group(0))]
 
 
+def _context_is_modal(evidence: str, start: int, end: int) -> bool:
+    context = evidence[max(0, start - 24) : min(len(evidence), end + 8)]
+    return bool(_MODALITY_RE.search(context) or _QUESTION_RE.search(context))
+
+
+def _partition_modal(
+    matches: Sequence[re.Match[str]], evidence: str
+) -> tuple[list[re.Match[str]], list[re.Match[str]]]:
+    assertive: list[re.Match[str]] = []
+    modal: list[re.Match[str]] = []
+    for match in matches:
+        (modal if _context_is_modal(evidence, match.start(), match.end()) else assertive).append(match)
+    return assertive, modal
+
+
 def _positive_permission_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
     matches: list[re.Match[str]] = []
     for match in pattern.finditer(evidence):
@@ -378,9 +402,13 @@ def _normalize_date(value: object) -> str | None:
     year = int(match.group("y"))
     month = int(match.group("m"))
     day = int(match.group("d")) if match.group("d") else None
-    if not 1 <= month <= 12 or (day is not None and not 1 <= day <= 31):
+    if day is None:
+        return f"{year:04d}-{month:02d}" if 1 <= month <= 12 else None
+    try:
+        date(year, month, day)
+    except ValueError:
         return None
-    return f"{year:04d}-{month:02d}" + (f"-{day:02d}" if day is not None else "")
+    return f"{year:04d}-{month:02d}-{day:02d}"
 
 
 def _normalized_claim(candidate: ClaimCandidate) -> dict[str, object]:
@@ -434,7 +462,8 @@ def _finish(
         status=status,
         reason_codes=unique_reasons,
         may_index=accepted,
-        may_freeze=accepted,
+        # Claim validation alone is never sufficient for final snapshot freeze.
+        may_freeze=False,
         source_id=candidate.source_id,
         unit_id=candidate.unit_id,
         evidence_start=candidate.evidence_start,
@@ -445,13 +474,31 @@ def _finish(
     )
 
 
+def _modal_review(
+    candidate: ClaimCandidate,
+    evidence: str,
+    matches: Sequence[re.Match[str]],
+) -> ClaimValidationResult:
+    return _finish(
+        candidate,
+        evidence,
+        status=_STATUS_REVIEW,
+        reasons=("MODAL_REPORTED_OR_QUESTION_ASSERTION",),
+        spans=[_span(match) for match in matches],
+    )
+
+
 def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     if not candidate.subject or not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("ALIAS_TERMS_REQUIRED",))
     forward = _relation_regex(candidate.subject, candidate.object, _ALIAS_MARKERS)
     reverse = _relation_regex(candidate.object, candidate.subject, _ALIAS_MARKERS)
-    positive = _clean_matches(forward, evidence) + _clean_matches(reverse, evidence)
-    negated = _negated_matches(forward, evidence) + _negated_matches(reverse, evidence)
+    positive, modal_positive = _partition_modal(
+        _clean_matches(forward, evidence) + _clean_matches(reverse, evidence), evidence
+    )
+    negated, modal_negated = _partition_modal(
+        _negated_matches(forward, evidence) + _negated_matches(reverse, evidence), evidence
+    )
     if positive and negated:
         return _finish(
             candidate,
@@ -476,6 +523,8 @@ def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
             reasons=("NEGATED_ALIAS_RELATION",),
             spans=[_span(match) for match in negated],
         )
+    if modal_positive or modal_negated:
+        return _modal_review(candidate, evidence, modal_positive + modal_negated)
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("ALIAS_RELATION_NOT_FOUND",))
 
 
@@ -490,16 +539,16 @@ def _validate_directional(
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("RELATION_TERMS_REQUIRED",))
     direct_pattern = _relation_regex(candidate.subject, candidate.object, markers)
     reverse_pattern = _relation_regex(candidate.object, candidate.subject, markers)
-    direct = _clean_matches(direct_pattern, evidence)
-    negated = _negated_matches(direct_pattern, evidence)
-    reverse = _clean_matches(reverse_pattern, evidence)
-    if direct and negated:
+    direct, modal_direct = _partition_modal(_clean_matches(direct_pattern, evidence), evidence)
+    negated, modal_negated = _partition_modal(_negated_matches(direct_pattern, evidence), evidence)
+    reverse, modal_reverse = _partition_modal(_clean_matches(reverse_pattern, evidence), evidence)
+    if direct and (negated or reverse):
         return _finish(
             candidate,
             evidence,
             status=_STATUS_REVIEW,
             reasons=("CONFLICTING_RELATION_ASSERTIONS",),
-            spans=[_span(match) for match in direct + negated],
+            spans=[_span(match) for match in direct + negated + reverse],
         )
     if direct:
         return _finish(
@@ -525,6 +574,9 @@ def _validate_directional(
             reasons=("RELATION_DIRECTION_MISMATCH",),
             spans=[_span(match) for match in reverse],
         )
+    modal = modal_direct + modal_negated + modal_reverse
+    if modal:
+        return _modal_review(candidate, evidence, modal)
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("RELATION_NOT_FOUND",))
 
 
@@ -543,10 +595,16 @@ def _permission_pattern(candidate: ClaimCandidate, markers: Sequence[str]) -> re
 def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     if not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))
-    positive = _positive_permission_matches(
-        _permission_pattern(candidate, _POSITIVE_PERMISSION_MARKERS), evidence
+    positive, modal_positive = _partition_modal(
+        _positive_permission_matches(
+            _permission_pattern(candidate, _POSITIVE_PERMISSION_MARKERS), evidence
+        ),
+        evidence,
     )
-    negative = list(_permission_pattern(candidate, _NEGATIVE_PERMISSION_MARKERS).finditer(evidence))
+    negative, modal_negative = _partition_modal(
+        list(_permission_pattern(candidate, _NEGATIVE_PERMISSION_MARKERS).finditer(evidence)),
+        evidence,
+    )
     expected = positive if candidate.polarity else negative
     opposite = negative if candidate.polarity else positive
     if expected and opposite:
@@ -573,6 +631,9 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
             reasons=("PERMISSION_POLARITY_MISMATCH",),
             spans=[_span(match) for match in opposite],
         )
+    modal = modal_positive + modal_negative
+    if modal:
+        return _modal_review(candidate, evidence, modal)
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_RELATION_NOT_FOUND",))
 
 
@@ -595,17 +656,31 @@ def _validate_count(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("COUNT_ASSERTION_NOT_FOUND",))
 
     exact_spans: list[tuple[int, int]] = []
-    observed: set[Decimal] = set()
+    modal_exact_spans: list[tuple[int, int]] = []
+    observed_assertive: set[Decimal] = set()
+    observed_any: set[Decimal] = set()
     for clause_start, clause in relevant:
+        clause_modal = bool(_MODALITY_RE.search(clause) or _QUESTION_RE.search(clause))
         for number, start, end in _extract_numbers(clause):
-            observed.add(number)
+            observed_any.add(number)
+            if not clause_modal:
+                observed_assertive.add(number)
             if number != expected:
                 continue
             if candidate.unit:
                 tail = clause[end : end + max(8, len(candidate.unit) + 4)]
                 if _normalized_text(candidate.unit).casefold() not in _normalized_text(tail).casefold():
                     continue
-            exact_spans.append((clause_start + start, clause_start + end))
+            target = modal_exact_spans if clause_modal else exact_spans
+            target.append((clause_start + start, clause_start + end))
+    if exact_spans and any(value != expected for value in observed_assertive):
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REVIEW,
+            reasons=("MULTIPLE_COUNT_VALUES",),
+            spans=exact_spans,
+        )
     if exact_spans:
         return _finish(
             candidate,
@@ -614,7 +689,15 @@ def _validate_count(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
             reasons=("EXACT_TYPED_COUNT_MATCH",),
             spans=exact_spans,
         )
-    reason = "NUMERIC_VALUE_MISMATCH" if observed else "COUNT_VALUE_NOT_FOUND"
+    if modal_exact_spans:
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REVIEW,
+            reasons=("MODAL_REPORTED_OR_QUESTION_ASSERTION",),
+            spans=modal_exact_spans,
+        )
+    reason = "NUMERIC_VALUE_MISMATCH" if observed_any else "COUNT_VALUE_NOT_FOUND"
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=(reason,))
 
 
@@ -637,15 +720,29 @@ def _validate_date(candidate: ClaimCandidate, evidence: str) -> ClaimValidationR
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("DATE_ASSERTION_NOT_FOUND",))
 
     exact_spans: list[tuple[int, int]] = []
-    observed: set[str] = set()
+    modal_exact_spans: list[tuple[int, int]] = []
+    observed_assertive: set[str] = set()
+    observed_any: set[str] = set()
     for clause_start, clause in relevant:
+        clause_modal = bool(_MODALITY_RE.search(clause) or _QUESTION_RE.search(clause))
         for match in _DATE_TOKEN_RE.finditer(clause):
             normalized = _normalize_date(match.group(0))
             if normalized is None:
                 continue
-            observed.add(normalized)
+            observed_any.add(normalized)
+            if not clause_modal:
+                observed_assertive.add(normalized)
             if normalized == expected:
-                exact_spans.append((clause_start + match.start(), clause_start + match.end()))
+                target = modal_exact_spans if clause_modal else exact_spans
+                target.append((clause_start + match.start(), clause_start + match.end()))
+    if exact_spans and any(value != expected for value in observed_assertive):
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REVIEW,
+            reasons=("MULTIPLE_DATE_VALUES",),
+            spans=exact_spans,
+        )
     if exact_spans:
         return _finish(
             candidate,
@@ -654,7 +751,15 @@ def _validate_date(candidate: ClaimCandidate, evidence: str) -> ClaimValidationR
             reasons=("EXACT_TYPED_DATE_MATCH",),
             spans=exact_spans,
         )
-    reason = "DATE_VALUE_MISMATCH" if observed else "DATE_VALUE_NOT_FOUND"
+    if modal_exact_spans:
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REVIEW,
+            reasons=("MODAL_REPORTED_OR_QUESTION_ASSERTION",),
+            spans=modal_exact_spans,
+        )
+    reason = "DATE_VALUE_MISMATCH" if observed_any else "DATE_VALUE_NOT_FOUND"
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=(reason,))
 
 
