@@ -9,6 +9,8 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   materialize:
@@ -18,17 +20,46 @@ jobs:
         with:
           ref: feature/entity-normalization-v5.4-alpha1
           fetch-depth: 0
-      - name: Decode staged Phase 4 files
+      - name: Decode and validate staged Phase 4 files
+        id: validation
         shell: bash
         run: |
-          set -euo pipefail
-          cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
-          cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
-          echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
-          echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
-          python -m compileall -q tkr tests
-          python -m unittest discover -s tests -v
+          set +e
+          {
+            set -euo pipefail
+            cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
+            cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
+            echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
+            echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
+            python -m compileall -q tkr tests
+            python -m unittest discover -s tests -v
+          } > phase4-materialize.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Preserve materialization log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-materialize-log
+          path: phase4-materialize.log
+          if-no-files-found: error
+      - name: Report materialization result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          {
+            echo "### Phase 4 materialization status: ${{ steps.validation.outputs.status }}"
+            echo
+            echo '```text'
+            cat phase4-materialize.log
+            echo '```'
+          } > phase4-materialize-comment.md
+          gh pr comment 3 --body-file phase4-materialize-comment.md
       - name: Commit materialized implementation
+        if: steps.validation.outputs.status == '0'
         shell: bash
         run: |
           set -euo pipefail
@@ -39,3 +70,7 @@ jobs:
           git rm .github/workflows/phase4-materialize.yml
           git commit -m "feat(entities): harden Phase 4 normalization and adversarial tests"
           git push origin HEAD:feature/entity-normalization-v5.4-alpha1
+      - name: Enforce materialization gate
+        if: always()
+        shell: bash
+        run: test "${{ steps.validation.outputs.status }}" = "0"
