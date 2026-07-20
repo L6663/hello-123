@@ -147,11 +147,11 @@ class ChunkingPhase2Tests(unittest.TestCase):
         self.assertFalse(first["text"].startswith("标题"))
 
     def test_closing_quote_is_kept_with_sentence_boundary(self):
-        text = ("甲" * 55) + "。” + ("乙" * 80)
+        text = ("甲" * 55) + "。”" + ("乙" * 80)
         units = [UnitSpan("u", 0, len(text), "s")]
         chunks, _ = chunk_units(text, units, ChunkConfig(80, 8))
         self.assertEqual(chunks[0].end_boundary, "sentence")
-        self.assertTrue(chunks[0].text.endswith("。”))
+        self.assertTrue(chunks[0].text.endswith("。”"))
         self.assertFalse(chunks[1].text.startswith("”"))
 
     def test_decimal_period_is_not_treated_as_sentence_end(self):
