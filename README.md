@@ -6,53 +6,56 @@ This repository hardens one subsystem at a time and keeps every stage independen
 
 - **v5.2 Phase 2:** deterministic bounded chunking;
 - **v5.3 Phase 3:** typed Claim evidence validation;
-- **v5.4 Phase 4:** entity, alias, homonym, timeline, and conflict normalization.
+- **v5.4 Phase 4:** entity, alias, homonym, timeline, and conflict normalization;
+- **v5.5 Phase 5:** hash-verified SQLite indexing and predicate-aware hybrid retrieval.
 
-## Phase 4 contract
+## Phase 5 contract
 
-Phase 4 accepts only `claims.accepted.jsonl` from Phase 3. It re-runs Phase 3 validation against the normalized source and Unit index before building any entity or fact. Modified, stale, duplicate, or non-accepted records are rejected.
+Phase 5 consumes the normalized source, Unit index, Phase 3 accepted Claims, and the complete Phase 4 artifact directory. Before building an index it verifies:
 
-Normalization rules are conservative:
+- source, Unit index, accepted Claims, and optional identity-link SHA-256 values;
+- every Phase 4 artifact hash recorded by `entity-normalization-report.json`;
+- unique identifiers and cross-artifact references;
+- exact mention spans and Fact evidence hashes;
+- Phase 4 review/canonical publication permissions.
 
-- accepted alias Claims may merge names;
-- exact repeated surfaces merge automatically only inside the same source and Unit;
-- the same name in different Units remains an ambiguity group;
-- cross-Unit `same_as` and `different_from` links require their own exact evidence span;
-- identity links may not cross source boundaries;
-- actor/place type conflicts block unsafe merges;
-- unresolved factual conflicts remain contested instead of being overwritten;
-- explicit earlier/later language creates temporal variants only when every adjacent state change is evidence-supported;
-- a single temporal marker cannot resolve unrelated third or later values;
-- Phase 4 never grants final freeze authority.
+The resulting SQLite database contains Units, entities, aliases, mentions, typed Facts, timeline events, conflicts, and ambiguity groups. FTS5 with the trigram tokenizer is used when available; standard-library fallbacks remain available.
+
+## Predicate-aware answerability
+
+The deterministic query parser supports the same closed predicate family as Phase 3:
+
+```text
+alias
+defeats
+located_in
+permission
+count
+date
+```
+
+A lexical match may rank supplemental evidence but **cannot** make a question answerable. `answerable=true` requires a matching typed Fact, unambiguous entity resolution, correct subject/object direction, and non-contested evidence. Unsupported open predicates are returned as `unsupported`; conflicting or unresolved temporal answers are returned as `ambiguous`.
 
 ## Usage
 
 ```bash
 python -m pip install .
 
-tkr-entity-normalize \
+tkr-retrieval build \
   project/admission/normalized-text.txt \
   project/claims/claims.accepted.jsonl \
+  project/entities \
   --units project/admission/unit-index.csv \
   --identity-links project/entities/identity-links.jsonl \
-  --outdir project/entities
+  --database project/index/knowledge.sqlite3 \
+  --mode review
+
+tkr-retrieval query \
+  project/index/knowledge.sqlite3 \
+  "北门位于哪里？"
 ```
 
-`--identity-links` is optional. Each link must cite a local span and reference two Phase 3 Claim roles.
-
-## Outputs
-
-```text
-mentions.jsonl
-entities.jsonl
-facts.jsonl
-timeline.jsonl
-conflicts.jsonl
-ambiguity-groups.jsonl
-entity-normalization-report.json
-```
-
-The report includes SHA-256 values for the source, Unit index, accepted Claims, optional identity links, and every generated artifact.
+The index report is written beside the database and binds the database SHA-256 plus a deterministic logical index hash. Query integrity verification is enabled by default. `--skip-integrity-check` is reserved for trusted interactive workloads and does not grant canonical or freeze authority.
 
 ## Validation
 
@@ -61,8 +64,8 @@ python -m compileall -q tkr tests
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions checks out the event revision and runs Python 3.10, 3.11, and 3.12 matrices for Phase 2, Phase 3, and Phase 4. The current full stack contains 120 regression tests after the temporal-transition review fix.
+GitHub Actions runs the complete stack on Python 3.10, 3.11, and 3.12.
 
 ## Deliberate limits
 
-Phase 4 does not perform pronoun resolution, implicit identity inference, open-ended character understanding, embeddings, or graph-database storage. Repeated names inside one Unit use a documented local-continuity heuristic; difficult same-Unit homonyms require explicit `different_from` evidence. Those limits prevent an apparent recall gain from silently creating false entity merges.
+Phase 5 does not perform open-ended natural-language inference, embeddings, neural reranking, pronoun resolution, implicit identity merging, answer generation, Gold Benchmark certification, or final freezing. The database and report remain Phase 5 review artifacts with `may_freeze=false`.
