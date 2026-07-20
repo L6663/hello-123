@@ -181,6 +181,66 @@ class EntityNormalizationAdversarialTests(unittest.TestCase):
         bundle = normalize_entities([one, two], source, [unit])
         self.assertTrue(any(item.conflict_type == "MULTIPLE_COUNT_VALUES" for item in bundle.conflicts))
 
+    def test_partial_temporal_markers_do_not_resolve_three_count_values(self):
+        first = "守卫共有100名。"
+        second = "后来守卫共有120名。"
+        third = "守卫共有130名。"
+        source = first + second + third
+        unit = UnitSpan("u1", 0, len(source), "s")
+        one = self.record(source, first, unit, claim_type="count", subject="守卫", value=100, unit_name="名")
+        two = self.record(
+            source,
+            second,
+            unit,
+            claim_type="count",
+            subject="守卫",
+            value=120,
+            unit_name="名",
+            start=len(first),
+        )
+        three = self.record(
+            source,
+            third,
+            unit,
+            claim_type="count",
+            subject="守卫",
+            value=130,
+            unit_name="名",
+            start=len(first) + len(second),
+        )
+        bundle = normalize_entities([one, two, three], source, [unit])
+        conflict = next(item for item in bundle.conflicts if item.conflict_type == "MULTIPLE_COUNT_VALUES")
+        self.assertEqual(conflict.status, "unresolved")
+        self.assertTrue(all(fact.canonical_status == "contested" for fact in bundle.facts))
+        self.assertFalse(bundle.report["may_publish_canonical"])
+
+    def test_all_adjacent_count_changes_require_explicit_markers(self):
+        first = "守卫共有100名。"
+        second = "后来守卫共有120名。"
+        third = "随后守卫共有130名。"
+        source = first + second + third
+        unit = UnitSpan("u1", 0, len(source), "s")
+        records = [
+            self.record(source, first, unit, claim_type="count", subject="守卫", value=100, unit_name="名"),
+            self.record(
+                source, second, unit, claim_type="count", subject="守卫", value=120, unit_name="名", start=len(first)
+            ),
+            self.record(
+                source,
+                third,
+                unit,
+                claim_type="count",
+                subject="守卫",
+                value=130,
+                unit_name="名",
+                start=len(first) + len(second),
+            ),
+        ]
+        bundle = normalize_entities(records, source, [unit])
+        transition = next(item for item in bundle.conflicts if item.conflict_type == "COUNT_TEMPORAL_TRANSITION")
+        self.assertEqual(transition.status, "resolved_temporal")
+        self.assertTrue(all(fact.canonical_status == "temporal_variant" for fact in bundle.facts))
+
     def test_different_date_predicates_do_not_conflict(self):
         first = "工程始于2001年2月3日。"
         second = "工程截至2002年2月3日。"
