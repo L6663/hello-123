@@ -1,0 +1,155 @@
+                identity_links=[
+                    {
+                        "unit_index": 3,
+                        "evidence": "第二章的玄门与第一章改称后的玄门是同一实体。",
+                        "left_record": 0,
+                        "left_role": "object",
+                        "right_record": 1,
+                        "right_role": "subject",
+                    }
+                ],
+            )
+            result = query_hybrid_index(paths[4], "北门位于哪里？")
+        self.assertEqual(result.answerability, "answerable")
+        self.assertEqual(result.hits[0].object, "皇城北侧")
+        self.assertEqual(result.hits[0].unit_id, "u2")
+
+    def test_directional_relation_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["张三击败李四。"],
+                [{"evidence": "张三击败李四。", "claim_type": "defeats", "subject": "张三", "object": "李四"}],
+            )
+            forward = query_hybrid_index(paths[4], "张三击败了谁？")
+            reverse = query_hybrid_index(paths[4], "李四击败了谁？")
+            who = query_hybrid_index(paths[4], "谁击败了李四？")
+        self.assertEqual(forward.answerability, "answerable")
+        self.assertEqual(forward.hits[0].object, "李四")
+        self.assertEqual(who.answerability, "answerable")
+        self.assertEqual(who.hits[0].subject, "张三")
+        self.assertEqual(reverse.answerability, "not_answerable")
+
+    def test_entity_mention_does_not_make_unrelated_predicate_answerable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["玄门位于皇城北侧。"],
+                [{"evidence": "玄门位于皇城北侧。", "claim_type": "located_in", "subject": "玄门", "object": "皇城北侧"}],
+            )
+            result = query_hybrid_index(paths[4], "玄门是谁发明的？")
+        self.assertEqual(result.answerability, "unsupported")
+        self.assertFalse(result.answerable_candidate)
+
+    def test_location_boolean_requires_matching_object(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["玄门位于皇城北侧。"],
+                [{"evidence": "玄门位于皇城北侧。", "claim_type": "located_in", "subject": "玄门", "object": "皇城北侧"}],
+            )
+            true_result = query_hybrid_index(paths[4], "玄门位于皇城北侧吗？")
+            false_result = query_hybrid_index(paths[4], "玄门位于火星吗？")
+        self.assertEqual(true_result.answerability, "answerable")
+        self.assertEqual(false_result.answerability, "not_answerable")
+
+    def test_exact_count_is_returned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["守卫共有100名。"],
+                [{"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"}],
+            )
+            result = query_hybrid_index(paths[4], "守卫有多少名？")
+        self.assertEqual(result.answerability, "answerable")
+        self.assertEqual(result.hits[0].value, 100)
+        self.assertNotEqual(result.hits[0].value, 1000)
+
+    def test_same_surface_across_units_is_ambiguous(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["张三击败李四。", "张三击败王五。"],
+                [
+                    {"unit_index": 1, "evidence": "张三击败李四。", "claim_type": "defeats", "subject": "张三", "object": "李四"},
+                    {"unit_index": 2, "evidence": "张三击败王五。", "claim_type": "defeats", "subject": "张三", "object": "王五"},
+                ],
+            )
+            result = query_hybrid_index(paths[4], "张三击败了谁？")
+        self.assertEqual(result.answerability, "ambiguous")
+        self.assertIn("AMBIGUOUS_SUBJECT_ENTITY", result.reason_codes)
+
+    def test_contested_facts_are_not_a_single_answer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["守卫共有100名。守卫共有120名。"],
+                [
+                    {"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"},
+                    {"evidence": "守卫共有120名。", "claim_type": "count", "subject": "守卫", "value": 120, "unit": "名"},
+                ],
+            )
+            result = query_hybrid_index(paths[4], "守卫有多少名？")
+        self.assertEqual(result.answerability, "ambiguous")
+        self.assertIn("CONTESTED_FACTS_PRESENT", result.reason_codes)
+
+    def test_temporal_scope_selects_past_or_current(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["守卫共有100名。后来守卫共有120名。"],
+                [
+                    {"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"},
+                    {"evidence": "后来守卫共有120名。", "claim_type": "count", "subject": "守卫", "value": 120, "unit": "名"},
+                ],
+            )
+            unspecified = query_hybrid_index(paths[4], "守卫有多少名？")
+            current = query_hybrid_index(paths[4], "守卫现在有多少名？")
+            past = query_hybrid_index(paths[4], "守卫最初有多少名？")
+        self.assertEqual(unspecified.answerability, "ambiguous")
+        self.assertEqual(current.answerability, "answerable")
+        self.assertEqual(current.hits[0].value, 120)
+        self.assertEqual(past.answerability, "answerable")
+        self.assertEqual(past.hits[0].value, 100)
+
+    def test_evidence_offsets_are_exact(self):
+        source = "序言。张三击败李四。尾声。"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                [source],
+                [{"evidence": "张三击败李四。", "claim_type": "defeats", "subject": "张三", "object": "李四"}],
+            )
+            result = query_hybrid_index(paths[4], "张三击败了谁？")
+        hit = result.hits[0]
+        self.assertEqual(source[hit.evidence_start : hit.evidence_end], hit.evidence_text)
+
+
+    def test_alias_boolean_requires_the_exact_pair(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["北门后来改称玄门。"],
+                [{"evidence": "北门后来改称玄门。", "claim_type": "alias", "subject": "北门", "object": "玄门"}],
+            )
+            correct = query_hybrid_index(paths[4], "北门改称玄门吗？")
+            wrong = query_hybrid_index(paths[4], "北门改称太阳宫吗？")
+        self.assertEqual(correct.answerability, "answerable")
+        self.assertEqual(wrong.answerability, "not_answerable")
+
+    def test_permission_and_date_predicates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["系统允许删除。工程始于2001年2月3日。"],
+                [
