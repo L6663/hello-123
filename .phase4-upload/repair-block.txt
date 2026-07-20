@@ -1,0 +1,79 @@
+    facts: list[Fact] = []
+    for item in accepted:
+        candidate = item.candidate
+        validation = item.validation
+        subject_mention = mention_by_key.get((validation.result_id, "subject"))
+        object_mention = mention_by_key.get((validation.result_id, "object"))
+        normalized = validation.normalized_claim
+        scope = _predicate_scope(item)
+        fact_id = _stable_id(
+            "fac_",
+            NORMALIZER_VERSION,
+            validation.result_id,
+            scope,
+            json.dumps(normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        )
+        facts.append(
+            Fact(
+                fact_id=fact_id,
+                claim_result_id=validation.result_id,
+                claim_type=candidate.claim_type,
+                predicate_scope=scope,
+                subject_entity_id=(
+                    mention_to_entity[subject_mention.mention_id] if subject_mention is not None else None
+                ),
+                subject=str(normalized.get("subject", "")),
+                object_entity_id=(
+                    mention_to_entity[object_mention.mention_id] if object_mention is not None else None
+                ),
+                object=str(normalized.get("object", "")),
+                value=normalized.get("value"),
+                unit=str(normalized.get("unit", "")),
+                polarity=bool(normalized.get("polarity", True)),
+                source_id=candidate.source_id,
+                unit_id=candidate.unit_id,
+                evidence_start=candidate.evidence_start,
+                evidence_end=candidate.evidence_end,
+                evidence_sha256=validation.evidence_sha256,
+                temporal_marker=_temporal_marker(item),
+            )
+        )
+
+    facts.sort(key=lambda item: (item.source_id, item.evidence_start, item.fact_id))
+    conflicts = _attach_claim_conflicts(conflicts, facts)
+    conflicts.extend(_detect_fact_conflicts(facts))
+    conflicts = sorted({item.conflict_id: item for item in conflicts}.values(), key=lambda item: item.conflict_id)
+
+    conflict_by_fact: dict[str, list[Conflict]] = defaultdict(list)
+    for conflict in conflicts:
+        for fact_id in conflict.fact_ids:
+            conflict_by_fact[fact_id].append(conflict)
+    normalized_facts: list[Fact] = []
+    for fact in facts:
+        related = conflict_by_fact.get(fact.fact_id, [])
+        statuses = {item.status for item in related}
+        if "unresolved" in statuses:
+            canonical_status = "contested"
+        elif "resolved_temporal" in statuses:
+            canonical_status = "temporal_variant"
+        elif "resolved_precision" in statuses:
+            canonical_status = "compatible_variant"
+        else:
+            canonical_status = "canonical"
+        normalized_facts.append(
+            replace(
+                fact,
+                canonical_status=canonical_status,
+                conflict_ids=tuple(sorted(item.conflict_id for item in related)),
+            )
+        )
+
+    source_orders: Counter[str] = Counter()
+    timeline_rows: list[TimelineEvent] = []
+    for fact in normalized_facts:
+        source_orders[fact.source_id] += 1
+        timeline_rows.append(
+            TimelineEvent(
+                event_id=_stable_id("evt_", NORMALIZER_VERSION, fact.fact_id),
+                fact_id=fact.fact_id,
+                source_id=fact.source_id,
