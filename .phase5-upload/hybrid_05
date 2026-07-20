@@ -1,0 +1,137 @@
+            if source_id is not None:
+                sql += " AND source_id=?"
+                params.append(source_id)
+            sql += " ORDER BY source_id,norm_start LIMIT ?"
+            params.append(limit)
+            for row in connection.execute(sql, params):
+                key = (str(row[0]), str(row[1]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                text = str(row[3])
+                local = text.find(term)
+                snippet_start = max(0, local - 80)
+                snippet_end = min(len(text), local + len(term) + 120)
+                hits.append(
+                    RetrievalHit(
+                        hit_type="unit_lexical",
+                        score=10.0,
+                        source_id=key[0],
+                        unit_id=key[1],
+                        evidence_start=int(row[2]) + snippet_start,
+                        evidence_end=int(row[2]) + snippet_end,
+                        evidence_text=text[snippet_start:snippet_end],
+                    )
+                )
+                if len(hits) >= limit:
+                    return hits
+    return hits
+
+
+def _verify_database_report(database_path: Path, report_path: Path | None) -> dict[str, object]:
+    path = report_path or database_path.with_suffix(".report.json")
+    if not path.is_file():
+        raise RetrievalError("index report is missing")
+    report = _load_json_object(path, "index report")
+    if report.get("status") != "completed":
+        raise RetrievalError("index report status is not completed")
+    if report.get("index_schema_version") != INDEX_SCHEMA_VERSION:
+        raise RetrievalError("index report schema version mismatch")
+    if report.get("database_sha256") != _sha256_bytes(database_path.read_bytes()):
+        raise RetrievalError("database SHA-256 does not match index report")
+    return report
+
+
+def query_hybrid_index(
+    database_path: str | Path,
+    question: str,
+    *,
+    source_id: str | None = None,
+    limit: int = 10,
+    verify_database: bool = True,
+    report_path: str | Path | None = None,
+) -> QueryResult:
+    """Retrieve typed evidence and make a conservative answerability decision."""
+
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0 or limit > 100:
+        raise RetrievalError("limit must be an integer between 1 and 100")
+    intent = parse_predicate_query(question)
+    database_path = Path(database_path)
+    report = _verify_database_report(
+        database_path, Path(report_path) if report_path is not None else None
+    ) if verify_database else None
+    connection = sqlite3.connect(f"file:{database_path}?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA query_only=ON")
+    try:
+        metadata = _metadata(connection)
+        if metadata.get("index_schema_version") != INDEX_SCHEMA_VERSION:
+            raise RetrievalError("index schema version mismatch")
+        logical_hash = metadata.get("index_logical_sha256", "")
+        if report is not None and report.get("index_logical_sha256") != logical_hash:
+            raise RetrievalError("index report logical hash does not match database metadata")
+        lexical = tuple(_lexical_hits(connection, intent, source_id=source_id, limit=min(limit, 20)))
+        if not intent.supported:
+            return QueryResult(
+                QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                "unsupported", ("UNSUPPORTED_OPEN_PREDICATE",), (), (), lexical,
+            )
+
+        subject_entities = _resolve_entities(connection, intent.subject, source_id=source_id) if intent.subject else []
+        object_entities = _resolve_entities(connection, intent.object, source_id=source_id) if intent.object else []
+        ambiguity_reasons: list[str] = []
+        if intent.subject and len(subject_entities) > 1:
+            ambiguity_reasons.append("AMBIGUOUS_SUBJECT_ENTITY")
+        if intent.object and len(object_entities) > 1:
+            ambiguity_reasons.append("AMBIGUOUS_OBJECT_ENTITY")
+        resolved = tuple(sorted(set(subject_entities + object_entities)))
+        if ambiguity_reasons:
+            return QueryResult(
+                QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                "ambiguous", tuple(ambiguity_reasons), resolved, (), lexical,
+            )
+
+        rows = _fact_rows_for_intent(
+            connection, intent, subject_entities, object_entities, source_id=source_id
+        )
+        hits = [_row_to_fact_hit(row) for row in rows]
+        if not hits:
+            return QueryResult(
+                QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                "not_answerable", ("NO_TYPED_FACT_MATCH",), resolved, (), lexical,
+            )
+
+        if any(hit.canonical_status == "contested" for hit in hits):
+            return QueryResult(
+                QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                "ambiguous", ("CONTESTED_FACTS_PRESENT",), resolved,
+                tuple(hits[:limit]), lexical,
+            )
+
+        active = [hit for hit in hits if hit.canonical_status in {"canonical", "temporal_variant", "compatible_variant"}]
+        if not active:
+            return QueryResult(
+                QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                "not_answerable", ("NO_CANONICAL_FACT_MATCH",), resolved, (), lexical,
+            )
+
+        distinct = {_answer_key(hit, intent) for hit in active}
+        if len(distinct) > 1:
+            if all(hit.canonical_status == "temporal_variant" for hit in active) and intent.temporal_scope != "any":
+                active = _select_temporal(active, intent.temporal_scope)
+                distinct = {_answer_key(hit, intent) for hit in active}
+            if len(distinct) > 1:
+                reason = "TEMPORAL_SCOPE_REQUIRED" if any(
+                    hit.canonical_status == "temporal_variant" for hit in active
+                ) else "MULTIPLE_TYPED_ANSWERS"
+                return QueryResult(
+                    QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+                    "ambiguous", (reason,), resolved, tuple(active[:limit]), lexical,
+                )
+
+        return QueryResult(
+            QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
+            "answerable", ("TYPED_FACT_MATCH",), resolved, tuple(active[:limit]), lexical,
+        )
+    finally:
+        connection.close()
