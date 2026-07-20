@@ -1,0 +1,198 @@
+            object=object_value,
+            requested_role=requested_role,
+            unit=unit,
+            predicate_scope=predicate_scope,
+            polarity=polarity,
+            temporal_scope=temporal,
+            supported=True,
+            reason="SUPPORTED_TYPED_PREDICATE",
+        )
+
+    return PredicateQuery(
+        raw_query=raw,
+        normalized_query=normalized,
+        predicate="unsupported",
+        subject="",
+        object="",
+        requested_role="",
+        unit="",
+        predicate_scope="",
+        polarity=None,
+        temporal_scope=temporal,
+        supported=False,
+        reason="UNSUPPORTED_OPEN_PREDICATE",
+    )
+
+
+def _load_json_object(path: Path, label: str) -> dict[str, object]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RetrievalError(f"invalid {label} JSON: {exc.msg}") from exc
+    if not isinstance(payload, dict):
+        raise RetrievalError(f"{label} must be a JSON object")
+    return payload
+
+
+def _load_jsonl(path: Path, label: str, *, allow_empty: bool = True) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                raise RetrievalError(f"blank {label} record at line {line_number}")
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise RetrievalError(f"invalid {label} JSON at line {line_number}: {exc.msg}") from exc
+            if not isinstance(payload, dict):
+                raise RetrievalError(f"{label} record at line {line_number} must be an object")
+            rows.append(payload)
+    if not rows and not allow_empty:
+        raise RetrievalError(f"{label} JSONL is empty")
+    return rows
+
+
+def _require_text(row: Mapping[str, object], key: str, label: str) -> str:
+    value = row.get(key)
+    if not isinstance(value, str) or not value:
+        raise RetrievalError(f"{label}.{key} must be a non-empty string")
+    return value
+
+
+def _require_int(row: Mapping[str, object], key: str, label: str) -> int:
+    value = row.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise RetrievalError(f"{label}.{key} must be an integer")
+    return value
+
+
+def _unique_ids(rows: Sequence[Mapping[str, object]], key: str, label: str) -> set[str]:
+    result: set[str] = set()
+    for row in rows:
+        value = _require_text(row, key, label)
+        if value in result:
+            raise RetrievalError(f"duplicate {label} identifier: {value}")
+        result.add(value)
+    return result
+
+
+def _unit_lookup(units: Sequence[UnitSpan], source_length: int) -> dict[tuple[str, str], UnitSpan]:
+    lookup: dict[tuple[str, str], UnitSpan] = {}
+    for unit in units:
+        key = (unit.source_id, unit.unit_id)
+        if key in lookup:
+            raise RetrievalError(f"duplicate Unit identifier: {key}")
+        if unit.start < 0 or unit.end <= unit.start or unit.end > source_length:
+            raise RetrievalError(f"invalid Unit span: {key}")
+        lookup[key] = unit
+    return lookup
+
+
+def verify_phase4_artifacts(
+    source_path: str | Path,
+    units_path: str | Path,
+    accepted_claims_path: str | Path,
+    entity_dir: str | Path,
+    *,
+    identity_links_path: str | Path | None = None,
+    index_mode: str = "review",
+    source_id: str = "source",
+) -> tuple[str, list[UnitSpan], dict[str, list[dict[str, object]]], dict[str, object]]:
+    """Verify the complete Phase 4 hash chain and referential integrity."""
+
+    if index_mode not in {"review", "canonical"}:
+        raise RetrievalError("index_mode must be review or canonical")
+    source_path = Path(source_path)
+    units_path = Path(units_path)
+    accepted_claims_path = Path(accepted_claims_path)
+    entity_dir = Path(entity_dir)
+    identity_path = Path(identity_links_path) if identity_links_path is not None else None
+
+    source_bytes = source_path.read_bytes()
+    try:
+        source_text = source_bytes.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RetrievalError("source must be strict UTF-8") from exc
+    if not source_text:
+        raise RetrievalError("source text is empty")
+    units = _load_units(units_path, len(source_text), source_id)
+    unit_lookup = _unit_lookup(units, len(source_text))
+
+    report_path = entity_dir / "entity-normalization-report.json"
+    report = _load_json_object(report_path, "entity normalization report")
+    if report.get("status") != "completed":
+        raise RetrievalError("Phase 4 report status is not completed")
+    if report.get("normalizer_version") != NORMALIZER_VERSION:
+        raise RetrievalError("Phase 4 normalizer version mismatch")
+    if report.get("source_sha256") != _sha256_bytes(source_bytes):
+        raise RetrievalError("source SHA-256 does not match Phase 4 report")
+    if report.get("unit_index_sha256") != _sha256_bytes(units_path.read_bytes()):
+        raise RetrievalError("Unit index SHA-256 does not match Phase 4 report")
+    if report.get("accepted_claims_sha256") != _sha256_bytes(accepted_claims_path.read_bytes()):
+        raise RetrievalError("accepted Claims SHA-256 does not match Phase 4 report")
+
+    expected_identity_hash = report.get("identity_links_sha256")
+    if expected_identity_hash is None:
+        if identity_path is not None and identity_path.exists() and identity_path.read_bytes():
+            raise RetrievalError("identity links were not bound by the Phase 4 report")
+    else:
+        if identity_path is None:
+            raise RetrievalError("Phase 4 report requires the identity-links artifact")
+        if expected_identity_hash != _sha256_bytes(identity_path.read_bytes()):
+            raise RetrievalError("identity-links SHA-256 does not match Phase 4 report")
+
+    if not bool(report.get("may_build_review_index")):
+        raise RetrievalError("Phase 4 does not permit a review index")
+    if index_mode == "canonical" and not bool(report.get("may_publish_canonical")):
+        raise RetrievalError("Phase 4 does not permit a canonical index")
+
+    artifact_hashes = report.get("artifact_sha256")
+    if not isinstance(artifact_hashes, dict):
+        raise RetrievalError("Phase 4 report is missing artifact hashes")
+    datasets: dict[str, list[dict[str, object]]] = {}
+    for name in _REQUIRED_ARTIFACTS:
+        path = entity_dir / name
+        if not path.is_file():
+            raise RetrievalError(f"missing Phase 4 artifact: {name}")
+        expected = artifact_hashes.get(name)
+        actual = _sha256_bytes(path.read_bytes())
+        if expected != actual:
+            raise RetrievalError(f"artifact SHA-256 mismatch: {name}")
+        datasets[name] = _load_jsonl(path, name)
+
+    entity_ids = _unique_ids(datasets["entities.jsonl"], "entity_id", "entity")
+    mention_ids = _unique_ids(datasets["mentions.jsonl"], "mention_id", "mention")
+    fact_ids = _unique_ids(datasets["facts.jsonl"], "fact_id", "fact")
+    _unique_ids(datasets["timeline.jsonl"], "event_id", "timeline event")
+    _unique_ids(datasets["conflicts.jsonl"], "conflict_id", "conflict")
+    _unique_ids(datasets["ambiguity-groups.jsonl"], "ambiguity_id", "ambiguity")
+
+    for row in datasets["entities.jsonl"]:
+        for mention_id in row.get("mention_ids", []):
+            if mention_id not in mention_ids:
+                raise RetrievalError("entity references an unknown mention")
+    for row in datasets["mentions.jsonl"]:
+        source = _require_text(row, "source_id", "mention")
+        unit_id_value = _require_text(row, "unit_id", "mention")
+        start = _require_int(row, "evidence_start", "mention")
+        end = _require_int(row, "evidence_end", "mention")
+        unit = unit_lookup.get((source, unit_id_value))
+        if unit is None or not (unit.start <= start < end <= unit.end):
+            raise RetrievalError("mention span is outside its Unit")
+        surface = _require_text(row, "surface", "mention")
+        if source_text[start:end] != surface:
+            raise RetrievalError("mention surface does not match source span")
+
+    for row in datasets["facts.jsonl"]:
+        source = _require_text(row, "source_id", "fact")
+        unit_id_value = _require_text(row, "unit_id", "fact")
+        start = _require_int(row, "evidence_start", "fact")
+        end = _require_int(row, "evidence_end", "fact")
+        unit = unit_lookup.get((source, unit_id_value))
+        if unit is None or not (unit.start <= start < end <= unit.end):
+            raise RetrievalError("fact span is outside its Unit")
+        evidence = source_text[start:end]
+        if row.get("evidence_sha256") != _sha256_bytes(evidence.encode("utf-8")):
+            raise RetrievalError("fact evidence hash does not match source span")
+        for key in ("subject_entity_id", "object_entity_id"):
+            value = row.get(key)
