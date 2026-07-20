@@ -155,6 +155,49 @@ class HybridRetrievalAdversarialTests(RetrievalFixture):
             result = query_hybrid_index(paths[4], "守卫现在有多少名？")
         self.assertEqual(result.answerability, "ambiguous")
 
+    def test_forged_artifact_and_rehashed_report_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.basic_project(root)
+            facts_path = paths[3] / "facts.jsonl"
+            row = json.loads(facts_path.read_text(encoding="utf-8"))
+            row["object"] = "火星"
+            forged = json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+            facts_path.write_text(forged, encoding="utf-8")
+            report_path = paths[3] / "entity-normalization-report.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            from hashlib import sha256
+            report["artifact_sha256"]["facts.jsonl"] = sha256(forged.encode("utf-8")).hexdigest()
+            report_path.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(RetrievalError):
+                build_hybrid_index(*paths[:4], paths[4], identity_links_path=paths[5])
+
+    def test_forged_canonical_permission_in_report_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.make_project(
+                root,
+                ["张三击败李四。", "张三击败王五。"],
+                [
+                    {"unit_index": 1, "evidence": "张三击败李四。", "claim_type": "defeats", "subject": "张三", "object": "李四"},
+                    {"unit_index": 2, "evidence": "张三击败王五。", "claim_type": "defeats", "subject": "张三", "object": "王五"},
+                ],
+            )
+            report_path = paths[3] / "entity-normalization-report.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["may_publish_canonical"] = True
+            report_path.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(RetrievalError):
+                build_hybrid_index(
+                    *paths[:4], paths[4], index_mode="canonical", identity_links_path=paths[5]
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

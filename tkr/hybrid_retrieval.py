@@ -21,7 +21,7 @@ import unicodedata
 
 from .chunking import UnitSpan
 from .cli import _load_units
-from .entity_normalization import NORMALIZER_VERSION
+from .entity_normalization import IdentityLink, NORMALIZER_VERSION, normalize_entities
 
 INDEX_SCHEMA_VERSION = "tkr-hybrid-index-v1"
 QUERY_PARSER_VERSION = "tkr-predicate-query-v1"
@@ -297,6 +297,14 @@ def _load_json_object(path: Path, label: str) -> dict[str, object]:
     return payload
 
 
+def _jsonl_bytes(rows: Sequence[object]) -> bytes:
+    lines: list[str] = []
+    for row in rows:
+        payload = row.to_dict() if hasattr(row, "to_dict") else row
+        lines.append(_canonical_json(payload))
+    return (("\n".join(lines) + "\n") if lines else "").encode("utf-8")
+
+
 def _load_jsonl(path: Path, label: str, *, allow_empty: bool = True) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     with path.open("r", encoding="utf-8") as handle:
@@ -413,15 +421,49 @@ def verify_phase4_artifacts(
     if not isinstance(artifact_hashes, dict):
         raise RetrievalError("Phase 4 report is missing artifact hashes")
     datasets: dict[str, list[dict[str, object]]] = {}
+    artifact_bytes: dict[str, bytes] = {}
     for name in _REQUIRED_ARTIFACTS:
         path = entity_dir / name
         if not path.is_file():
             raise RetrievalError(f"missing Phase 4 artifact: {name}")
+        data = path.read_bytes()
         expected = artifact_hashes.get(name)
-        actual = _sha256_bytes(path.read_bytes())
+        actual = _sha256_bytes(data)
         if expected != actual:
             raise RetrievalError(f"artifact SHA-256 mismatch: {name}")
+        artifact_bytes[name] = data
         datasets[name] = _load_jsonl(path, name)
+
+    # A self-consistent forged report and forged artifacts must not become an
+    # authority boundary. Re-run Phase 4 from the accepted Claims and source,
+    # then require byte-for-byte equality with every published artifact. This
+    # also re-runs current typed Claim validation through normalize_entities().
+    accepted_records = _load_jsonl(accepted_claims_path, "accepted Claim", allow_empty=False)
+    identity_links = (
+        [IdentityLink.from_dict(row) for row in _load_jsonl(identity_path, "identity link", allow_empty=False)]
+        if identity_path is not None
+        else []
+    )
+    regenerated = normalize_entities(
+        accepted_records,
+        source_text,
+        units,
+        identity_links=identity_links,
+    )
+    regenerated_datasets: dict[str, Sequence[object]] = {
+        "mentions.jsonl": regenerated.mentions,
+        "entities.jsonl": regenerated.entities,
+        "facts.jsonl": regenerated.facts,
+        "timeline.jsonl": regenerated.timeline,
+        "conflicts.jsonl": regenerated.conflicts,
+        "ambiguity-groups.jsonl": regenerated.ambiguity_groups,
+    }
+    for name, rows in regenerated_datasets.items():
+        if _jsonl_bytes(rows) != artifact_bytes[name]:
+            raise RetrievalError(f"Phase 4 artifact differs from fresh normalization: {name}")
+    for key, value in regenerated.report.items():
+        if report.get(key) != value:
+            raise RetrievalError(f"Phase 4 report differs from fresh normalization: {key}")
 
     entity_ids = _unique_ids(datasets["entities.jsonl"], "entity_id", "entity")
     mention_ids = _unique_ids(datasets["mentions.jsonl"], "mention_id", "mention")
