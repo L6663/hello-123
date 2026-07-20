@@ -1,6 +1,0 @@
-            result = query_hybrid_index(paths[4], "守卫现在有多少名？")
-        self.assertEqual(result.answerability, "ambiguous")
-
-
-if __name__ == "__main__":
-    unittest.main()

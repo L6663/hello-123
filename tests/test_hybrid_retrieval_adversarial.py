@@ -152,3 +152,9 @@ class HybridRetrievalAdversarialTests(RetrievalFixture):
                 ],
             )
             build_hybrid_index(*paths[:4], paths[4], identity_links_path=paths[5])
+            result = query_hybrid_index(paths[4], "守卫现在有多少名？")
+        self.assertEqual(result.answerability, "ambiguous")
+
+
+if __name__ == "__main__":
+    unittest.main()
