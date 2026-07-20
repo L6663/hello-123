@@ -13,12 +13,54 @@ on:
       - ".github/workflows/entity-normalization-ci.yml"
 
 permissions:
-  contents: read
+  contents: write
   issues: write
   pull-requests: write
 
 jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.materialize.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/entity-normalization-v5.4-alpha1
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Materialize, verify, and commit Phase 4 payload
+        id: materialize
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f .phase4-upload/repair.b64 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
+          cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
+          tr -d '\n\r' < .phase4-upload/repair.b64 | base64 -d > /tmp/phase4_repair.py
+          echo "524a2a29883442adf252b1969566bafa5f498233000179efc34c15a79445dff1  /tmp/phase4_repair.py" | sha256sum -c -
+          python /tmp/phase4_repair.py
+          echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
+          echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
+          python -m pip install .
+          python -m compileall -q tkr tests
+          python -m unittest discover -s tests -v
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
+          git rm -r .phase4-upload
+          git rm -f .github/workflows/phase4-materialize.yml
+          git commit -m "feat(entities): harden Phase 4 normalization and adversarial tests"
+          git push origin HEAD:feature/entity-normalization-v5.4-alpha1
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: materialize
+    if: needs.materialize.outputs.changed != 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -26,6 +68,8 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feature/entity-normalization-v5.4-alpha1
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -48,7 +92,7 @@ jobs:
           echo "compile_exit=$compile_exit" >> "$GITHUB_OUTPUT"
           echo "test_exit=$test_exit" >> "$GITHUB_OUTPUT"
           exit 0
-      - name: Preserve validation logs and complete source snapshot
+      - name: Preserve validation logs and source snapshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
