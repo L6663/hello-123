@@ -1,0 +1,210 @@
+    source_id: str | None,
+) -> list[sqlite3.Row]:
+    clauses = ["claim_type=?"]
+    params: list[object] = [intent.predicate]
+    if source_id is not None:
+        clauses.append("source_id=?")
+        params.append(source_id)
+
+    normalized_subject = _normalize_surface(intent.subject)
+    normalized_object = _normalize_surface(intent.object)
+
+    if intent.predicate == "alias":
+        if intent.requested_role == "boolean":
+            clauses.append("normalized_subject=? AND normalized_object=?")
+            params.extend((normalized_subject, normalized_object))
+        elif subject_entities:
+            clauses.append("(subject_entity_id IN (%s) OR object_entity_id IN (%s))" % (
+                ",".join("?" for _ in subject_entities), ",".join("?" for _ in subject_entities)
+            ))
+            params.extend(subject_entities)
+            params.extend(subject_entities)
+        else:
+            clauses.append("(normalized_subject=? OR normalized_object=?)")
+            params.extend((normalized_subject, normalized_subject))
+    elif intent.predicate == "defeats":
+        if intent.requested_role == "subject":
+            if object_entities:
+                clauses.append("object_entity_id IN (%s)" % ",".join("?" for _ in object_entities))
+                params.extend(object_entities)
+            else:
+                clauses.append("normalized_object=?")
+                params.append(normalized_object)
+        else:
+            if subject_entities:
+                clauses.append("subject_entity_id IN (%s)" % ",".join("?" for _ in subject_entities))
+                params.extend(subject_entities)
+            else:
+                clauses.append("normalized_subject=?")
+                params.append(normalized_subject)
+            if intent.requested_role == "boolean":
+                if object_entities:
+                    clauses.append("object_entity_id IN (%s)" % ",".join("?" for _ in object_entities))
+                    params.extend(object_entities)
+                else:
+                    clauses.append("normalized_object=?")
+                    params.append(normalized_object)
+    elif intent.predicate in {"located_in", "count", "date", "permission"}:
+        if subject_entities:
+            clauses.append("subject_entity_id IN (%s)" % ",".join("?" for _ in subject_entities))
+            params.extend(subject_entities)
+        else:
+            clauses.append("normalized_subject=?")
+            params.append(normalized_subject)
+        if intent.predicate == "located_in" and intent.requested_role == "boolean":
+            if object_entities:
+                clauses.append("object_entity_id IN (%s)" % ",".join("?" for _ in object_entities))
+                params.extend(object_entities)
+            else:
+                clauses.append("normalized_object=?")
+                params.append(normalized_object)
+        if intent.predicate == "count" and intent.unit:
+            clauses.append("unit=?")
+            params.append(intent.unit)
+        if intent.predicate == "date" and intent.predicate_scope and intent.predicate_scope != "generic_date":
+            clauses.append("predicate_scope=?")
+            params.append(intent.predicate_scope)
+        if intent.predicate == "permission":
+            clauses.append("normalized_object=?")
+            params.append(normalized_object)
+            if intent.polarity is not None:
+                clauses.append("polarity=?")
+                params.append(int(intent.polarity))
+
+    sql = "SELECT * FROM facts WHERE " + " AND ".join(clauses) + " ORDER BY evidence_start, fact_id"
+    return list(connection.execute(sql, params).fetchall())
+
+
+def _row_to_fact_hit(row: sqlite3.Row, score: float = 100.0) -> RetrievalHit:
+    value = json.loads(row["value_json"])
+    if row["claim_type"] == "count" and isinstance(value, str):
+        try:
+            number = Decimal(value)
+            value = int(number) if number == number.to_integral_value() else float(number)
+        except (InvalidOperation, ValueError, OverflowError):
+            pass
+    return RetrievalHit(
+        hit_type="fact",
+        score=score,
+        source_id=row["source_id"],
+        unit_id=row["unit_id"],
+        evidence_start=row["evidence_start"],
+        evidence_end=row["evidence_end"],
+        evidence_text=row["evidence_text"],
+        fact_id=row["fact_id"],
+        entity_id=row["subject_entity_id"],
+        claim_type=row["claim_type"],
+        predicate_scope=row["predicate_scope"],
+        canonical_status=row["canonical_status"],
+        subject=row["subject"],
+        object=row["object_text"],
+        value=value,
+        unit=row["unit"],
+        polarity=bool(row["polarity"]),
+        temporal_marker=row["temporal_marker"],
+    )
+
+
+def _answer_key(hit: RetrievalHit, intent: PredicateQuery) -> str:
+    if intent.predicate == "defeats":
+        return _normalize_surface(hit.subject if intent.requested_role == "subject" else hit.object or "")
+    if intent.predicate in {"located_in", "alias"}:
+        if intent.predicate == "alias":
+            query_name = _normalize_surface(intent.subject)
+            candidates = [hit.subject or "", hit.object or ""]
+            return "|".join(sorted(_normalize_surface(item) for item in candidates if _normalize_surface(item) != query_name))
+        return _normalize_surface(hit.object or "")
+    if intent.predicate in {"count", "date"}:
+        return _canonical_json(hit.value)
+    if intent.predicate == "permission":
+        return str(hit.polarity)
+    return hit.fact_id or ""
+
+
+def _select_temporal(hits: Sequence[RetrievalHit], scope: str) -> list[RetrievalHit]:
+    ordered = sorted(hits, key=lambda item: (item.source_id, item.evidence_start, item.fact_id or ""))
+    if not ordered or scope == "any":
+        return list(ordered)
+    by_source: dict[str, list[RetrievalHit]] = {}
+    for hit in ordered:
+        by_source.setdefault(hit.source_id, []).append(hit)
+    selected: list[RetrievalHit] = []
+    for group in by_source.values():
+        selected.append(group[-1] if scope == "current" else group[0])
+    return selected
+
+
+def _lexical_terms(intent: PredicateQuery) -> list[str]:
+    terms = [intent.subject, intent.object]
+    if intent.predicate != "unsupported":
+        terms.append(intent.predicate)
+    terms.append(intent.raw_query)
+    result: list[str] = []
+    for term in terms:
+        cleaned = unicodedata.normalize("NFKC", term).strip()
+        if cleaned and cleaned not in result:
+            result.append(cleaned)
+    return result
+
+
+def _fts_phrase(term: str) -> str:
+    return '"' + term.replace('"', '""') + '"'
+
+
+def _lexical_hits(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    *,
+    source_id: str | None,
+    limit: int,
+) -> list[RetrievalHit]:
+    terms = [term for term in _lexical_terms(intent) if len(_normalize_surface(term)) >= 2]
+    if not terms or limit <= 0:
+        return []
+    metadata = _metadata(connection)
+    hits: list[RetrievalHit] = []
+    seen: set[tuple[str, str]] = set()
+
+    if metadata.get("fts5") == "1":
+        for term in terms:
+            try:
+                rows = connection.execute(
+                    "SELECT source_id,unit_id,text,bm25(unit_fts) AS rank FROM unit_fts WHERE unit_fts MATCH ? ORDER BY rank LIMIT ?",
+                    (_fts_phrase(term), limit),
+                ).fetchall()
+            except sqlite3.OperationalError:
+                rows = []
+            for row in rows:
+                key = (str(row[0]), str(row[1]))
+                if key in seen or (source_id is not None and key[0] != source_id):
+                    continue
+                seen.add(key)
+                unit_row = connection.execute(
+                    "SELECT norm_start,norm_end,text FROM units WHERE source_id=? AND unit_id=?",
+                    key,
+                ).fetchone()
+                if unit_row is None:
+                    continue
+                text = str(unit_row[2])
+                local = text.find(term)
+                snippet_start = max(0, local - 80) if local >= 0 else 0
+                snippet_end = min(len(text), (local + len(term) + 120) if local >= 0 else 240)
+                hits.append(
+                    RetrievalHit(
+                        hit_type="unit_lexical",
+                        score=max(0.0, 20.0 - float(row[3] or 0.0)),
+                        source_id=key[0],
+                        unit_id=key[1],
+                        evidence_start=int(unit_row[0]) + snippet_start,
+                        evidence_end=int(unit_row[0]) + snippet_end,
+                        evidence_text=text[snippet_start:snippet_end],
+                    )
+                )
+                if len(hits) >= limit:
+                    return hits
+
+    if len(hits) < limit:
+        for term in terms:
+            pattern = f"%{term}%"
+            sql = "SELECT source_id,unit_id,norm_start,text FROM units WHERE text LIKE ?"
+            params: list[object] = [pattern]
