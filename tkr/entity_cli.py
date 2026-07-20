@@ -59,6 +59,7 @@ def _publish(
     *,
     accepted_path: Path,
     identity_links_path: Path | None,
+    units_path: Path,
 ) -> dict[str, object]:
     outdir.mkdir(parents=True, exist_ok=True)
     datasets: dict[str, Sequence[object]] = {
@@ -83,6 +84,7 @@ def _publish(
         report.update(
             {
                 "accepted_claims_sha256": sha256(accepted_path.read_bytes()).hexdigest(),
+                "unit_index_sha256": sha256(units_path.read_bytes()).hexdigest(),
                 "identity_links_sha256": (
                     sha256(identity_links_path.read_bytes()).hexdigest()
                     if identity_links_path is not None
@@ -151,6 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.outdir,
             accepted_path=args.accepted_claims,
             identity_links_path=args.identity_links,
+            units_path=args.units,
         )
     except (OSError, UnicodeError, TypeError, ValueError, KeyError) as exc:
         raise SystemExit(f"entity normalization failed: {exc}") from exc
