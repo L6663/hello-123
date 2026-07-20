@@ -1,15 +1,16 @@
 """Evidence-bound entity, alias, homonym, timeline, and conflict normalization.
 
-This phase consumes only Phase 3 accepted Claim records and re-validates every
-record against the normalized source and Unit index. It intentionally favors
-precision over recall: identical surface forms in different Units are not merged
-without an explicit, evidence-bound identity link.
+Phase 4 consumes only Phase 3 ``accepted`` Claim records. Every record is
+revalidated against the normalized source and Unit index before it can influence
+an entity cluster. The normalizer is deliberately conservative: a repeated name
+inside one Unit is treated as local continuity, while cross-Unit identity requires
+an accepted alias Claim or a separately cited ``same_as`` link.
 """
 
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
 import re
@@ -24,8 +25,9 @@ from .claim_validation import (
     validate_claim,
 )
 
-NORMALIZER_VERSION = "tkr-entity-normalizer-v1"
+NORMALIZER_VERSION = "tkr-entity-normalizer-v2"
 
+_ASSERTION_BREAK_RE = re.compile(r"[\n。！？!?；;]+")
 _EARLIER_RE = re.compile(
     r"(?:原先|原本|最初|起初|此前|之前|曾经|昔日|当初|formerly|initially|previously)",
     re.IGNORECASE,
@@ -34,13 +36,47 @@ _LATER_RE = re.compile(
     r"(?:后来|随后|之后|此后|最终|如今|现在|现已|改为|变为|later|afterwards|now|eventually)",
     re.IGNORECASE,
 )
-_SAME_IDENTITY_RE = re.compile(
-    r"(?:同一人|同一个人|同一实体|正是|就是|即为|其实是|本名|真名|same person|same entity)",
+_IDENTITY_MODAL_RE = re.compile(
+    r"(?:据说|传闻|听说|或许|可能|似乎|也许|假如|如果|倘若|若是|"
+    r"声称|宣称|谎称|预计|将要|即将|[？?]|"
+    r"\breportedly\b|\ballegedly\b|\bperhaps\b|\bmaybe\b|\bif\b|\bclaimed\b|\bwill\b)",
     re.IGNORECASE,
 )
-_DIFFERENT_IDENTITY_RE = re.compile(
-    r"(?:同名不同人|并非同一人|不是同一个人|并非同一实体|另一个|不同的人|different person|different entity|unrelated)",
-    re.IGNORECASE,
+_IDENTITY_GAP = r"[^\n。！？!?；;，,:：]{0,32}?"
+_IDENTITY_JOIN = r"(?:与|和|跟|及|、|\band\b)"
+_SAME_MIDDLE_MARKERS = (
+    "正是",
+    "就是",
+    "即为",
+    "其实是",
+    "本名是",
+    "本名为",
+    "真名是",
+    "真名为",
+    "is the same person as",
+    "is the same entity as",
+)
+_SAME_TAIL_MARKERS = ("是同一人", "为同一人", "是同一个人", "是同一实体", "same person", "same entity")
+_DIFFERENT_TAIL_MARKERS = (
+    "同名不同人",
+    "并非同一人",
+    "不是同一人",
+    "不是同一个人",
+    "并非同一实体",
+    "不是同一实体",
+    "different people",
+    "different persons",
+    "different entities",
+    "not the same person",
+    "not the same entity",
+)
+
+_DATE_SCOPE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("birth_date", re.compile(r"(?:出生于|生于|born on|date of birth)", re.IGNORECASE)),
+    ("death_date", re.compile(r"(?:卒于|死于|逝世于|died on|date of death)", re.IGNORECASE)),
+    ("start_date", re.compile(r"(?:始于|开始于|启用于|started on|began on)", re.IGNORECASE)),
+    ("end_date", re.compile(r"(?:终于|结束于|截至|ended on|until)", re.IGNORECASE)),
+    ("event_date", re.compile(r"(?:发生于|举行于|occurred on|happened on)", re.IGNORECASE)),
 )
 
 
@@ -96,6 +132,7 @@ class Fact:
     fact_id: str
     claim_result_id: str
     claim_type: str
+    predicate_scope: str
     subject_entity_id: str | None
     subject: str
     object_entity_id: str | None
@@ -128,6 +165,7 @@ class TimelineEvent:
     evidence_start: int
     evidence_end: int
     event_type: str
+    predicate_scope: str
     normalized_date: str | None
     temporal_marker: str
     subject_entity_id: str | None
@@ -150,15 +188,16 @@ class Conflict:
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
-        payload["entity_ids"] = list(self.entity_ids)
-        payload["fact_ids"] = list(self.fact_ids)
-        payload["mention_ids"] = list(self.mention_ids)
+        payload["entity_ids"] = list(payload["entity_ids"])
+        payload["fact_ids"] = list(payload["fact_ids"])
+        payload["mention_ids"] = list(payload["mention_ids"])
         return payload
 
 
 @dataclass(frozen=True, slots=True)
 class AmbiguityGroup:
     ambiguity_id: str
+    source_id: str
     normalized_surface: str
     surfaces: tuple[str, ...]
     entity_ids: tuple[str, ...]
@@ -167,9 +206,9 @@ class AmbiguityGroup:
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
-        payload["surfaces"] = list(self.surfaces)
-        payload["entity_ids"] = list(self.entity_ids)
-        payload["mention_ids"] = list(self.mention_ids)
+        payload["surfaces"] = list(payload["surfaces"])
+        payload["entity_ids"] = list(payload["entity_ids"])
+        payload["mention_ids"] = list(payload["mention_ids"])
         return payload
 
 
@@ -221,13 +260,14 @@ class NormalizationBundle:
 
 
 class _UnionFind:
-    def __init__(self, mention_ids: Iterable[str], mentions: Mapping[str, Mention]) -> None:
-        self.parent = {item: item for item in mention_ids}
-        self.members = {item: {item} for item in mention_ids}
+    def __init__(self, mentions: Mapping[str, Mention]) -> None:
+        self.parent = {item: item for item in mentions}
+        self.members = {item: {item} for item in mentions}
         self.types = {
-            item: ({mentions[item].inferred_type} - {"unknown", "entity"}) for item in mention_ids
+            item: ({mentions[item].inferred_type} - {"unknown", "entity"}) for item in mentions
         }
-        self.basis = {item: set() for item in mention_ids}
+        self.sources = {item: {mentions[item].source_id} for item in mentions}
+        self.basis = {item: set() for item in mentions}
 
     def find(self, item: str) -> str:
         parent = self.parent[item]
@@ -235,35 +275,39 @@ class _UnionFind:
             self.parent[item] = self.find(parent)
         return self.parent[item]
 
-    def roots_conflict(self, left: str, right: str) -> bool:
-        left_types = self.types[self.find(left)]
-        right_types = self.types[self.find(right)]
-        return bool(left_types and right_types and left_types != right_types)
-
     def union(
         self,
         left: str,
         right: str,
         *,
         basis: str,
-        forbidden_pairs: set[frozenset[str]],
+        forbidden_neighbors: Mapping[str, set[str]],
     ) -> tuple[bool, str | None]:
         left_root = self.find(left)
         right_root = self.find(right)
         if left_root == right_root:
             self.basis[left_root].add(basis)
             return True, None
-        if self.roots_conflict(left_root, right_root):
+        if self.sources[left_root] != self.sources[right_root]:
+            return False, "CROSS_SOURCE_IDENTITY_MERGE"
+        left_types = self.types[left_root]
+        right_types = self.types[right_root]
+        if left_types and right_types and left_types != right_types:
             return False, "ENTITY_TYPE_CONFLICT"
-        for left_member in self.members[left_root]:
-            for right_member in self.members[right_root]:
-                if frozenset((left_member, right_member)) in forbidden_pairs:
-                    return False, "EXPLICIT_DIFFERENT_FROM_CONSTRAINT"
-        if right_root < left_root:
+        left_members = self.members[left_root]
+        right_members = self.members[right_root]
+        smaller, other = (left_members, right_members) if len(left_members) <= len(right_members) else (right_members, left_members)
+        for member in smaller:
+            if forbidden_neighbors.get(member, set()).intersection(other):
+                return False, "EXPLICIT_DIFFERENT_FROM_CONSTRAINT"
+        left_size = len(self.members[left_root])
+        right_size = len(self.members[right_root])
+        if left_size < right_size or (left_size == right_size and right_root < left_root):
             left_root, right_root = right_root, left_root
         self.parent[right_root] = left_root
         self.members[left_root].update(self.members.pop(right_root))
         self.types[left_root].update(self.types.pop(right_root))
+        self.sources[left_root].update(self.sources.pop(right_root))
         self.basis[left_root].update(self.basis.pop(right_root))
         self.basis[left_root].add(basis)
         return True, None
@@ -287,16 +331,52 @@ def _normalize_surface(value: str) -> str:
     return unicodedata.normalize("NFKC", value).strip().casefold()
 
 
+def _literal_pattern(value: str) -> str:
+    pieces = re.split(r"\s+", unicodedata.normalize("NFKC", value).strip())
+    return r"\s*".join(re.escape(piece) for piece in pieces if piece)
+
+
+def _marker_pattern(markers: Sequence[str]) -> str:
+    patterns: list[str] = []
+    for marker in markers:
+        escaped = re.escape(marker.strip()).replace(r"\ ", r"\s+")
+        patterns.append(escaped)
+    return "(?:" + "|".join(patterns) + ")"
+
+
 def _stable_id(prefix: str, *parts: object, length: int = 24) -> str:
     payload = "\0".join(str(part) for part in parts)
     return prefix + sha256(payload.encode("utf-8")).hexdigest()[:length]
+
+
+def _validated_unit_lookup(source_text: str, units: Sequence[UnitSpan]) -> dict[tuple[str, str], UnitSpan]:
+    if not units:
+        raise EntityNormalizationError("Unit index is empty")
+    lookup: dict[tuple[str, str], UnitSpan] = {}
+    by_source: dict[str, list[UnitSpan]] = defaultdict(list)
+    for unit in units:
+        key = (unit.source_id, unit.unit_id)
+        if not unit.source_id or not unit.unit_id:
+            raise EntityNormalizationError("Unit source_id and unit_id must be non-empty")
+        if key in lookup:
+            raise EntityNormalizationError(f"duplicate Unit identity: {key}")
+        if unit.start < 0 or unit.end <= unit.start or unit.end > len(source_text):
+            raise EntityNormalizationError(f"invalid Unit span: {key}")
+        lookup[key] = unit
+        by_source[unit.source_id].append(unit)
+    for source_id, group in by_source.items():
+        previous_end = -1
+        for unit in sorted(group, key=lambda item: (item.start, item.end, item.unit_id)):
+            if unit.start < previous_end:
+                raise EntityNormalizationError(f"overlapping Unit spans for source {source_id!r}")
+            previous_end = unit.end
+    return lookup
 
 
 def _result_from_dict(payload: Mapping[str, object]) -> ClaimValidationResult:
     def text(name: str) -> str:
         return _required_text(payload, name)
 
-    status = text("status")
     reasons = payload.get("reason_codes")
     spans = payload.get("matched_spans")
     normalized = payload.get("normalized_claim")
@@ -319,7 +399,7 @@ def _result_from_dict(payload: Mapping[str, object]) -> ClaimValidationResult:
         result_id=text("result_id"),
         claim_fingerprint=text("claim_fingerprint"),
         validator_version=text("validator_version"),
-        status=status,
+        status=text("status"),
         reason_codes=tuple(reasons),
         may_index=may_index,
         may_freeze=may_freeze,
@@ -338,11 +418,13 @@ def revalidate_accepted_records(
     source_text: str,
     units: Sequence[UnitSpan],
 ) -> tuple[AcceptedClaim, ...]:
-    """Re-run Phase 3 and reject stale, forged, or non-accepted artifacts."""
+    """Re-run Phase 3 and reject stale, forged, duplicate, or non-accepted artifacts."""
 
+    if not isinstance(source_text, str) or not source_text:
+        raise EntityNormalizationError("source text must be a non-empty string")
     if not records:
         raise EntityNormalizationError("accepted Claim records are empty")
-    unit_lookup = {(unit.source_id, unit.unit_id): unit for unit in units}
+    unit_lookup = _validated_unit_lookup(source_text, units)
     accepted: list[AcceptedClaim] = []
     seen_results: set[str] = set()
     for index, record in enumerate(records, start=1):
@@ -387,6 +469,32 @@ def _role_type(claim_type: str, role: str) -> str:
     return "entity" if role == "subject" else "unknown"
 
 
+def _occurrences(text: str, surface: str) -> list[tuple[int, int]]:
+    pattern = re.compile(_literal_pattern(surface), re.IGNORECASE)
+    return [(match.start(), match.end()) for match in pattern.finditer(text)]
+
+
+def _mention_span(accepted: AcceptedClaim, surface: str) -> tuple[int, int]:
+    occurrences = _occurrences(accepted.evidence, surface)
+    if not occurrences:
+        raise EntityNormalizationError(
+            f"accepted Claim {accepted.validation.result_id} does not contain its entity surface {surface!r}"
+        )
+    matched = accepted.validation.matched_spans
+    if matched:
+        overlapping = [
+            span
+            for span in occurrences
+            if any(span[0] < relation_end and relation_start < span[1] for relation_start, relation_end in matched)
+        ]
+        choices = overlapping or occurrences
+        anchor = matched[0][0]
+        local_start, local_end = min(choices, key=lambda span: (abs(span[0] - anchor), span[0], span[1]))
+    else:
+        local_start, local_end = occurrences[0]
+    return accepted.candidate.evidence_start + local_start, accepted.candidate.evidence_start + local_end
+
+
 def _make_mentions(claims: Sequence[AcceptedClaim]) -> tuple[Mention, ...]:
     mentions: list[Mention] = []
     for accepted in claims:
@@ -397,6 +505,7 @@ def _make_mentions(claims: Sequence[AcceptedClaim]) -> tuple[Mention, ...]:
         for role, surface in roles:
             if not surface:
                 continue
+            start, end = _mention_span(accepted, surface)
             normalized = _normalize_surface(surface)
             mention_id = _stable_id(
                 "men_",
@@ -406,8 +515,8 @@ def _make_mentions(claims: Sequence[AcceptedClaim]) -> tuple[Mention, ...]:
                 normalized,
                 candidate.source_id,
                 candidate.unit_id,
-                candidate.evidence_start,
-                candidate.evidence_end,
+                start,
+                end,
             )
             mentions.append(
                 Mention(
@@ -419,11 +528,34 @@ def _make_mentions(claims: Sequence[AcceptedClaim]) -> tuple[Mention, ...]:
                     inferred_type=_role_type(candidate.claim_type, role),
                     source_id=candidate.source_id,
                     unit_id=candidate.unit_id,
-                    evidence_start=candidate.evidence_start,
-                    evidence_end=candidate.evidence_end,
+                    evidence_start=start,
+                    evidence_end=end,
                 )
             )
-    return tuple(sorted(mentions, key=lambda item: (item.source_id, item.evidence_start, item.role, item.mention_id)))
+    return tuple(
+        sorted(mentions, key=lambda item: (item.source_id, item.evidence_start, item.role, item.mention_id))
+    )
+
+
+def _identity_relation_pattern(left: str, right: str, relation: str) -> re.Pattern[str]:
+    left_pattern = _literal_pattern(left)
+    right_pattern = _literal_pattern(right)
+    if relation == "same_as":
+        middle = _marker_pattern(_SAME_MIDDLE_MARKERS)
+        tail = _marker_pattern(_SAME_TAIL_MARKERS)
+        expression = (
+            rf"(?:{left_pattern}{_IDENTITY_GAP}{middle}{_IDENTITY_GAP}{right_pattern}"
+            rf"|{right_pattern}{_IDENTITY_GAP}{middle}{_IDENTITY_GAP}{left_pattern}"
+            rf"|{left_pattern}{_IDENTITY_GAP}{_IDENTITY_JOIN}{_IDENTITY_GAP}{right_pattern}{_IDENTITY_GAP}{tail}"
+            rf"|{right_pattern}{_IDENTITY_GAP}{_IDENTITY_JOIN}{_IDENTITY_GAP}{left_pattern}{_IDENTITY_GAP}{tail})"
+        )
+    else:
+        tail = _marker_pattern(_DIFFERENT_TAIL_MARKERS)
+        expression = (
+            rf"(?:{left_pattern}{_IDENTITY_GAP}{_IDENTITY_JOIN}{_IDENTITY_GAP}{right_pattern}{_IDENTITY_GAP}{tail}"
+            rf"|{right_pattern}{_IDENTITY_GAP}{_IDENTITY_JOIN}{_IDENTITY_GAP}{left_pattern}{_IDENTITY_GAP}{tail})"
+        )
+    return re.compile(expression, re.IGNORECASE)
 
 
 def _validate_identity_links(
@@ -432,16 +564,33 @@ def _validate_identity_links(
     units: Sequence[UnitSpan],
     mention_by_key: Mapping[tuple[str, str], Mention],
 ) -> tuple[list[tuple[IdentityLink, Mention, Mention]], set[frozenset[str]]]:
-    unit_lookup = {(unit.source_id, unit.unit_id): unit for unit in units}
+    unit_lookup = _validated_unit_lookup(source_text, units)
     validated: list[tuple[IdentityLink, Mention, Mention]] = []
     forbidden: set[frozenset[str]] = set()
+    seen_links: set[tuple[object, ...]] = set()
     for index, link in enumerate(links, start=1):
+        signature = (
+            link.relation,
+            link.left_result_id,
+            link.left_role,
+            link.right_result_id,
+            link.right_role,
+            link.source_id,
+            link.unit_id,
+            link.evidence_start,
+            link.evidence_end,
+        )
+        if signature in seen_links:
+            raise EntityNormalizationError(f"duplicate identity link at item {index}")
+        seen_links.add(signature)
         left = mention_by_key.get((link.left_result_id, link.left_role))
         right = mention_by_key.get((link.right_result_id, link.right_role))
         if left is None or right is None:
             raise EntityNormalizationError(f"identity link {index} references an unknown mention")
         if left.mention_id == right.mention_id:
             raise EntityNormalizationError(f"identity link {index} references the same mention twice")
+        if left.source_id != right.source_id or link.source_id != left.source_id:
+            raise EntityNormalizationError(f"identity link {index} cannot cross source boundaries")
         if link.evidence_start < 0 or link.evidence_end <= link.evidence_start or link.evidence_end > len(source_text):
             raise EntityNormalizationError(f"identity link {index} evidence span is invalid")
         evidence = source_text[link.evidence_start : link.evidence_end]
@@ -450,21 +599,13 @@ def _validate_identity_links(
         unit = unit_lookup.get((link.source_id, link.unit_id))
         if unit is None or not unit.start <= link.evidence_start < link.evidence_end <= unit.end:
             raise EntityNormalizationError(f"identity link {index} evidence is outside its Unit")
-        same = bool(_SAME_IDENTITY_RE.search(evidence))
-        different = bool(_DIFFERENT_IDENTITY_RE.search(evidence))
-        if link.relation == "same_as" and (not same or different):
-            raise EntityNormalizationError(f"identity link {index} lacks unambiguous same-identity evidence")
-        if link.relation == "different_from" and (not different or same):
-            raise EntityNormalizationError(f"identity link {index} lacks unambiguous different-identity evidence")
-        surfaces = [left.normalized_surface, right.normalized_surface]
-        normalized_evidence = _normalize_surface(evidence)
-        if surfaces[0] == surfaces[1]:
-            if normalized_evidence.count(surfaces[0]) < 2:
-                raise EntityNormalizationError(
-                    f"identity link {index} must mention the homonymous surface at least twice"
-                )
-        elif any(surface not in normalized_evidence for surface in surfaces):
-            raise EntityNormalizationError(f"identity link {index} evidence does not mention both entities")
+        if _IDENTITY_MODAL_RE.search(evidence):
+            raise EntityNormalizationError(f"identity link {index} is modal, reported, hypothetical, or a question")
+        relation_pattern = _identity_relation_pattern(left.surface, right.surface, link.relation)
+        if not relation_pattern.search(evidence):
+            raise EntityNormalizationError(
+                f"identity link {index} lacks an exact {link.relation} relation between both referenced surfaces"
+            )
         validated.append((link, left, right))
         if link.relation == "different_from":
             forbidden.add(frozenset((left.mention_id, right.mention_id)))
@@ -492,9 +633,25 @@ def _conflict(
     return Conflict(conflict_id, conflict_type, severity, status, entities, facts, mentions, detail_dict)
 
 
-def _temporal_marker(evidence: str) -> str:
-    earlier = bool(_EARLIER_RE.search(evidence))
-    later = bool(_LATER_RE.search(evidence))
+def _assertion_context(accepted: AcceptedClaim) -> str:
+    if not accepted.validation.matched_spans:
+        return accepted.evidence
+    anchor_start, anchor_end = accepted.validation.matched_spans[0]
+    left = 0
+    right = len(accepted.evidence)
+    for match in _ASSERTION_BREAK_RE.finditer(accepted.evidence):
+        if match.end() <= anchor_start:
+            left = match.end()
+        elif match.start() >= anchor_end:
+            right = match.start()
+            break
+    return accepted.evidence[left:right]
+
+
+def _temporal_marker(accepted: AcceptedClaim) -> str:
+    context = _assertion_context(accepted)
+    earlier = bool(_EARLIER_RE.search(context))
+    later = bool(_LATER_RE.search(context))
     if earlier and later:
         return "mixed"
     if earlier:
@@ -502,6 +659,27 @@ def _temporal_marker(evidence: str) -> str:
     if later:
         return "later"
     return "unspecified"
+
+
+def _predicate_scope(accepted: AcceptedClaim) -> str:
+    candidate = accepted.candidate
+    context = _assertion_context(accepted)
+    if candidate.claim_type == "date":
+        for scope, pattern in _DATE_SCOPE_PATTERNS:
+            if pattern.search(context):
+                return scope
+        return "generic_date"
+    if candidate.claim_type == "count":
+        return "count:" + _normalize_surface(candidate.unit or "unspecified")
+    if candidate.claim_type == "permission":
+        return "permission:" + _normalize_surface(candidate.object)
+    if candidate.claim_type == "located_in":
+        return "location"
+    if candidate.claim_type == "defeats":
+        return "defeats"
+    if candidate.claim_type == "alias":
+        return "identity"
+    return candidate.claim_type
 
 
 def _entity_type(types: set[str]) -> str:
@@ -513,6 +691,36 @@ def _entity_type(types: set[str]) -> str:
     return "mixed"
 
 
+def _canonical_name(component: Sequence[Mention]) -> str:
+    counts = Counter(item.surface for item in component)
+    first_position = {
+        name: min(item.evidence_start for item in component if item.surface == name) for name in counts
+    }
+    return min(counts, key=lambda name: (-counts[name], first_position[name], name))
+
+
+def _attach_claim_conflicts(conflicts: Sequence[Conflict], facts: Sequence[Fact]) -> list[Conflict]:
+    by_result = {fact.claim_result_id: fact.fact_id for fact in facts}
+    attached: list[Conflict] = []
+    for conflict in conflicts:
+        result_id = conflict.details.get("claim_result_id")
+        if isinstance(result_id, str) and result_id in by_result and by_result[result_id] not in conflict.fact_ids:
+            attached.append(
+                _conflict(
+                    conflict.conflict_type,
+                    severity=conflict.severity,
+                    status=conflict.status,
+                    entity_ids=conflict.entity_ids,
+                    fact_ids=(*conflict.fact_ids, by_result[result_id]),
+                    mention_ids=conflict.mention_ids,
+                    details=conflict.details,
+                )
+            )
+        else:
+            attached.append(conflict)
+    return attached
+
+
 def normalize_entities(
     accepted_records: Sequence[Mapping[str, object]],
     source_text: str,
@@ -520,7 +728,7 @@ def normalize_entities(
     *,
     identity_links: Sequence[IdentityLink] = (),
 ) -> NormalizationBundle:
-    """Build deterministic entities/facts while retaining ambiguity and conflict evidence."""
+    """Build deterministic entities/facts while retaining ambiguity and conflicts."""
 
     accepted = revalidate_accepted_records(accepted_records, source_text, units)
     mentions = _make_mentions(accepted)
@@ -532,11 +740,16 @@ def normalize_entities(
     validated_links, forbidden_pairs = _validate_identity_links(
         identity_links, source_text, units, mention_by_key
     )
-    union = _UnionFind(mention_map, mention_map)
+    forbidden_neighbors: dict[str, set[str]] = defaultdict(set)
+    for pair in forbidden_pairs:
+        left_id, right_id = tuple(pair)
+        forbidden_neighbors[left_id].add(right_id)
+        forbidden_neighbors[right_id].add(left_id)
+    union = _UnionFind(mention_map)
     conflicts: list[Conflict] = []
 
-    # Exact local surface continuity is intentionally scoped to one Unit. Cross-Unit
-    # consolidation requires alias evidence or an explicit same_as identity link.
+    # Local continuity is a documented heuristic: only exact surface matches inside
+    # one Unit are merged automatically. Cross-Unit identity remains explicit.
     local_groups: dict[tuple[str, str, str], list[Mention]] = defaultdict(list)
     for mention in mentions:
         local_groups[(mention.source_id, mention.unit_id, mention.normalized_surface)].append(mention)
@@ -547,7 +760,7 @@ def normalize_entities(
                 anchor.mention_id,
                 other.mention_id,
                 basis="same_surface_same_unit",
-                forbidden_pairs=forbidden_pairs,
+                forbidden_neighbors=forbidden_neighbors,
             )
             if not merged:
                 conflicts.append(
@@ -559,7 +772,6 @@ def normalize_entities(
                     )
                 )
 
-    accepted_by_result = {item.validation.result_id: item for item in accepted}
     for item in accepted:
         if item.candidate.claim_type != "alias":
             continue
@@ -571,7 +783,7 @@ def normalize_entities(
             left.mention_id,
             right.mention_id,
             basis="accepted_alias_claim",
-            forbidden_pairs=forbidden_pairs,
+            forbidden_neighbors=forbidden_neighbors,
         )
         if not merged:
             conflicts.append(
@@ -601,7 +813,7 @@ def normalize_entities(
             left.mention_id,
             right.mention_id,
             basis="evidence_bound_same_as",
-            forbidden_pairs=forbidden_pairs,
+            forbidden_neighbors=forbidden_neighbors,
         )
         if not merged:
             conflicts.append(
@@ -622,8 +834,7 @@ def normalize_entities(
     mention_to_entity: dict[str, str] = {}
     for root, component in sorted(components.items()):
         ordered = sorted(component, key=lambda item: (item.evidence_start, item.surface, item.mention_id))
-        counts = Counter(item.surface for item in ordered)
-        canonical = min(counts, key=lambda name: (-counts[name], ordered[0].evidence_start if name == ordered[0].surface else min(item.evidence_start for item in ordered if item.surface == name), name))
+        canonical = _canonical_name(ordered)
         aliases = tuple(sorted(set(item.surface for item in ordered)))
         types = {item.inferred_type for item in ordered}
         mention_ids = tuple(item.mention_id for item in ordered)
@@ -644,21 +855,27 @@ def normalize_entities(
         for mention_id in mention_ids:
             mention_to_entity[mention_id] = entity_id
 
-    fact_rows: list[Fact] = []
+    facts: list[Fact] = []
     for item in accepted:
         candidate = item.candidate
         validation = item.validation
         subject_mention = mention_by_key.get((validation.result_id, "subject"))
         object_mention = mention_by_key.get((validation.result_id, "object"))
         normalized = validation.normalized_claim
+        scope = _predicate_scope(item)
         fact_id = _stable_id(
-            "fac_", NORMALIZER_VERSION, validation.result_id, json.dumps(normalized, ensure_ascii=False, sort_keys=True)
+            "fac_",
+            NORMALIZER_VERSION,
+            validation.result_id,
+            scope,
+            json.dumps(normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
         )
-        fact_rows.append(
+        facts.append(
             Fact(
                 fact_id=fact_id,
                 claim_result_id=validation.result_id,
                 claim_type=candidate.claim_type,
+                predicate_scope=scope,
                 subject_entity_id=(
                     mention_to_entity[subject_mention.mention_id] if subject_mention is not None else None
                 ),
@@ -675,81 +892,93 @@ def normalize_entities(
                 evidence_start=candidate.evidence_start,
                 evidence_end=candidate.evidence_end,
                 evidence_sha256=validation.evidence_sha256,
-                temporal_marker=_temporal_marker(item.evidence),
+                temporal_marker=_temporal_marker(item),
             )
         )
 
-    fact_rows.sort(key=lambda item: (item.source_id, item.evidence_start, item.fact_id))
-    factual_conflicts = _detect_fact_conflicts(fact_rows)
-    conflicts.extend(factual_conflicts)
+    facts.sort(key=lambda item: (item.source_id, item.evidence_start, item.fact_id))
+    conflicts = _attach_claim_conflicts(conflicts, facts)
+    conflicts.extend(_detect_fact_conflicts(facts))
+    conflicts = sorted({item.conflict_id: item for item in conflicts}.values(), key=lambda item: item.conflict_id)
 
     conflict_by_fact: dict[str, list[Conflict]] = defaultdict(list)
     for conflict in conflicts:
         for fact_id in conflict.fact_ids:
             conflict_by_fact[fact_id].append(conflict)
     normalized_facts: list[Fact] = []
-    for fact in fact_rows:
+    for fact in facts:
         related = conflict_by_fact.get(fact.fact_id, [])
         statuses = {item.status for item in related}
-        canonical_status = "contested" if "unresolved" in statuses else (
-            "temporal_variant" if related else "canonical"
-        )
+        if "unresolved" in statuses:
+            canonical_status = "contested"
+        elif "resolved_temporal" in statuses:
+            canonical_status = "temporal_variant"
+        elif "resolved_precision" in statuses:
+            canonical_status = "compatible_variant"
+        else:
+            canonical_status = "canonical"
         normalized_facts.append(
-            Fact(
-                **{
-                    **asdict(fact),
-                    "canonical_status": canonical_status,
-                    "conflict_ids": tuple(sorted(item.conflict_id for item in related)),
-                }
+            replace(
+                fact,
+                canonical_status=canonical_status,
+                conflict_ids=tuple(sorted(item.conflict_id for item in related)),
             )
         )
 
-    timeline = tuple(
-        TimelineEvent(
-            event_id=_stable_id("evt_", NORMALIZER_VERSION, fact.fact_id, order),
-            fact_id=fact.fact_id,
-            source_id=fact.source_id,
-            unit_id=fact.unit_id,
-            source_order=order,
-            evidence_start=fact.evidence_start,
-            evidence_end=fact.evidence_end,
-            event_type=fact.claim_type,
-            normalized_date=(str(fact.value) if fact.claim_type == "date" else None),
-            temporal_marker=fact.temporal_marker,
-            subject_entity_id=fact.subject_entity_id,
-            object_entity_id=fact.object_entity_id,
+    source_orders: Counter[str] = Counter()
+    timeline_rows: list[TimelineEvent] = []
+    for fact in normalized_facts:
+        source_orders[fact.source_id] += 1
+        timeline_rows.append(
+            TimelineEvent(
+                event_id=_stable_id("evt_", NORMALIZER_VERSION, fact.fact_id),
+                fact_id=fact.fact_id,
+                source_id=fact.source_id,
+                unit_id=fact.unit_id,
+                source_order=source_orders[fact.source_id],
+                evidence_start=fact.evidence_start,
+                evidence_end=fact.evidence_end,
+                event_type=fact.claim_type,
+                predicate_scope=fact.predicate_scope,
+                normalized_date=(str(fact.value) if fact.claim_type == "date" else None),
+                temporal_marker=fact.temporal_marker,
+                subject_entity_id=fact.subject_entity_id,
+                object_entity_id=fact.object_entity_id,
+            )
         )
-        for order, fact in enumerate(normalized_facts, start=1)
-    )
+    timeline = tuple(timeline_rows)
 
-    entity_by_id = {entity.entity_id: entity for entity in entities}
-    surface_to_entities: dict[str, set[str]] = defaultdict(set)
-    surface_to_mentions: dict[str, set[str]] = defaultdict(set)
-    surface_forms: dict[str, set[str]] = defaultdict(set)
+    surface_to_entities: dict[tuple[str, str], set[str]] = defaultdict(set)
+    surface_to_mentions: dict[tuple[str, str], set[str]] = defaultdict(set)
+    surface_forms: dict[tuple[str, str], set[str]] = defaultdict(set)
     for mention in mentions:
+        key = (mention.source_id, mention.normalized_surface)
         entity_id = mention_to_entity[mention.mention_id]
-        surface_to_entities[mention.normalized_surface].add(entity_id)
-        surface_to_mentions[mention.normalized_surface].add(mention.mention_id)
-        surface_forms[mention.normalized_surface].add(mention.surface)
+        surface_to_entities[key].add(entity_id)
+        surface_to_mentions[key].add(mention.mention_id)
+        surface_forms[key].add(mention.surface)
     ambiguities: list[AmbiguityGroup] = []
-    for surface, entity_ids in sorted(surface_to_entities.items()):
+    for (source_id, surface), entity_ids in sorted(surface_to_entities.items()):
         if len(entity_ids) <= 1:
             continue
-        ambiguity_id = _stable_id("amb_", NORMALIZER_VERSION, surface, tuple(sorted(entity_ids)))
+        ambiguity_id = _stable_id(
+            "amb_", NORMALIZER_VERSION, source_id, surface, tuple(sorted(entity_ids))
+        )
         ambiguities.append(
             AmbiguityGroup(
                 ambiguity_id=ambiguity_id,
+                source_id=source_id,
                 normalized_surface=surface,
-                surfaces=tuple(sorted(surface_forms[surface])),
+                surfaces=tuple(sorted(surface_forms[(source_id, surface)])),
                 entity_ids=tuple(sorted(entity_ids)),
-                mention_ids=tuple(sorted(surface_to_mentions[surface])),
+                mention_ids=tuple(sorted(surface_to_mentions[(source_id, surface)])),
                 reason="SAME_SURFACE_MULTIPLE_ENTITIES",
             )
         )
 
-    conflicts = sorted({item.conflict_id: item for item in conflicts}.values(), key=lambda item: item.conflict_id)
     blocker_count = sum(item.severity == "blocker" for item in conflicts)
     contested_count = sum(fact.canonical_status == "contested" for fact in normalized_facts)
+    ambiguity_count = len(ambiguities)
     report = {
         "normalizer_version": NORMALIZER_VERSION,
         "status": "completed",
@@ -761,7 +990,8 @@ def normalize_entities(
         "fact_count": len(normalized_facts),
         "timeline_event_count": len(timeline),
         "identity_link_count": len(identity_links),
-        "ambiguity_group_count": len(ambiguities),
+        "ambiguity_group_count": ambiguity_count,
+        "unresolved_ambiguity_count": ambiguity_count,
         "conflict_count": len(conflicts),
         "blocker_conflict_count": blocker_count,
         "contested_fact_count": contested_count,
@@ -769,7 +999,13 @@ def normalize_entities(
         "temporal_variant_count": sum(
             fact.canonical_status == "temporal_variant" for fact in normalized_facts
         ),
+        "compatible_variant_count": sum(
+            fact.canonical_status == "compatible_variant" for fact in normalized_facts
+        ),
+        "local_surface_merge_policy": "same_source_same_unit_exact_surface",
+        "may_build_review_index": blocker_count == 0,
         "may_build_index": blocker_count == 0,
+        "may_publish_canonical": blocker_count == 0 and contested_count == 0 and ambiguity_count == 0,
         "may_freeze": False,
     }
     return NormalizationBundle(
@@ -783,33 +1019,57 @@ def normalize_entities(
     )
 
 
+def _subject_key(fact: Fact) -> str:
+    return fact.subject_entity_id or "surface:" + _normalize_surface(fact.subject)
+
+
+def _object_key(fact: Fact) -> str:
+    return fact.object_entity_id or "surface:" + _normalize_surface(fact.object)
+
+
 def _has_temporal_transition(facts: Sequence[Fact]) -> bool:
-    markers = {fact.temporal_marker for fact in facts}
-    return "later" in markers or ("earlier" in markers and len(facts) > 1)
+    ordered = sorted(facts, key=lambda item: (item.evidence_start, item.evidence_end, item.fact_id))
+    if any(fact.temporal_marker == "mixed" for fact in ordered):
+        return False
+    for index, fact in enumerate(ordered):
+        if fact.temporal_marker == "later" and index > 0:
+            return True
+        if fact.temporal_marker == "earlier" and index < len(ordered) - 1:
+            return True
+    return False
+
+
+def _date_precision_compatible(values: set[str]) -> bool:
+    if len(values) <= 1:
+        return True
+    ordered = sorted(values, key=len)
+    shortest = ordered[0]
+    return all(value == shortest or value.startswith(shortest + "-") for value in ordered[1:])
 
 
 def _detect_fact_conflicts(facts: Sequence[Fact]) -> list[Conflict]:
     conflicts: list[Conflict] = []
 
-    permissions: dict[tuple[str | None, str], list[Fact]] = defaultdict(list)
-    counts: dict[tuple[str | None, str], list[Fact]] = defaultdict(list)
-    locations: dict[str | None, list[Fact]] = defaultdict(list)
-    dates: dict[str | None, list[Fact]] = defaultdict(list)
-    defeats: dict[frozenset[str | None], list[Fact]] = defaultdict(list)
+    permissions: dict[tuple[str, str, str], list[Fact]] = defaultdict(list)
+    counts: dict[tuple[str, str, str], list[Fact]] = defaultdict(list)
+    locations: dict[tuple[str, str], list[Fact]] = defaultdict(list)
+    dates: dict[tuple[str, str, str], list[Fact]] = defaultdict(list)
+    defeats: dict[tuple[str, frozenset[str]], list[Fact]] = defaultdict(list)
 
     for fact in facts:
+        subject = _subject_key(fact)
         if fact.claim_type == "permission":
-            permissions[(fact.subject_entity_id, _normalize_surface(fact.object))].append(fact)
+            permissions[(fact.source_id, subject, _normalize_surface(fact.object))].append(fact)
         elif fact.claim_type == "count":
-            counts[(fact.subject_entity_id, _normalize_surface(fact.unit))].append(fact)
+            counts[(fact.source_id, subject, _normalize_surface(fact.unit))].append(fact)
         elif fact.claim_type == "located_in":
-            locations[fact.subject_entity_id].append(fact)
+            locations[(fact.source_id, subject)].append(fact)
         elif fact.claim_type == "date":
-            dates[fact.subject_entity_id].append(fact)
+            dates[(fact.source_id, subject, fact.predicate_scope)].append(fact)
         elif fact.claim_type == "defeats":
-            defeats[frozenset((fact.subject_entity_id, fact.object_entity_id))].append(fact)
+            defeats[(fact.source_id, frozenset((subject, _object_key(fact))))].append(fact)
 
-    for key, group in permissions.items():
+    for (source_id, subject, action), group in permissions.items():
         if len({fact.polarity for fact in group}) > 1:
             temporal = _has_temporal_transition(group)
             conflicts.append(
@@ -817,13 +1077,13 @@ def _detect_fact_conflicts(facts: Sequence[Fact]) -> list[Conflict]:
                     "PERMISSION_POLARITY_TRANSITION" if temporal else "PERMISSION_POLARITY_CONFLICT",
                     severity="info" if temporal else "review",
                     status="resolved_temporal" if temporal else "unresolved",
-                    entity_ids=[key[0]] if key[0] else (),
+                    entity_ids=[fact.subject_entity_id for fact in group if fact.subject_entity_id],
                     fact_ids=[fact.fact_id for fact in group],
-                    details={"action": key[1]},
+                    details={"source_id": source_id, "subject": subject, "action": action},
                 )
             )
 
-    for key, group in counts.items():
+    for (source_id, subject, unit), group in counts.items():
         values = {str(fact.value) for fact in group}
         if len(values) > 1:
             temporal = _has_temporal_transition(group)
@@ -832,14 +1092,14 @@ def _detect_fact_conflicts(facts: Sequence[Fact]) -> list[Conflict]:
                     "COUNT_TEMPORAL_TRANSITION" if temporal else "MULTIPLE_COUNT_VALUES",
                     severity="info" if temporal else "review",
                     status="resolved_temporal" if temporal else "unresolved",
-                    entity_ids=[key[0]] if key[0] else (),
+                    entity_ids=[fact.subject_entity_id for fact in group if fact.subject_entity_id],
                     fact_ids=[fact.fact_id for fact in group],
-                    details={"unit": key[1], "values": sorted(values)},
+                    details={"source_id": source_id, "subject": subject, "unit": unit, "values": sorted(values)},
                 )
             )
 
-    for subject, group in locations.items():
-        values = {fact.object_entity_id or fact.object for fact in group}
+    for (source_id, subject), group in locations.items():
+        values = {_object_key(fact) for fact in group}
         if len(values) > 1:
             temporal = _has_temporal_transition(group)
             conflicts.append(
@@ -847,28 +1107,56 @@ def _detect_fact_conflicts(facts: Sequence[Fact]) -> list[Conflict]:
                     "LOCATION_TEMPORAL_TRANSITION" if temporal else "MULTIPLE_LOCATIONS",
                     severity="info" if temporal else "review",
                     status="resolved_temporal" if temporal else "unresolved",
-                    entity_ids=[item for item in [subject, *values] if isinstance(item, str)],
+                    entity_ids=[
+                        entity_id
+                        for fact in group
+                        for entity_id in (fact.subject_entity_id, fact.object_entity_id)
+                        if entity_id
+                    ],
                     fact_ids=[fact.fact_id for fact in group],
-                    details={"location_values": sorted(str(value) for value in values)},
+                    details={"source_id": source_id, "subject": subject, "location_values": sorted(values)},
                 )
             )
 
-    for subject, group in dates.items():
+    for (source_id, subject, predicate_scope), group in dates.items():
         values = {str(fact.value) for fact in group}
-        if len(values) > 1:
+        if len(values) <= 1:
+            continue
+        if _date_precision_compatible(values):
+            conflicts.append(
+                _conflict(
+                    "DATE_PRECISION_REFINEMENT",
+                    severity="info",
+                    status="resolved_precision",
+                    entity_ids=[fact.subject_entity_id for fact in group if fact.subject_entity_id],
+                    fact_ids=[fact.fact_id for fact in group],
+                    details={
+                        "source_id": source_id,
+                        "subject": subject,
+                        "predicate_scope": predicate_scope,
+                        "values": sorted(values),
+                    },
+                )
+            )
+        else:
             conflicts.append(
                 _conflict(
                     "MULTIPLE_DATE_VALUES",
                     severity="review",
                     status="unresolved",
-                    entity_ids=[subject] if subject else (),
+                    entity_ids=[fact.subject_entity_id for fact in group if fact.subject_entity_id],
                     fact_ids=[fact.fact_id for fact in group],
-                    details={"values": sorted(values)},
+                    details={
+                        "source_id": source_id,
+                        "subject": subject,
+                        "predicate_scope": predicate_scope,
+                        "values": sorted(values),
+                    },
                 )
             )
 
-    for pair, group in defeats.items():
-        directions = {(fact.subject_entity_id, fact.object_entity_id) for fact in group}
+    for (source_id, pair), group in defeats.items():
+        directions = {(_subject_key(fact), _object_key(fact)) for fact in group}
         if len(directions) > 1:
             temporal = _has_temporal_transition(group)
             conflicts.append(
@@ -876,8 +1164,14 @@ def _detect_fact_conflicts(facts: Sequence[Fact]) -> list[Conflict]:
                     "RECIPROCAL_DEFEATS_ACROSS_TIME" if temporal else "RECIPROCAL_DEFEATS_UNRESOLVED",
                     severity="info" if temporal else "review",
                     status="resolved_temporal" if temporal else "unresolved",
-                    entity_ids=[item for item in pair if item],
+                    entity_ids=[
+                        entity_id
+                        for fact in group
+                        for entity_id in (fact.subject_entity_id, fact.object_entity_id)
+                        if entity_id
+                    ],
                     fact_ids=[fact.fact_id for fact in group],
+                    details={"source_id": source_id, "pair": sorted(pair)},
                 )
             )
     return conflicts
