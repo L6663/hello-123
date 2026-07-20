@@ -48,7 +48,7 @@ jobs:
           echo "compile_exit=$compile_exit" >> "$GITHUB_OUTPUT"
           echo "test_exit=$test_exit" >> "$GITHUB_OUTPUT"
           exit 0
-      - name: Preserve validation logs
+      - name: Preserve validation logs and source snapshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -56,6 +56,10 @@ jobs:
           path: |
             entity-compile.log
             entity-tests.log
+            tkr/entity_normalization.py
+            tkr/entity_cli.py
+            tests/test_entity_normalization.py
+            pyproject.toml
           if-no-files-found: error
       - name: Report Python 3.11 failure
         if: github.event_name == 'pull_request' && matrix.python-version == '3.11' && (steps.validation.outputs.compile_exit != '0' || steps.validation.outputs.test_exit != '0')
