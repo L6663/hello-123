@@ -1,0 +1,41 @@
+name: phase4-materialize
+
+on:
+  push:
+    branches:
+      - feature/entity-normalization-v5.4-alpha1
+    paths:
+      - ".github/workflows/phase4-materialize.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/entity-normalization-v5.4-alpha1
+          fetch-depth: 0
+      - name: Decode staged Phase 4 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
+          cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
+          echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
+          echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
+          python -m compileall -q tkr tests
+          python -m unittest discover -s tests -v
+      - name: Commit materialized implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
+          git rm -r .phase4-upload
+          git rm .github/workflows/phase4-materialize.yml
+          git commit -m "feat(entities): harden Phase 4 normalization and adversarial tests"
+          git push origin HEAD:feature/entity-normalization-v5.4-alpha1
