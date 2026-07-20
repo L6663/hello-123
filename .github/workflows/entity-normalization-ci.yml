@@ -93,7 +93,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
           git rm -r .phase4-upload
-          git rm -f .github/workflows/phase4-materialize.yml
+          if git ls-files --error-unmatch .github/workflows/phase4-materialize.yml >/dev/null 2>&1; then
+            git rm .github/workflows/phase4-materialize.yml
+          fi
           git commit -m "feat(entities): harden Phase 4 normalization and adversarial tests"
           git push origin HEAD:feature/entity-normalization-v5.4-alpha1
       - name: Enforce materialization gate
