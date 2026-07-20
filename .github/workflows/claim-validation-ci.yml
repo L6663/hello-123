@@ -31,15 +31,23 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install package
         run: python -m pip install .
-      - name: Compile sources
-        id: compile
-        continue-on-error: true
-        run: python -m compileall -q tkr tests > claim-compile.log 2>&1
-      - name: Run typed Claim tests
-        id: tests
-        if: steps.compile.outcome == 'success'
-        continue-on-error: true
-        run: python -m unittest tests.test_claim_validation -v > claim-tests.log 2>&1
+      - name: Run compile and typed Claim tests
+        id: validation
+        shell: bash
+        run: |
+          set +e
+          python -m compileall -q tkr tests > claim-compile.log 2>&1
+          compile_exit=$?
+          if [ "$compile_exit" -eq 0 ]; then
+            python -m unittest tests.test_claim_validation -v > claim-tests.log 2>&1
+            test_exit=$?
+          else
+            : > claim-tests.log
+            test_exit=99
+          fi
+          echo "compile_exit=$compile_exit" >> "$GITHUB_OUTPUT"
+          echo "test_exit=$test_exit" >> "$GITHUB_OUTPUT"
+          exit 0
       - name: Preserve validation logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -48,9 +56,9 @@ jobs:
           path: |
             claim-compile.log
             claim-tests.log
-          if-no-files-found: ignore
+          if-no-files-found: error
       - name: Report Python 3.11 failure
-        if: github.event_name == 'pull_request' && matrix.python-version == '3.11' && (steps.compile.outcome == 'failure' || steps.tests.outcome == 'failure')
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11' && (steps.validation.outputs.compile_exit != '0' || steps.validation.outputs.test_exit != '0')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -59,17 +67,17 @@ jobs:
             echo
             echo '#### compile'
             echo '```text'
-            cat claim-compile.log 2>/dev/null || true
+            cat claim-compile.log
             echo '```'
             echo
             echo '#### tests'
             echo '```text'
-            cat claim-tests.log 2>/dev/null || true
+            cat claim-tests.log
             echo '```'
           } > claim-ci-comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file claim-ci-comment.md
       - name: Enforce validation gate
         if: always()
         run: |
-          test "${{ steps.compile.outcome }}" = "success"
-          test "${{ steps.tests.outcome }}" = "success"
+          test "${{ steps.validation.outputs.compile_exit }}" = "0"
+          test "${{ steps.validation.outputs.test_exit }}" = "0"
