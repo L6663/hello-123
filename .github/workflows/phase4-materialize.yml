@@ -27,8 +27,12 @@ jobs:
           set +e
           {
             set -euo pipefail
+            echo '--- staged hashes ---'
+            sha256sum .phase4-upload/entity/part* .phase4-upload/tests/part*
+            echo '--- decoded hashes ---'
             cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
             cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
+            sha256sum tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
             echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
             echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
             python -m compileall -q tkr tests
