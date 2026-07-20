@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          if [ ! -f .phase4-upload/repair.b64 ]; then
+          if [ ! -f .phase4-upload/repair-block.txt ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "status=0" >> "$GITHUB_OUTPUT"
             exit 0
@@ -44,10 +44,7 @@ jobs:
             set -euo pipefail
             cat .phase4-upload/entity/part* | tr -d '\n\r' | base64 -d > tkr/entity_normalization.py
             cat .phase4-upload/tests/part* | tr -d '\n\r' | base64 -d > tests/test_entity_normalization_adversarial.py
-            tr -d '\n\r' < .phase4-upload/repair.b64 | base64 -d > /tmp/phase4_repair.py
-            sha256sum /tmp/phase4_repair.py
-            echo "d1fe1c33a7cc704dfb2c2d34154f18051dc3814db9b4c9af2380583c8cad7a4d  /tmp/phase4_repair.py" | sha256sum -c -
-            python /tmp/phase4_repair.py
+            python -c 'from pathlib import Path; import re; p=Path("tkr/entity_normalization.py"); t=p.read_text(encoding="utf-8"); g=Path(".phase4-upload/repair-block.txt").read_text(encoding="utf-8"); t,n=re.subn(r"    facts: list\{Fact\] = \[\]\s+source_id=fact\.source_id,",g,t,count=1); assert n==1,n; p.write_text(t,encoding="utf-8")'
             sha256sum tkr/entity_normalization.py tests/test_entity_normalization_adversarial.py
             echo "816f6957735d2f431e113f32106f851df851b78429a4f7ee563bffef9073113c  tkr/entity_normalization.py" | sha256sum -c -
             echo "b4fe014e5e1507449d13ca0dd32e877b5817738114c3b444d0f99e23409d2b52  tests/test_entity_normalization_adversarial.py" | sha256sum -c -
@@ -57,7 +54,11 @@ jobs:
           ) > phase4-entity-materialize.log 2>&1
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          echo "changed=false" >> "$GITHUB_OUTPUT"
+          if [ "$status" -eq 0 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
           exit 0
       - name: Preserve materialization log
         if: always()
@@ -81,7 +82,7 @@ jobs:
           } > phase4-entity-materialize-comment.md
           gh pr comment 3 --body-file phase4-entity-materialize-comment.md
       - name: Commit materialized implementation
-        if: steps.materialize.outputs.status == '0' && hashFiles('.phase4-upload/repair.b64') != ''
+        if: steps.materialize.outputs.status == '0' && steps.materialize.outputs.changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
