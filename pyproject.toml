@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-knowledge-reader-core"
-version = "5.4.0a1"
-description = "Auditable chunking, typed Claim validation, and entity normalization for Text Knowledge Reader"
+version = "5.5.0a1"
+description = "Auditable typed knowledge indexing and predicate-aware retrieval for Text Knowledge Reader"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -15,6 +15,7 @@ dependencies = []
 tkr-chunk = "tkr.cli:main"
 tkr-claim-validate = "tkr.claim_cli:main"
 tkr-entity-normalize = "tkr.entity_cli:main"
+tkr-retrieval = "tkr.retrieval_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
