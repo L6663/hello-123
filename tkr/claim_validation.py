@@ -1,10 +1,9 @@
 """Typed, deterministic Claim validation against exact local evidence spans.
 
-This module deliberately does not use lexical similarity, embeddings, or model
-judgement. A claim is accepted only when a type-specific validator can recover
-the same relation, direction, polarity, and exact value from the cited evidence.
-Unsupported or structurally ambiguous claims are routed to review, never silently
-accepted.
+A Claim is accepted only when a type-specific validator recovers the same
+relation, direction, polarity, and exact value from the cited evidence. Lexical
+similarity, embeddings, incoming verification flags, and model confidence are
+not acceptance signals.
 """
 
 from __future__ import annotations
@@ -28,10 +27,16 @@ _STATUS_ACCEPTED = "accepted"
 _STATUS_REJECTED = "rejected"
 _STATUS_REVIEW = "review"
 
+# Directional relation validators do not cross these clause boundaries. This is
+# intentionally conservative: false negatives enter review/re-extraction, while
+# a false positive could contaminate the canonical knowledge base.
+_RELATION_GAP = r"[^\n。！？!?；;，,:：]{0,24}?"
 _CLAUSE_BREAK_RE = re.compile(r"[\n。！？!?；;]+")
 _NEGATION_RE = re.compile(
-    r"(?:并非|不是|不曾|从未|不得|不能|不可以|不允许|禁止|未曾|没有|无权|"
-    r"\bnot\b|\bnever\b|\bno\b|\bcannot\b|\bcan't\b|\bmay not\b|\bmust not\b)",
+    r"(?:并非|并未|不是|不曾|从未|不得|不能|不可以|不允许|禁止|"
+    r"未曾|未能|没有|无权|未|"
+    r"\bnot\b|\bnever\b|\bno\b|\bcannot\b|\bcan't\b|"
+    r"\bmay not\b|\bmust not\b)",
     re.IGNORECASE,
 )
 
@@ -53,8 +58,8 @@ _ALIAS_MARKERS = (
     "also known as",
     "aka",
 )
-_DEFEAT_MARKERS = ("击败", "战胜", "打败", "击溃", " defeated ", " beat ")
-_LOCATION_MARKERS = ("位于", "坐落于", "地处", "设于", " located in ", " situated in ")
+_DEFEAT_MARKERS = ("击败", "战胜", "打败", "击溃", "defeated", "beat")
+_LOCATION_MARKERS = ("位于", "坐落于", "地处", "设于", "located in", "situated in")
 _POSITIVE_PERMISSION_MARKERS = (
     "可以",
     "能够",
@@ -63,9 +68,9 @@ _POSITIVE_PERMISSION_MARKERS = (
     "获准",
     "有权",
     "可",
-    " is allowed to ",
-    " may ",
-    " can ",
+    "is allowed to",
+    "may",
+    "can",
 )
 _NEGATIVE_PERMISSION_MARKERS = (
     "不可以",
@@ -75,11 +80,11 @@ _NEGATIVE_PERMISSION_MARKERS = (
     "禁止",
     "不得",
     "无权",
-    " is not allowed to ",
-    " may not ",
-    " cannot ",
-    " can't ",
-    " must not ",
+    "is not allowed to",
+    "may not",
+    "cannot",
+    "can't",
+    "must not",
 )
 _COUNT_CUES = (
     "共有",
@@ -90,10 +95,10 @@ _COUNT_CUES = (
     "数目为",
     "一共",
     "共",
-    " total ",
-    " count ",
-    " has ",
-    " contains ",
+    "total",
+    "count",
+    "has",
+    "contains",
 )
 _DATE_CUES = (
     "出生于",
@@ -102,9 +107,9 @@ _DATE_CUES = (
     "截至",
     "日期",
     "时间",
-    " date ",
-    " on ",
-    " since ",
+    "date",
+    "on",
+    "since",
 )
 
 _ARABIC_NUMBER_RE = re.compile(r"(?<![\d.])[-+]?\d+(?:\.\d+)?(?![\d.])")
@@ -132,7 +137,7 @@ _CHINESE_LARGE_UNITS = {"万": 10_000, "亿": 100_000_000}
 
 
 class ClaimValidationError(ValueError):
-    """Raised for malformed candidate objects, not for semantic rejection."""
+    """Raised for malformed candidate objects, not semantic rejection."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,11 +167,11 @@ class ClaimCandidate:
             raise ClaimValidationError("polarity must be a boolean")
         evidence_start = _require_int(payload, "evidence_start")
         evidence_end = _require_int(payload, "evidence_end")
-        evidence_text_value = payload.get("evidence_text")
-        if evidence_text_value is not None and not isinstance(evidence_text_value, str):
+        evidence_text = payload.get("evidence_text")
+        if evidence_text is not None and not isinstance(evidence_text, str):
             raise ClaimValidationError("evidence_text must be a string or null")
         value = payload.get("value")
-        if value is not None and isinstance(value, bool):
+        if isinstance(value, bool):
             raise ClaimValidationError("value must not be a boolean")
         if value is not None and not isinstance(value, (str, int, float)):
             raise ClaimValidationError("value must be a string, integer, float, or null")
@@ -181,7 +186,7 @@ class ClaimCandidate:
             unit_id=unit_id,
             evidence_start=evidence_start,
             evidence_end=evidence_end,
-            evidence_text=evidence_text_value,
+            evidence_text=evidence_text,
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -247,29 +252,40 @@ def _marker_pattern(markers: Sequence[str]) -> str:
     patterns: list[str] = []
     for marker in markers:
         stripped = marker.strip()
+        escaped = re.escape(stripped).replace(r"\ ", r"\s+")
         if re.fullmatch(r"[A-Za-z ]+", stripped):
-            patterns.append(r"\b" + re.escape(stripped).replace(r"\ ", r"\s+") + r"\b")
+            patterns.append(r"\b" + escaped + r"\b")
         else:
-            patterns.append(re.escape(stripped))
+            patterns.append(escaped)
     return "(?:" + "|".join(patterns) + ")"
 
 
 def _relation_regex(subject: str, object_value: str, markers: Sequence[str]) -> re.Pattern[str]:
-    subject_pattern = _literal_pattern(subject)
-    object_pattern = _literal_pattern(object_value)
-    gap = r"[^\n。！？!?；;]{0,24}?"
     return re.compile(
-        rf"(?P<subject>{subject_pattern}){gap}(?P<marker>{_marker_pattern(markers)}){gap}(?P<object>{object_pattern})",
+        rf"(?P<subject>{_literal_pattern(subject)}){_RELATION_GAP}"
+        rf"(?P<marker>{_marker_pattern(markers)}){_RELATION_GAP}"
+        rf"(?P<object>{_literal_pattern(object_value)})",
         re.IGNORECASE,
     )
 
 
-def _find_clean_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
+def _clean_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
     return [match for match in pattern.finditer(evidence) if not _NEGATION_RE.search(match.group(0))]
 
 
-def _find_negated_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
+def _negated_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
     return [match for match in pattern.finditer(evidence) if _NEGATION_RE.search(match.group(0))]
+
+
+def _positive_permission_matches(pattern: re.Pattern[str], evidence: str) -> list[re.Match[str]]:
+    matches: list[re.Match[str]] = []
+    for match in pattern.finditer(evidence):
+        # A subject-less match can start at “可以” inside “不可以”. Include a
+        # short left context so the negation cannot be dropped by the regex.
+        context = evidence[max(0, match.start() - 6) : match.end()]
+        if not _NEGATION_RE.search(context):
+            matches.append(match)
+    return matches
 
 
 def _split_clauses(evidence: str) -> list[tuple[int, str]]:
@@ -285,17 +301,19 @@ def _split_clauses(evidence: str) -> list[tuple[int, str]]:
 
 
 def _contains_marker(text: str, markers: Sequence[str]) -> bool:
-    normalized = " " + _normalized_text(text).casefold() + " "
+    normalized = _normalized_text(text).casefold()
     return any(_normalized_text(marker).casefold() in normalized for marker in markers)
 
 
-def _span_tuple(match: re.Match[str]) -> tuple[int, int]:
+def _span(match: re.Match[str]) -> tuple[int, int]:
     return (match.start(), match.end())
 
 
 def _chinese_integer(token: str) -> int | None:
     if not token or any(
-        char not in _CHINESE_DIGITS and char not in _CHINESE_SMALL_UNITS and char not in _CHINESE_LARGE_UNITS
+        char not in _CHINESE_DIGITS
+        and char not in _CHINESE_SMALL_UNITS
+        and char not in _CHINESE_LARGE_UNITS
         for char in token
     ):
         return None
@@ -309,14 +327,12 @@ def _chinese_integer(token: str) -> int | None:
         if char in _CHINESE_DIGITS:
             number = _CHINESE_DIGITS[char]
         elif char in _CHINESE_SMALL_UNITS:
-            unit = _CHINESE_SMALL_UNITS[char]
-            section += (number or 1) * unit
+            section += (number or 1) * _CHINESE_SMALL_UNITS[char]
             number = 0
         else:
-            large = _CHINESE_LARGE_UNITS[char]
             section += number
             number = 0
-            total += (section or 1) * large
+            total += (section or 1) * _CHINESE_LARGE_UNITS[char]
             section = 0
     return total + section + number
 
@@ -334,39 +350,35 @@ def _decimal_value(value: str | int | float | None) -> Decimal | None:
         return None
 
 
-def _extract_numbers(text: str) -> list[tuple[Decimal, int, int, str]]:
-    values: list[tuple[Decimal, int, int, str]] = []
+def _extract_numbers(text: str) -> list[tuple[Decimal, int, int]]:
+    values: list[tuple[Decimal, int, int]] = []
     occupied: list[tuple[int, int]] = []
     for match in _ARABIC_NUMBER_RE.finditer(text):
         try:
-            value = Decimal(match.group(0))
+            number = Decimal(match.group(0))
         except InvalidOperation:
             continue
-        values.append((value, match.start(), match.end(), match.group(0)))
+        values.append((number, match.start(), match.end()))
         occupied.append((match.start(), match.end()))
     for match in _CHINESE_NUMBER_RE.finditer(text):
         if any(start < match.end() and match.start() < end for start, end in occupied):
             continue
-        value = _chinese_integer(match.group(0))
-        if value is not None:
-            values.append((Decimal(value), match.start(), match.end(), match.group(0)))
+        number = _chinese_integer(match.group(0))
+        if number is not None:
+            values.append((Decimal(number), match.start(), match.end()))
     return sorted(values, key=lambda item: (item[1], item[2]))
 
 
 def _normalize_date(value: object) -> str | None:
     if value is None:
         return None
-    token = _normalized_text(str(value))
-    match = _DATE_TOKEN_RE.fullmatch(token)
+    match = _DATE_TOKEN_RE.fullmatch(_normalized_text(str(value)))
     if not match:
         return None
     year = int(match.group("y"))
     month = int(match.group("m"))
-    day_text = match.group("d")
-    day = int(day_text) if day_text else None
-    if not (1 <= month <= 12):
-        return None
-    if day is not None and not (1 <= day <= 31):
+    day = int(match.group("d")) if match.group("d") else None
+    if not 1 <= month <= 12 or (day is not None and not 1 <= day <= 31):
         return None
     return f"{year:04d}-{month:02d}" + (f"-{day:02d}" if day is not None else "")
 
@@ -374,8 +386,8 @@ def _normalize_date(value: object) -> str | None:
 def _normalized_claim(candidate: ClaimCandidate) -> dict[str, object]:
     value: object = candidate.value
     if candidate.claim_type == "count":
-        numeric = _decimal_value(candidate.value)
-        value = str(numeric.normalize()) if numeric is not None else candidate.value
+        number = _decimal_value(candidate.value)
+        value = str(number.normalize()) if number is not None else candidate.value
     elif candidate.claim_type == "date":
         value = _normalize_date(candidate.value) or candidate.value
     return {
@@ -400,6 +412,7 @@ def _finish(
     claim_payload = json.dumps(normalized, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     fingerprint = sha256(claim_payload.encode("utf-8")).hexdigest()
     evidence_hash = sha256(evidence.encode("utf-8")).hexdigest()
+    unique_reasons = tuple(sorted(set(reasons)))
     result_payload = "\0".join(
         (
             VALIDATOR_VERSION,
@@ -410,17 +423,16 @@ def _finish(
             str(candidate.evidence_end),
             evidence_hash,
             status,
-            ",".join(sorted(set(reasons))),
+            ",".join(unique_reasons),
         )
     )
-    result_id = "clv_" + sha256(result_payload.encode("utf-8")).hexdigest()[:24]
     accepted = status == _STATUS_ACCEPTED
     return ClaimValidationResult(
-        result_id=result_id,
+        result_id="clv_" + sha256(result_payload.encode("utf-8")).hexdigest()[:24],
         claim_fingerprint=fingerprint,
         validator_version=VALIDATOR_VERSION,
         status=status,
-        reason_codes=tuple(sorted(set(reasons))),
+        reason_codes=unique_reasons,
         may_index=accepted,
         may_freeze=accepted,
         source_id=candidate.source_id,
@@ -438,15 +450,15 @@ def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("ALIAS_TERMS_REQUIRED",))
     forward = _relation_regex(candidate.subject, candidate.object, _ALIAS_MARKERS)
     reverse = _relation_regex(candidate.object, candidate.subject, _ALIAS_MARKERS)
-    positive = _find_clean_matches(forward, evidence) + _find_clean_matches(reverse, evidence)
-    negated = _find_negated_matches(forward, evidence) + _find_negated_matches(reverse, evidence)
+    positive = _clean_matches(forward, evidence) + _clean_matches(reverse, evidence)
+    negated = _negated_matches(forward, evidence) + _negated_matches(reverse, evidence)
     if positive and negated:
         return _finish(
             candidate,
             evidence,
             status=_STATUS_REVIEW,
             reasons=("CONFLICTING_ALIAS_ASSERTIONS",),
-            spans=[_span_tuple(item) for item in positive + negated],
+            spans=[_span(match) for match in positive + negated],
         )
     if positive:
         return _finish(
@@ -454,7 +466,7 @@ def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
             evidence,
             status=_STATUS_ACCEPTED,
             reasons=("EXACT_TYPED_ALIAS_MATCH",),
-            spans=[_span_tuple(item) for item in positive],
+            spans=[_span(match) for match in positive],
         )
     if negated:
         return _finish(
@@ -462,7 +474,7 @@ def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
             evidence,
             status=_STATUS_REJECTED,
             reasons=("NEGATED_ALIAS_RELATION",),
-            spans=[_span_tuple(item) for item in negated],
+            spans=[_span(match) for match in negated],
         )
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("ALIAS_RELATION_NOT_FOUND",))
 
@@ -478,16 +490,16 @@ def _validate_directional(
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("RELATION_TERMS_REQUIRED",))
     direct_pattern = _relation_regex(candidate.subject, candidate.object, markers)
     reverse_pattern = _relation_regex(candidate.object, candidate.subject, markers)
-    direct = _find_clean_matches(direct_pattern, evidence)
-    direct_negated = _find_negated_matches(direct_pattern, evidence)
-    reverse = _find_clean_matches(reverse_pattern, evidence)
-    if direct and direct_negated:
+    direct = _clean_matches(direct_pattern, evidence)
+    negated = _negated_matches(direct_pattern, evidence)
+    reverse = _clean_matches(reverse_pattern, evidence)
+    if direct and negated:
         return _finish(
             candidate,
             evidence,
             status=_STATUS_REVIEW,
             reasons=("CONFLICTING_RELATION_ASSERTIONS",),
-            spans=[_span_tuple(item) for item in direct + direct_negated],
+            spans=[_span(match) for match in direct + negated],
         )
     if direct:
         return _finish(
@@ -495,15 +507,15 @@ def _validate_directional(
             evidence,
             status=_STATUS_ACCEPTED,
             reasons=(accepted_reason,),
-            spans=[_span_tuple(item) for item in direct],
+            spans=[_span(match) for match in direct],
         )
-    if direct_negated:
+    if negated:
         return _finish(
             candidate,
             evidence,
             status=_STATUS_REJECTED,
             reasons=("NEGATED_RELATION",),
-            spans=[_span_tuple(item) for item in direct_negated],
+            spans=[_span(match) for match in negated],
         )
     if reverse:
         return _finish(
@@ -511,15 +523,15 @@ def _validate_directional(
             evidence,
             status=_STATUS_REJECTED,
             reasons=("RELATION_DIRECTION_MISMATCH",),
-            spans=[_span_tuple(item) for item in reverse],
+            spans=[_span(match) for match in reverse],
         )
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("RELATION_NOT_FOUND",))
 
 
-def _permission_patterns(candidate: ClaimCandidate, markers: Sequence[str]) -> re.Pattern[str]:
+def _permission_pattern(candidate: ClaimCandidate, markers: Sequence[str]) -> re.Pattern[str]:
     action = _literal_pattern(candidate.object)
-    gap = r"[^\n。！？!?；;]{0,16}?"
     marker = _marker_pattern(markers)
+    gap = r"[^\n。！？!?；;，,]{0,16}?"
     if candidate.subject:
         return re.compile(
             rf"{_literal_pattern(candidate.subject)}{gap}(?P<marker>{marker}){gap}{action}",
@@ -531,10 +543,10 @@ def _permission_patterns(candidate: ClaimCandidate, markers: Sequence[str]) -> r
 def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     if not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))
-    positive_pattern = _permission_patterns(candidate, _POSITIVE_PERMISSION_MARKERS)
-    negative_pattern = _permission_patterns(candidate, _NEGATIVE_PERMISSION_MARKERS)
-    positive = [match for match in positive_pattern.finditer(evidence) if not _NEGATION_RE.search(match.group(0))]
-    negative = list(negative_pattern.finditer(evidence))
+    positive = _positive_permission_matches(
+        _permission_pattern(candidate, _POSITIVE_PERMISSION_MARKERS), evidence
+    )
+    negative = list(_permission_pattern(candidate, _NEGATIVE_PERMISSION_MARKERS).finditer(evidence))
     expected = positive if candidate.polarity else negative
     opposite = negative if candidate.polarity else positive
     if expected and opposite:
@@ -543,7 +555,7 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
             evidence,
             status=_STATUS_REVIEW,
             reasons=("CONFLICTING_PERMISSION_ASSERTIONS",),
-            spans=[_span_tuple(item) for item in expected + opposite],
+            spans=[_span(match) for match in expected + opposite],
         )
     if expected:
         return _finish(
@@ -551,7 +563,7 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
             evidence,
             status=_STATUS_ACCEPTED,
             reasons=("EXACT_TYPED_PERMISSION_MATCH",),
-            spans=[_span_tuple(item) for item in expected],
+            spans=[_span(match) for match in expected],
         )
     if opposite:
         return _finish(
@@ -559,7 +571,7 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
             evidence,
             status=_STATUS_REJECTED,
             reasons=("PERMISSION_POLARITY_MISMATCH",),
-            spans=[_span_tuple(item) for item in opposite],
+            spans=[_span(match) for match in opposite],
         )
     return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_RELATION_NOT_FOUND",))
 
@@ -567,28 +579,33 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
 def _validate_count(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     expected = _decimal_value(candidate.value)
     if not candidate.subject or expected is None:
-        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("COUNT_SUBJECT_AND_NUMERIC_VALUE_REQUIRED",))
-
-    relevant: list[tuple[int, str]] = []
-    for start, clause in _split_clauses(evidence):
-        if _normalized_text(candidate.subject).casefold() not in _normalized_text(clause).casefold():
-            continue
-        if _contains_marker(clause, _COUNT_CUES):
-            relevant.append((start, clause))
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REJECTED,
+            reasons=("COUNT_SUBJECT_AND_NUMERIC_VALUE_REQUIRED",),
+        )
+    relevant = [
+        (start, clause)
+        for start, clause in _split_clauses(evidence)
+        if _normalized_text(candidate.subject).casefold() in _normalized_text(clause).casefold()
+        and _contains_marker(clause, _COUNT_CUES)
+    ]
     if not relevant:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("COUNT_ASSERTION_NOT_FOUND",))
 
     exact_spans: list[tuple[int, int]] = []
     observed: set[Decimal] = set()
     for clause_start, clause in relevant:
-        for number, start, end, _ in _extract_numbers(clause):
+        for number, start, end in _extract_numbers(clause):
             observed.add(number)
-            if number == expected:
-                if candidate.unit:
-                    tail = clause[end : end + max(8, len(candidate.unit) + 4)]
-                    if _normalized_text(candidate.unit).casefold() not in _normalized_text(tail).casefold():
-                        continue
-                exact_spans.append((clause_start + start, clause_start + end))
+            if number != expected:
+                continue
+            if candidate.unit:
+                tail = clause[end : end + max(8, len(candidate.unit) + 4)]
+                if _normalized_text(candidate.unit).casefold() not in _normalized_text(tail).casefold():
+                    continue
+            exact_spans.append((clause_start + start, clause_start + end))
     if exact_spans:
         return _finish(
             candidate,
@@ -597,31 +614,30 @@ def _validate_count(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
             reasons=("EXACT_TYPED_COUNT_MATCH",),
             spans=exact_spans,
         )
-    if observed:
-        return _finish(
-            candidate,
-            evidence,
-            status=_STATUS_REJECTED,
-            reasons=("NUMERIC_VALUE_MISMATCH",),
-        )
-    return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("COUNT_VALUE_NOT_FOUND",))
+    reason = "NUMERIC_VALUE_MISMATCH" if observed else "COUNT_VALUE_NOT_FOUND"
+    return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=(reason,))
 
 
 def _validate_date(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     expected = _normalize_date(candidate.value)
     if not candidate.subject or expected is None:
-        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("DATE_SUBJECT_AND_VALUE_REQUIRED",))
-    relevant: list[tuple[int, str]] = []
-    for start, clause in _split_clauses(evidence):
-        if _normalized_text(candidate.subject).casefold() not in _normalized_text(clause).casefold():
-            continue
-        if _contains_marker(clause, _DATE_CUES):
-            relevant.append((start, clause))
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REJECTED,
+            reasons=("DATE_SUBJECT_AND_VALUE_REQUIRED",),
+        )
+    relevant = [
+        (start, clause)
+        for start, clause in _split_clauses(evidence)
+        if _normalized_text(candidate.subject).casefold() in _normalized_text(clause).casefold()
+        and _contains_marker(clause, _DATE_CUES)
+    ]
     if not relevant:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("DATE_ASSERTION_NOT_FOUND",))
 
-    observed: set[str] = set()
     exact_spans: list[tuple[int, int]] = []
+    observed: set[str] = set()
     for clause_start, clause in relevant:
         for match in _DATE_TOKEN_RE.finditer(clause):
             normalized = _normalize_date(match.group(0))
@@ -638,9 +654,8 @@ def _validate_date(candidate: ClaimCandidate, evidence: str) -> ClaimValidationR
             reasons=("EXACT_TYPED_DATE_MATCH",),
             spans=exact_spans,
         )
-    if observed:
-        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("DATE_VALUE_MISMATCH",))
-    return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("DATE_VALUE_NOT_FOUND",))
+    reason = "DATE_VALUE_MISMATCH" if observed else "DATE_VALUE_NOT_FOUND"
+    return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=(reason,))
 
 
 def validate_claim(
@@ -650,7 +665,7 @@ def validate_claim(
     unit_span: UnitSpan | None = None,
     require_unit: bool = False,
 ) -> ClaimValidationResult:
-    """Validate one candidate against its exact source span and optional Unit span."""
+    """Validate one candidate against its exact source span and optional Unit."""
 
     if not isinstance(source_text, str):
         raise TypeError("source_text must be a string")
@@ -667,9 +682,7 @@ def validate_claim(
     if unit_span is not None:
         if (unit_span.source_id, unit_span.unit_id) != (candidate.source_id, candidate.unit_id):
             return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("UNIT_IDENTITY_MISMATCH",))
-        if not (
-            unit_span.start <= candidate.evidence_start < candidate.evidence_end <= unit_span.end
-        ):
+        if not unit_span.start <= candidate.evidence_start < candidate.evidence_end <= unit_span.end:
             return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("EVIDENCE_OUTSIDE_UNIT",))
 
     if candidate.claim_type not in SUPPORTED_CLAIM_TYPES:
