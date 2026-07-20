@@ -1,82 +1,58 @@
 # Text Knowledge Reader – staged hardening workspace
 
-This repository implements and independently tests one subsystem at a time before integration into the complete Skill.
+This repository hardens one subsystem at a time and keeps every stage independently testable.
 
-## Current stage
+## Current stack
 
-**v5.3.0-alpha1 — Phase 3 typed Claim validation**
+- **v5.2 Phase 2:** deterministic bounded chunking;
+- **v5.3 Phase 3:** typed Claim evidence validation;
+- **v5.4 Phase 4:** entity, alias, homonym, timeline, and conflict normalization.
 
-Phase 3 is stacked on the completed Phase 2 chunking work. It validates structured Claim candidates against exact local evidence; it does not perform extraction, entity normalization, retrieval, benchmark scoring, or final freezing.
+## Phase 4 contract
 
-## Phase 2: deterministic chunking
+Phase 4 accepts only `claims.accepted.jsonl` from Phase 3. It re-runs Phase 3 validation against the normalized source and Unit index before building any entity or fact. Modified, stale, duplicate, or non-accepted records are rejected.
 
-- every Chunk is an exact contiguous slice of normalized source text;
-- `0 < chunk.length <= max_chars`;
-- `0 <= overlap <= overlap_chars < max_chars`;
-- Unit boundaries are never crossed;
-- Unit coverage is complete and gap-free;
-- Chunk IDs are deterministic;
-- JSONL output is independently validated before publication.
+Normalization rules are conservative:
 
-```bash
-tkr-chunk project/admission/normalized-text.txt \
-  --units project/admission/unit-index.csv \
-  --max-chars 1400 \
-  --overlap-chars 180 \
-  --outdir project/chunks
-```
+- accepted alias Claims may merge names;
+- exact repeated surfaces merge automatically only inside the same source and Unit;
+- the same name in different Units remains an ambiguity group;
+- cross-Unit `same_as` and `different_from` links require their own exact evidence span;
+- identity links may not cross source boundaries;
+- actor/place type conflicts block unsafe merges;
+- unresolved factual conflicts remain contested instead of being overwritten;
+- explicit earlier/later language creates temporal variants only when every adjacent state change is evidence-supported;
+- a single temporal marker cannot resolve unrelated third or later values;
+- Phase 4 never grants final freeze authority.
 
-## Phase 3: typed Claim validation
-
-Supported deterministic Claim types:
-
-```text
-alias
-defeats
-located_in
-permission
-count
-date
-```
-
-The validator enforces:
-
-- exact source and evidence-span agreement;
-- mandatory Unit binding in the CLI;
-- subject/object direction for directional relations;
-- explicit negation and permission polarity;
-- exact Arabic and basic Chinese numeric comparison;
-- normalized, calendar-valid dates;
-- review routing for rumors, questions, hypotheticals, predictions, and conflicts;
-- deterministic validation IDs;
-- `may_index=true` only for fresh accepted results;
-- `may_freeze=false` for every Phase 3 result, because final freeze requires later independent gates.
-
-Candidate JSONL example:
-
-```json
-{"claim_type":"alias","subject":"北门","object":"玄门","source_id":"novel","unit_id":"chapter-12","evidence_start":1024,"evidence_end":1032,"evidence_text":"北门改称玄门。"}
-```
-
-Run:
+## Usage
 
 ```bash
-tkr-claim-validate project/admission/normalized-text.txt \
-  project/extraction/claim-candidates.jsonl \
+python -m pip install .
+
+tkr-entity-normalize \
+  project/admission/normalized-text.txt \
+  project/claims/claims.accepted.jsonl \
   --units project/admission/unit-index.csv \
-  --outdir project/claim-validation
+  --identity-links project/entities/identity-links.jsonl \
+  --outdir project/entities
 ```
 
-Outputs:
+`--identity-links` is optional. Each link must cite a local span and reference two Phase 3 Claim roles.
+
+## Outputs
 
 ```text
-claims.accepted.jsonl
-claims.rejected.jsonl
-claims.review.jsonl
-claim-validation-report.json
+mentions.jsonl
+entities.jsonl
+facts.jsonl
+timeline.jsonl
+conflicts.jsonl
+ambiguity-groups.jsonl
+entity-normalization-report.json
 ```
 
-Incoming fields such as `verification_status`, `confidence`, `may_index`, or `may_freeze` are not trusted as validation evidence.
+The report includes SHA-256 values for the source, Unit index, accepted Claims, optional identity links, and every generated artifact.
 
 ## Validation
 
@@ -85,11 +61,8 @@ python -m compileall -q tkr tests
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the chunking and typed Claim suites on Python 3.10, 3.11, and 3.12 and preserves validation logs as workflow artifacts.
+GitHub Actions checks out the event revision and runs Python 3.10, 3.11, and 3.12 matrices for Phase 2, Phase 3, and Phase 4. The current full stack contains 120 regression tests after the temporal-transition review fix.
 
-## Known boundaries
+## Deliberate limits
 
-- Claim extraction is not implemented in this stage; Phase 3 validates candidates produced elsewhere.
-- The rule set is intentionally closed. Unsupported Claim types enter review rather than using a generic similarity fallback.
-- Reported speech, nested quotation semantics, coreference, temporal version resolution, and broad natural-language inference still require later extraction/normalization stages and Gold evaluation.
-- The normalized source is still decoded into one Python string by the CLI; two-hundred-million-character production processing requires the later file-backed and resumable scale layer.
+Phase 4 does not perform pronoun resolution, implicit identity inference, open-ended character understanding, embeddings, or graph-database storage. Repeated names inside one Unit use a documented local-continuity heuristic; difficult same-Unit homonyms require explicit `different_from` evidence. Those limits prevent an apparent recall gain from silently creating false entity merges.
