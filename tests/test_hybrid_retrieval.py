@@ -348,6 +348,21 @@ class HybridRetrievalTests(RetrievalFixture):
         self.assertEqual(date.answerability, "answerable")
         self.assertEqual(date.hits[0].value, "2001-02-03")
 
+    def test_date_precision_refinement_returns_most_precise_value(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["工程始于2001-02。工程始于2001-02-03。"],
+                [
+                    {"evidence": "工程始于2001-02。", "claim_type": "date", "subject": "工程", "value": "2001-02"},
+                    {"evidence": "工程始于2001-02-03。", "claim_type": "date", "subject": "工程", "value": "2001-02-03"},
+                ],
+            )
+            result = query_hybrid_index(paths[4], "工程什么时候开始？")
+        self.assertEqual(result.answerability, "answerable")
+        self.assertEqual(result.hits[0].value, "2001-02-03")
+
     def test_index_contains_structured_tables(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1041,6 +1041,20 @@ def _answer_key(hit: RetrievalHit, intent: PredicateQuery) -> str:
     return hit.fact_id or ""
 
 
+def _select_most_precise_compatible_date(
+    hits: Sequence[RetrievalHit],
+) -> list[RetrievalHit]:
+    """Collapse a Phase 4 date-precision refinement to its most precise value."""
+
+    if not hits or any(hit.canonical_status != "compatible_variant" for hit in hits):
+        return list(hits)
+    values = {str(hit.value) for hit in hits}
+    most_precise = max(values, key=lambda value: (value.count("-"), len(value), value))
+    if not all(value == most_precise or most_precise.startswith(value + "-") for value in values):
+        return list(hits)
+    return [hit for hit in hits if str(hit.value) == most_precise]
+
+
 def _select_temporal(hits: Sequence[RetrievalHit], scope: str) -> list[RetrievalHit]:
     ordered = sorted(hits, key=lambda item: (item.source_id, item.evidence_start, item.fact_id or ""))
     if not ordered or scope == "any":
@@ -1244,6 +1258,9 @@ def query_hybrid_index(
                 QUERY_PARSER_VERSION, INDEX_SCHEMA_VERSION, logical_hash, intent,
                 "not_answerable", ("NO_CANONICAL_FACT_MATCH",), resolved, (), lexical,
             )
+
+        if intent.predicate == "date":
+            active = _select_most_precise_compatible_date(active)
 
         distinct = {_answer_key(hit, intent) for hit in active}
         if len(distinct) > 1:
