@@ -10,7 +10,7 @@ This repository hardens one subsystem at a time and keeps every stage independen
 - **v5.5 Phase 5:** hash-verified SQLite indexing and predicate-aware hybrid retrieval;
 - **v5.6 Phase 6:** strict answers, evidence packets, citation entailment, and refusal decisions;
 - **v5.7 Phase 7:** immutable Gold Benchmark coverage, accuracy, refusal, citation, and hallucination gates;
-- **v5.8 Phase 8:** artifact-chain manifests, reproducible wheel checks, explicit approval, and freeze seals.
+- **v5.8 Phase 8:** artifact-chain manifests, reproducible wheel checks, Git-backed source provenance, explicit approval, and freeze seals.
 
 ## v5.7 release acceptance
 
@@ -40,9 +40,13 @@ Phase 8 separates technical readiness from human release authority.
 - accepted package reports from Python 3.10, 3.11, and 3.12;
 - one reproducible-build report;
 - at least two actual reproducible-build wheel files whose bytes are independently rehashed;
+- a Git bundle containing the claimed source commit;
+- a source-provenance record binding the bundle, wheel, runtime file set, package version, and fixed ZIP build timestamp;
 - release version, source commit, and fixed source-date epoch.
 
-The candidate recomputes every file size and SHA-256, reruns Release Gold verification from the bound database and Gold inputs, confirms all package reports point to the same wheel, and verifies byte-for-byte reproducibility from the bound wheel files. A technical candidate always contains:
+The candidate recomputes every file size and SHA-256, reruns Release Gold verification from the bound database and Gold inputs, confirms all package reports point to the same wheel, verifies byte-for-byte reproducibility from the bound wheel files, clones the bound Git bundle, and compares every `tkr/` runtime file in the wheel byte-for-byte with the claimed commit. It also verifies that the wheel version matches `pyproject.toml` at that commit and that every wheel entry timestamp represents the declared `SOURCE_DATE_EPOCH`.
+
+A technical candidate always contains:
 
 ```json
 {
@@ -95,7 +99,7 @@ tkr-gold-benchmark verify \
   --require-profile release
 
 # Prepare a non-authorizing technical candidate.
-# Every path below must be inside --root.
+# Every path below must be inside --root. Git is required for source verification.
 tkr-release-freeze prepare \
   --root release-evidence \
   --version 5.8.0a1 \
@@ -116,9 +120,11 @@ tkr-release-freeze prepare \
   --artifact package_acceptance=release-evidence/package-acceptance-python-3.11.json \
   --artifact package_acceptance=release-evidence/package-acceptance-python-3.12.json \
   --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-01.whl \
-  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-02.whl
+  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-02.whl \
+  --artifact source_bundle=release-evidence/source.bundle \
+  --artifact source_provenance=release-evidence/source-provenance.json
 
-# Recompute candidate evidence and hashes.
+# Recompute candidate evidence and hashes, including Git source provenance.
 tkr-release-freeze verify release-evidence/freeze-candidate.json \
   --root release-evidence
 
@@ -130,7 +136,7 @@ tkr-release-freeze seal \
   --output release-evidence/freeze-seal.json
 ```
 
-For CI-produced evidence, `tools/assemble_freeze_candidate.py` copies the complete benchmark chain and both build wheels into a dedicated candidate directory before invoking the same verifier.
+For CI-produced evidence, `tools/assemble_freeze_candidate.py` requires a clean checkout whose `HEAD` equals `--source-commit`, creates the Git bundle and provenance record, copies the complete benchmark chain and both build wheels into a dedicated candidate directory, and invokes the same independent verifier.
 
 ## Validation
 
@@ -139,7 +145,7 @@ python -m compileall -q tkr tests benchmark tools
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the complete stack, independent wheel acceptance, reproducible builds, technical-candidate assembly, and Phase 8 tests on Python 3.10, 3.11, and 3.12.
+GitHub Actions runs the complete stack, independent wheel acceptance, reproducible builds, Git-backed source verification, technical-candidate assembly, and Phase 8 tests on Python 3.10, 3.11, and 3.12.
 
 ## Deliberate limits
 
