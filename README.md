@@ -59,7 +59,7 @@ Each JSONL case declares the current parser predicate and exact expected decisio
   "expected_fact_ids": ["fact_..."],
   "expected_evidence_sha256": ["..."],
   "source_id_filter": null,
-  "tags": ["temporal_scope"]
+  "tags": ["answered_current_count"]
 }
 ```
 
