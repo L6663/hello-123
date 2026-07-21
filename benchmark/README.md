@@ -16,15 +16,18 @@ The corpus deliberately includes relation reversals, explicit permission denials
 
 ## Gold governance
 
-Expected decisions and structured answer Claims are first-party curated in the versioned script. Fact IDs and evidence hashes are mechanical bindings produced only after the generated strict-QA packet exactly matches the curated decision and Claim.
+Expected decisions and structured answer Claims are first-party curated in the versioned script. The complete case specifications and full 108-row Gold JSONL bytes are bound to immutable SHA-256 commitments. A candidate may materialize Fact IDs and evidence hashes only when the resulting Gold bytes reproduce the pre-existing canonical commitment exactly.
 
-The resulting manifest records the case-spec hash and hashes of the corpus, Unit index, accepted Claims, SQLite index, Gold JSONL, benchmark report, and verification report.
+The resulting manifest records the case-spec commitment and hashes of the corpus, Unit index, accepted Claims, SQLite index, Gold JSONL, benchmark report, and verification report.
 
 This is a real, executable release gate for the six closed predicates. It is not an independently annotated external novel corpus, does not prove open-domain understanding, and cannot grant final freeze authority. Every report and manifest keeps `may_freeze=false`.
 
 ## Run
 
+The package must be installed before invoking the script directly from a source checkout:
+
 ```bash
+python -m pip install .
 python benchmark/release_benchmark.py --output build/release-benchmark
 ```
 
