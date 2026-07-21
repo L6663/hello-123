@@ -39,6 +39,19 @@ class ReleaseFreezeTests(unittest.TestCase):
             return_value=self.benchmark_verification,
         )
         self.verify_mock = self.verify_patch.start()
+        self.source_summary = {
+            "source_commit": self.SOURCE_COMMIT,
+            "source_date_epoch": 1700000000,
+            "source_bundle_sha256": "b" * 64,
+            "runtime_file_count": 2,
+            "runtime_files_sha256": "c" * 64,
+            "source_provenance_verified": True,
+        }
+        self.source_patch = patch(
+            "tkr.release_freeze.verify_source_provenance",
+            return_value=self.source_summary,
+        )
+        self.source_mock = self.source_patch.start()
 
         self.wheel = (
             self.root
@@ -111,6 +124,13 @@ class ReleaseFreezeTests(unittest.TestCase):
             },
         )
 
+        self.source_bundle = self._write_bytes(
+            "source.bundle", b"git-bundle"
+        )
+        self.source_provenance = self._write_json(
+            "source-provenance.json", {"schema_version": "test"}
+        )
+
         self.reproducible = self._write_json(
             "reproducible-build.json",
             {
@@ -139,6 +159,7 @@ class ReleaseFreezeTests(unittest.TestCase):
             )
 
     def tearDown(self) -> None:
+        self.source_patch.stop()
         self.verify_patch.stop()
         self.temporary.cleanup()
 
@@ -187,6 +208,8 @@ class ReleaseFreezeTests(unittest.TestCase):
                 for name, path in self.release_files.items()
             ),
             ("reproducible_build_report", self.reproducible),
+            ("source_bundle", self.source_bundle),
+            ("source_provenance", self.source_provenance),
             *(
                 ("package_acceptance", path)
                 for path in self.package_reports

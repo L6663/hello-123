@@ -8,6 +8,7 @@ import re
 import shutil
 
 from tkr.release_freeze import prepare_freeze_candidate, verify_freeze_candidate
+from tkr.source_provenance import build_source_provenance
 
 
 RELEASE_FILE_ROLES = {
@@ -104,6 +105,7 @@ def main() -> int:
         description="Assemble a Phase 8 technical freeze candidate."
     )
     parser.add_argument("--matrix-root", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, default=Path("."))
     parser.add_argument(
         "--reproducible-wheel",
         type=Path,
@@ -177,6 +179,17 @@ def main() -> int:
     wheel = output / wheel_name
     shutil.copy2(source_wheels[0], wheel)
 
+    source_bundle = output / "source.bundle"
+    source_provenance = output / "source-provenance.json"
+    build_source_provenance(
+        args.source_root,
+        source_bundle,
+        source_provenance,
+        source_commit=args.source_commit,
+        source_date_epoch=args.source_date_epoch,
+        wheel_path=wheel,
+    )
+
     benchmark_manifests = list(
         matrix_root.rglob("benchmark/release-manifest.json")
     )
@@ -245,6 +258,8 @@ def main() -> int:
             for name, role in RELEASE_FILE_ROLES.items()
         ),
         ("reproducible_build_report", reproducible_path),
+        ("source_bundle", source_bundle),
+        ("source_provenance", source_provenance),
     ]
     specs.extend(
         ("package_acceptance", path) for path in package_targets

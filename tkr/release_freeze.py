@@ -14,6 +14,10 @@ import re
 from typing import Mapping, Sequence
 
 from .gold_benchmark import verify_benchmark_report
+from .source_provenance import (
+    SourceProvenanceError,
+    verify_source_provenance,
+)
 
 FREEZE_CANDIDATE_SCHEMA_VERSION = "tkr-freeze-candidate-v1"
 FREEZE_SEAL_SCHEMA_VERSION = "tkr-freeze-seal-v1"
@@ -43,6 +47,8 @@ SINGLETON_ROLES = (
     "release_report",
     "release_verification",
     "reproducible_build_report",
+    "source_bundle",
+    "source_provenance",
 )
 
 
@@ -249,6 +255,8 @@ def _validate_release_evidence(
     records: Sequence[ArtifactRecord],
     *,
     release_version: str,
+    source_commit: str,
+    source_date_epoch: int,
 ) -> dict[str, object]:
     grouped = _group_records(records)
 
@@ -393,6 +401,18 @@ def _validate_release_evidence(
     if any(item != wheel_sha256 for item in actual_build_hashes):
         raise FreezeError("bound reproducible wheels are not byte-identical")
 
+    try:
+        source_evidence = verify_source_provenance(
+            _single_path(root, grouped, "source_bundle"),
+            _single_path(root, grouped, "source_provenance"),
+            _single_path(root, grouped, "wheel"),
+            source_commit=source_commit,
+            source_date_epoch=source_date_epoch,
+            release_version=release_version,
+        )
+    except SourceProvenanceError as exc:
+        raise FreezeError(f"source provenance verification failed: {exc}") from exc
+
     return {
         "release_report_id": report_id,
         "gold_case_count": case_count,
@@ -403,6 +423,12 @@ def _validate_release_evidence(
         "wheel_sha256": wheel_sha256,
         "reproducible_build_count": build_count,
         "reproducible_wheel_artifact_count": len(reproducible_records),
+        "source_commit_bound": source_evidence["source_commit"],
+        "source_date_epoch_bound": source_evidence["source_date_epoch"],
+        "source_bundle_sha256": source_evidence["source_bundle_sha256"],
+        "source_runtime_file_count": source_evidence["runtime_file_count"],
+        "source_runtime_files_sha256": source_evidence["runtime_files_sha256"],
+        "source_provenance_verified": source_evidence["source_provenance_verified"],
         "technical_gate_passed": True,
     }
 
@@ -458,7 +484,11 @@ def prepare_freeze_candidate(
 
     records = _records_from_specs(root_path, artifact_specs)
     evidence = _validate_release_evidence(
-        root_path, records, release_version=version
+        root_path,
+        records,
+        release_version=version,
+        source_commit=commit,
+        source_date_epoch=source_date_epoch,
     )
     core = _candidate_core(
         release_version=version,
@@ -568,7 +598,11 @@ def verify_freeze_candidate(
             )
 
     evidence = _validate_release_evidence(
-        root_path, records, release_version=release_version
+        root_path,
+        records,
+        release_version=release_version,
+        source_commit=source_commit,
+        source_date_epoch=source_date_epoch,
     )
     if payload["evidence"] != evidence:
         raise FreezeError("freeze candidate evidence summary mismatch")
