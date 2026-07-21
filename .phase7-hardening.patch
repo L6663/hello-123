@@ -2,14 +2,14 @@ diff --git a/tkr/gold_benchmark.py b/tkr/gold_benchmark.py
 index 1e9272a..0000000 100644
 --- a/tkr/gold_benchmark.py
 +++ b/tkr/gold_benchmark.py
-@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass
+@@ -15,5 +15,6 @@
  from hashlib import sha256
  import json
  from pathlib import Path
  import re
 +from types import MappingProxyType
  from typing import Mapping, Sequence
-@@ -168,6 +169,27 @@ POLICIES: Mapping[str, BenchmarkPolicy] = {
+@@ -166,6 +167,27 @@
      ),
  }
  
@@ -40,7 +40,7 @@ index 1e9272a..0000000 100644
  
  @dataclass(frozen=True, slots=True)
  class GoldCase:
-@@ -309,6 +331,42 @@ def _strings(value: object, label: str, *, required: bool) -> tuple[str, ...]:
+@@ -307,4 +329,40 @@
      return tuple(result)
  
  
@@ -78,7 +78,7 @@ index 1e9272a..0000000 100644
 +
 +
  def _parse_case(row: Mapping[str, object], line_number: int) -> GoldCase:
-@@ -361,6 +419,14 @@ def _parse_case(row: Mapping[str, object], line_number: int) -> GoldCase:
+@@ -359,5 +417,13 @@
          if expected_decision != "refused_unsupported" and not parsed.supported:
              raise BenchmarkError(f"typed refusal Gold case {case_id} parses as unsupported")
  
@@ -92,13 +92,13 @@ index 1e9272a..0000000 100644
 +
      return GoldCase(
          case_id=case_id,
-@@ -674,6 +740,7 @@ def verify_benchmark_report(
+@@ -672,4 +738,5 @@
      report: Mapping[str, object] | str | Path,
      *,
      index_report_path: str | Path | None = None,
 +    expected_profile: str | None = None,
  ) -> BenchmarkVerification:
-@@ -690,6 +757,14 @@ def verify_benchmark_report(
+@@ -688,4 +755,13 @@
              "rejected", False, ("BENCHMARK_POLICY_PROFILE_INVALID",), supplied_id, ""
          )
 +    if expected_profile is not None:
@@ -112,4 +112,3 @@ index 1e9272a..0000000 100644
 +            )
      try:
          expected = evaluate_gold_benchmark(
-
