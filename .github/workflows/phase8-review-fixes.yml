@@ -1,0 +1,238 @@
+name: phase8-review-fixes
+on:
+  push:
+    branches: [feature/release-freeze-v5.8-alpha1]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.event.head_commit.message != 'fix(phase8): validate provenance and protect evidence paths'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/release-freeze-v5.8-alpha1
+          fetch-depth: 0
+      - name: Apply focused review fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          release = Path('tkr/release_freeze.py')
+          text = release.read_text(encoding='utf-8')
+          old = '''    if payload["status"] != "candidate":
+              raise FreezeError("freeze candidate status must be candidate")
+
+              root_path = Path(root).resolve() if root is not None else path.parent.resolve()
+          '''
+          new = '''    if payload["status"] != "candidate":
+              raise FreezeError("freeze candidate status must be candidate")
+
+              release_version = _nonempty_string(payload["release_version"], "release_version")
+              source_commit = _nonempty_string(payload["source_commit"], "source_commit")
+              if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
+                  raise FreezeError("source_commit must be a lowercase 40-character Git SHA")
+              source_date_epoch = payload["source_date_epoch"]
+              if (
+                  not isinstance(source_date_epoch, int)
+                  or isinstance(source_date_epoch, bool)
+                  or source_date_epoch < 0
+              ):
+                  raise FreezeError("source_date_epoch must be a non-negative integer")
+
+              root_path = Path(root).resolve() if root is not None else path.parent.resolve()
+          '''
+          # The string literals above are indented by the workflow script; normalize them.
+          old = old.replace('          ', '')
+          new = new.replace('          ', '')
+          if old not in text:
+              raise SystemExit('release_freeze verification anchor not found')
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '    release_version = _nonempty_string(payload["release_version"], "release_version")\n'
+              '    evidence = _validate_release_evidence(root_path, records, release_version=release_version)\n',
+              '    evidence = _validate_release_evidence(root_path, records, release_version=release_version)\n',
+              1,
+          )
+          release.write_text(text, encoding='utf-8')
+
+          assembly = Path('tools/assemble_freeze_candidate.py')
+          text = assembly.read_text(encoding='utf-8')
+          anchor = '''def main() -> int:
+          '''.replace('          ', '')
+          helper = '''def ensure_disjoint_output(
+              matrix_root: Path,
+              output_root: Path,
+              reproducible_wheels: list[Path],
+          ) -> None:
+              """Reject output paths that could delete or overwrite release evidence."""
+
+              matrix = matrix_root.resolve()
+              output = output_root.resolve()
+              if output == matrix or output in matrix.parents or matrix in output.parents:
+                  raise SystemExit(
+                      "output root must be a dedicated directory disjoint from matrix input"
+                  )
+              for wheel in reproducible_wheels:
+                  resolved = wheel.resolve()
+                  if output == resolved or output in resolved.parents:
+                      raise SystemExit(
+                          "output root must not contain a reproducible wheel input"
+                      )
+
+
+          def main() -> int:
+          '''.replace('          ', '')
+          if anchor not in text:
+              raise SystemExit('assembly main anchor not found')
+          text = text.replace(anchor, helper, 1)
+          old = '''    output = args.output_root.resolve()
+              if output.exists():
+                  shutil.rmtree(output)
+              output.mkdir(parents=True)
+          '''.replace('          ', '')
+          new = '''    matrix_root = args.matrix_root.resolve()
+              reproducible_wheels = [path.resolve() for path in args.reproducible_wheel]
+              output = args.output_root.resolve()
+              ensure_disjoint_output(matrix_root, output, reproducible_wheels)
+              if output.exists():
+                  shutil.rmtree(output)
+              output.mkdir(parents=True)
+          '''.replace('          ', '')
+          if old not in text:
+              raise SystemExit('assembly output anchor not found')
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '    for path in args.matrix_root.rglob("package-acceptance.json"):\n',
+              '    for path in matrix_root.rglob("package-acceptance.json"):\n',
+              1,
+          )
+          text = text.replace(
+              '    source_wheels = list(args.matrix_root.rglob(wheel_name))\n',
+              '    source_wheels = list(matrix_root.rglob(wheel_name))\n',
+              1,
+          )
+          text = text.replace(
+              '    benchmark_roots = list(args.matrix_root.rglob("benchmark/release-manifest.json"))\n',
+              '    benchmark_roots = list(matrix_root.rglob("benchmark/release-manifest.json"))\n',
+              1,
+          )
+          text = text.replace(
+              '    build_hashes = [digest(path.resolve()) for path in args.reproducible_wheel]\n',
+              '    build_hashes = [digest(path) for path in reproducible_wheels]\n',
+              1,
+          )
+          assembly.write_text(text, encoding='utf-8')
+
+          tests = Path('tests/test_release_freeze.py')
+          text = tests.read_text(encoding='utf-8')
+          insert = '''
+              def _rewrite_candidate_id(self, payload: dict[str, object]) -> None:
+                  core = dict(payload)
+                  core.pop("candidate_id", None)
+                  canonical = json.dumps(
+                      core,
+                      ensure_ascii=False,
+                      sort_keys=True,
+                      separators=(",", ":"),
+                  )
+                  payload["candidate_id"] = "freeze_candidate_" + sha256(
+                      canonical.encode("utf-8")
+                  ).hexdigest()[:24]
+
+              def test_verify_rejects_malformed_source_commit_even_with_recomputed_id(self) -> None:
+                  candidate = self._prepare()
+                  payload = json.loads(candidate.read_text(encoding="utf-8"))
+                  payload["source_commit"] = "not-a-git-sha"
+                  self._rewrite_candidate_id(payload)
+                  candidate.write_text(json.dumps(payload), encoding="utf-8")
+                  with self.assertRaisesRegex(FreezeError, "lowercase 40-character Git SHA"):
+                      verify_freeze_candidate(candidate, root=self.root)
+
+              def test_verify_rejects_negative_source_epoch_even_with_recomputed_id(self) -> None:
+                  candidate = self._prepare()
+                  payload = json.loads(candidate.read_text(encoding="utf-8"))
+                  payload["source_date_epoch"] = -1
+                  self._rewrite_candidate_id(payload)
+                  candidate.write_text(json.dumps(payload), encoding="utf-8")
+                  with self.assertRaisesRegex(FreezeError, "non-negative integer"):
+                      verify_freeze_candidate(candidate, root=self.root)
+          '''
+          insert = insert.replace('          ', '')
+          marker = '\n\nif __name__ == "__main__":\n'
+          if marker not in text:
+              raise SystemExit('test insertion anchor not found')
+          text = text.replace(marker, insert + marker, 1)
+          tests.write_text(text, encoding='utf-8')
+
+          path_test = Path('tests/test_freeze_assembly_paths.py')
+          path_test.write_text('''from __future__ import annotations
+
+from pathlib import Path
+import tempfile
+import unittest
+
+from tools.assemble_freeze_candidate import ensure_disjoint_output
+
+
+class FreezeAssemblyPathTests(unittest.TestCase):
+    def test_rejects_output_equal_to_matrix_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaisesRegex(SystemExit, "disjoint from matrix input"):
+                ensure_disjoint_output(root, root, [])
+
+    def test_rejects_output_ancestor_of_matrix_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix = root / "matrix"
+            matrix.mkdir()
+            with self.assertRaisesRegex(SystemExit, "disjoint from matrix input"):
+                ensure_disjoint_output(matrix, root, [])
+
+    def test_rejects_output_descendant_of_matrix_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "candidate"
+            with self.assertRaisesRegex(SystemExit, "disjoint from matrix input"):
+                ensure_disjoint_output(root, output, [])
+
+    def test_rejects_output_containing_reproducible_wheel(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix = root / "matrix"
+            matrix.mkdir()
+            output = root / "builds"
+            output.mkdir()
+            wheel = output / "candidate.whl"
+            wheel.write_bytes(b"wheel")
+            with self.assertRaisesRegex(SystemExit, "must not contain"):
+                ensure_disjoint_output(matrix, output, [wheel])
+
+    def test_accepts_disjoint_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            matrix = root / "matrix"
+            matrix.mkdir()
+            output = root / "candidate"
+            wheel_dir = root / "builds"
+            wheel_dir.mkdir()
+            wheel = wheel_dir / "candidate.whl"
+            wheel.write_bytes(b"wheel")
+            ensure_disjoint_output(matrix, output, [wheel])
+
+
+if __name__ == "__main__":
+    unittest.main()
+''', encoding='utf-8')
+
+          Path('.github/workflows/phase8-review-fixes.yml').unlink()
+          PY
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/release_freeze.py tools/assemble_freeze_candidate.py tests/test_release_freeze.py tests/test_freeze_assembly_paths.py .github/workflows/phase8-review-fixes.yml
+          git commit -m "fix(phase8): validate provenance and protect evidence paths"
+          git push origin HEAD:feature/release-freeze-v5.8-alpha1
