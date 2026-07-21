@@ -20,13 +20,14 @@ permissions:
 
 jobs:
   apply_review_fix:
-    if: github.event_name == 'push'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.apply.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -50,12 +51,12 @@ jobs:
           git add tkr/strict_qa.py tests/test_strict_qa_adversarial.py
           git rm .phase6-review-fix.patch
           git commit -m "fix(qa): require database integrity verification"
-          git push origin HEAD:feature/strict-qa-v5.6-alpha1
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
   test:
     needs: apply_review_fix
-    if: always() && (github.event_name == 'pull_request' || (needs.apply_review_fix.result == 'success' && needs.apply_review_fix.outputs.changed != 'true'))
+    if: github.event_name == 'pull_request' && needs.apply_review_fix.result == 'success' && needs.apply_review_fix.outputs.changed != 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
