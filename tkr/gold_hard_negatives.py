@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import sqlite3
 from typing import Sequence
 
@@ -11,6 +12,7 @@ from .strict_qa import StrictQAPacket
 
 
 _ACTIVE_STATUSES = ("canonical", "temporal_variant", "compatible_variant", "contested")
+_DECIMAL_TEXT = re.compile(r"^[+-]?(?:0|[1-9]\d*)(?:\.\d+)?$")
 
 
 def _source_clause(source_id: str | None) -> tuple[str, list[object]]:
@@ -54,31 +56,46 @@ def _numeric_prefix_collision_exists(
     intent: PredicateQuery,
     source_id: str | None,
 ) -> bool:
-    if intent.predicate != "count" or not intent.subject:
+    """Confirm that the queried count subject has two decimal prefix-colliding values.
+
+    The count query parser's optional unit capture is intentionally not used as an
+    evidence filter here.  Unit parsing is a query-shape concern; the adversarial
+    property being certified is the presence of exact values such as 100 and 1000
+    for the same subject.  Requiring the parsed unit previously allowed harmless
+    parser differences to erase a real numeric-prefix case.
+    """
+
+    if intent.predicate != "count":
         return False
     source_sql, source_params = _source_clause(source_id)
     rows = connection.execute(
-        "SELECT normalized_subject,value_text,unit FROM facts "
+        "SELECT normalized_subject,value_text FROM facts "
         f"WHERE claim_type='count'{source_sql} ORDER BY fact_id",
         source_params,
     ).fetchall()
-    subject = _normalize_surface(intent.subject)
+    parsed_subject = _normalize_surface(intent.subject)
     question = _normalize_surface(intent.raw_query)
-    values: list[str] = []
-    for normalized_subject, value_text, unit in rows:
-        normalized_subject = str(normalized_subject)
-        if normalized_subject != subject and normalized_subject not in question:
+    values_by_subject: dict[str, set[str]] = {}
+    for normalized_subject, value_text in rows:
+        fact_subject = str(normalized_subject)
+        if not fact_subject:
             continue
-        if intent.unit and str(unit) != intent.unit:
+        if fact_subject != parsed_subject and fact_subject not in question:
             continue
-        normalized_value = str(value_text).strip()
-        if normalized_value and normalized_value not in values:
-            values.append(normalized_value)
-    return any(
-        left != right and (left.startswith(right) or right.startswith(left))
-        for index, left in enumerate(values)
-        for right in values[index + 1 :]
-    )
+        normalized_value = str(value_text).strip().lstrip("+")
+        if not _DECIMAL_TEXT.fullmatch(normalized_value):
+            continue
+        values_by_subject.setdefault(fact_subject, set()).add(normalized_value)
+
+    for values in values_by_subject.values():
+        ordered = sorted(values)
+        if any(
+            left != right and (left.startswith(right) or right.startswith(left))
+            for index, left in enumerate(ordered)
+            for right in ordered[index + 1 :]
+        ):
+            return True
+    return False
 
 
 def _entity_name_present(
