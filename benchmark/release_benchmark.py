@@ -19,6 +19,8 @@ from tkr.strict_qa import answer_strict
 SOURCE_ID = "release-novel-v1"
 BENCHMARK_VERSION = "tkr-release-gold-v1"
 CASE_SPEC_VERSION = "tkr-release-case-specs-v1"
+CANONICAL_CASE_SPECS_SHA256 = "fbdfa21f1ef00ccb514a7db53560bb5937970930bf2abdb9b4916499edb624d2"
+CANONICAL_GOLD_SHA256 = "859b2710c10bdbcb0f1a2f0a1f7e598e003d9bb507e57ed02496278e838ab22f"
 
 ALIASES = (
     ("北门", "玄门"), ("西门", "白门"), ("东塔", "曙塔"), ("南桥", "赤桥"),
@@ -336,7 +338,13 @@ def compile_gold(database: Path, specs: list[dict[str, object]], output: Path) -
 def run_release(output: Path) -> dict[str, object]:
     _, _, _, _, database, index_report = build_project(output)
     specs = case_specs()
+    specs_sha256 = sha256(canonical(specs).encode("utf-8")).hexdigest()
+    if specs_sha256 != CANONICAL_CASE_SPECS_SHA256:
+        raise RuntimeError("curated case specifications differ from the canonical release commitment")
     gold = compile_gold(database, specs, output)
+    gold_sha256 = digest(gold)
+    if gold_sha256 != CANONICAL_GOLD_SHA256:
+        raise RuntimeError("candidate-generated Gold differs from the fixed canonical release commitment")
     report = evaluate_gold_benchmark(database, gold, profile="release", report_path=index_report)
     report_path = output / "release-report.json"
     report_path.write_text(json.dumps(report.to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -358,13 +366,14 @@ def run_release(output: Path) -> dict[str, object]:
         "case_spec_version": CASE_SPEC_VERSION,
         "source_id": SOURCE_ID,
         "case_count": len(specs),
-        "case_specs_sha256": sha256(canonical(specs).encode("utf-8")).hexdigest(),
+        "case_specs_sha256": specs_sha256,
+        "canonical_gold_sha256": CANONICAL_GOLD_SHA256,
         "coverage": report.coverage,
         "metrics": report.metrics,
         "report_id": report.report_id,
         "governance": {
             "expected_decisions_and_claims": "first-party manually curated case families",
-            "fact_ids_and_evidence_hashes": "mechanically bound after exact manual Claim checks",
+            "fact_ids_and_evidence_hashes": "candidate output must reproduce the fixed canonical Gold SHA-256 exactly",
             "independent_external_annotation": False,
             "open_domain_claim": False,
             "may_freeze": False,
