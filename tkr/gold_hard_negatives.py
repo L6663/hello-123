@@ -1,6 +1,7 @@
 """Database-grounded validation for Phase 7 hard-negative Gold categories."""
 from __future__ import annotations
 
+from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
@@ -12,6 +13,7 @@ from .strict_qa import StrictQAPacket
 
 
 _ACTIVE_STATUSES = ("canonical", "temporal_variant", "compatible_variant", "contested")
+_RELATION_PREDICATES = frozenset({"defeats", "located_in"})
 
 
 def _source_clause(source_id: str | None) -> tuple[str, list[object]]:
@@ -20,51 +22,53 @@ def _source_clause(source_id: str | None) -> tuple[str, list[object]]:
     return " AND source_id=?", [source_id]
 
 
+def _active_clause() -> tuple[str, list[object]]:
+    marks = ",".join("?" for _ in _ACTIVE_STATUSES)
+    return f"canonical_status IN ({marks})", list(_ACTIVE_STATUSES)
+
+
 def _relation_direction_exists(
     connection: sqlite3.Connection,
     intent: PredicateQuery,
     source_id: str | None,
 ) -> bool:
-    if intent.predicate not in {"defeats", "located_in"}:
+    """Return true only when the index contains the relation in the reverse role."""
+
+    if intent.predicate not in _RELATION_PREDICATES:
         return False
+    active_sql, active_params = _active_clause()
     source_sql, source_params = _source_clause(source_id)
-    status_marks = ",".join("?" for _ in _ACTIVE_STATUSES)
-    params: list[object] = [intent.predicate, *_ACTIVE_STATUSES]
+    params: list[object] = [intent.predicate, *active_params]
+
     if intent.requested_role == "object" and intent.subject:
-        relation_sql = "normalized_object=?"
+        reverse_sql = "normalized_object=?"
         params.append(_normalize_surface(intent.subject))
     elif intent.requested_role == "subject" and intent.object:
-        relation_sql = "normalized_subject=?"
+        reverse_sql = "normalized_subject=?"
         params.append(_normalize_surface(intent.object))
     elif intent.requested_role == "boolean" and intent.subject and intent.object:
-        relation_sql = "normalized_subject=? AND normalized_object=?"
+        reverse_sql = "normalized_subject=? AND normalized_object=?"
         params.extend((_normalize_surface(intent.object), _normalize_surface(intent.subject)))
     else:
         return False
+
     params.extend(source_params)
-    row = connection.execute(
-        f"SELECT 1 FROM facts WHERE claim_type=? AND canonical_status IN ({status_marks}) "
-        f"AND {relation_sql}{source_sql} LIMIT 1",
+    return connection.execute(
+        f"SELECT 1 FROM facts WHERE claim_type=? AND {active_sql} "
+        f"AND {reverse_sql}{source_sql} LIMIT 1",
         params,
-    ).fetchone()
-    return row is not None
+    ).fetchone() is not None
 
 
-def _plain_decimal(value: object) -> str | None:
-    """Normalize SQLite count text such as ``1E+2`` to plain decimal ``100``."""
-
+def _decimal_key(value: object) -> str | None:
     try:
         number = Decimal(str(value).strip())
     except (InvalidOperation, ValueError):
         return None
     if not number.is_finite():
         return None
-    rendered = format(number, "f")
-    if "." in rendered:
-        rendered = rendered.rstrip("0").rstrip(".")
-    if rendered in {"-0", ""}:
-        rendered = "0"
-    return rendered
+    normalized = number.normalize()
+    return format(normalized, "f").lstrip("+") or "0"
 
 
 def _numeric_prefix_collision_exists(
@@ -72,31 +76,31 @@ def _numeric_prefix_collision_exists(
     intent: PredicateQuery,
     source_id: str | None,
 ) -> bool:
-    """Confirm two exact decimal values with a strict textual prefix collision."""
+    """Confirm exact count facts for one subject/unit have prefix-colliding values."""
 
-    if intent.predicate != "count":
+    if intent.predicate != "count" or not intent.subject:
         return False
+    active_sql, active_params = _active_clause()
     source_sql, source_params = _source_clause(source_id)
+    params: list[object] = [
+        *active_params,
+        _normalize_surface(intent.subject),
+        *source_params,
+    ]
     rows = connection.execute(
-        "SELECT normalized_subject,value_text FROM facts "
-        f"WHERE claim_type='count'{source_sql} ORDER BY fact_id",
-        source_params,
+        "SELECT normalized_subject,value_text,unit FROM facts "
+        f"WHERE claim_type='count' AND {active_sql} AND normalized_subject=?"
+        f"{source_sql} ORDER BY fact_id",
+        params,
     ).fetchall()
-    parsed_subject = _normalize_surface(intent.subject)
-    question = _normalize_surface(intent.raw_query)
-    values_by_subject: dict[str, set[str]] = {}
-    for normalized_subject, value_text in rows:
-        fact_subject = str(normalized_subject)
-        if not fact_subject:
-            continue
-        if fact_subject != parsed_subject and fact_subject not in question:
-            continue
-        normalized_value = _plain_decimal(value_text)
-        if normalized_value is None:
-            continue
-        values_by_subject.setdefault(fact_subject, set()).add(normalized_value)
 
-    for values in values_by_subject.values():
+    values_by_unit: dict[str, set[str]] = defaultdict(set)
+    for _, value_text, unit in rows:
+        value = _decimal_key(value_text)
+        if value is not None:
+            values_by_unit[str(unit)].add(value)
+
+    for values in values_by_unit.values():
         ordered = sorted(values)
         if any(
             left != right and (left.startswith(right) or right.startswith(left))
@@ -105,6 +109,67 @@ def _numeric_prefix_collision_exists(
         ):
             return True
     return False
+
+
+def _matching_fact_rows(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    source_id: str | None,
+) -> list[sqlite3.Row]:
+    if not intent.supported or not intent.subject:
+        return []
+    source_sql, source_params = _source_clause(source_id)
+    clauses = ["claim_type=?", "normalized_subject=?"]
+    params: list[object] = [intent.predicate, _normalize_surface(intent.subject)]
+    if intent.predicate in {"permission"} and intent.object:
+        clauses.append("normalized_object=?")
+        params.append(_normalize_surface(intent.object))
+    if intent.predicate == "date" and intent.predicate_scope not in {"", "generic_date"}:
+        clauses.append("predicate_scope=?")
+        params.append(intent.predicate_scope)
+    params.extend(source_params)
+    connection.row_factory = sqlite3.Row
+    return list(
+        connection.execute(
+            "SELECT * FROM facts WHERE " + " AND ".join(clauses) + source_sql
+            + " ORDER BY evidence_start,fact_id",
+            params,
+        )
+    )
+
+
+def _answer_signature(row: sqlite3.Row) -> tuple[object, ...]:
+    claim_type = str(row["claim_type"])
+    if claim_type == "count":
+        return (_decimal_key(row["value_text"]), str(row["unit"]))
+    if claim_type == "date":
+        return (str(row["predicate_scope"]), str(row["value_text"]))
+    if claim_type == "permission":
+        return (str(row["normalized_object"]), int(row["polarity"]))
+    return (str(row["normalized_object"]), int(row["polarity"]))
+
+
+def _temporal_scope_exists(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    source_id: str | None,
+) -> bool:
+    if intent.temporal_scope != "any":
+        return False
+    rows = _matching_fact_rows(connection, intent, source_id)
+    temporal = [row for row in rows if row["canonical_status"] == "temporal_variant"]
+    return len(temporal) >= 2 and len({_answer_signature(row) for row in temporal}) >= 2
+
+
+def _contested_fact_exists(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    source_id: str | None,
+) -> bool:
+    return any(
+        row["canonical_status"] == "contested"
+        for row in _matching_fact_rows(connection, intent, source_id)
+    )
 
 
 def _entity_name_present(
@@ -133,6 +198,27 @@ def _entity_name_present(
     return False
 
 
+def _absence_not_negative_exists(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    source_id: str | None,
+) -> bool:
+    """Require a known permission subject but no fact for the requested action."""
+
+    if intent.predicate != "permission" or not intent.subject or not intent.object:
+        return False
+    source_sql, source_params = _source_clause(source_id)
+    active_sql, active_params = _active_clause()
+    subject = _normalize_surface(intent.subject)
+    action = _normalize_surface(intent.object)
+    rows = connection.execute(
+        "SELECT normalized_object FROM facts WHERE claim_type='permission' "
+        f"AND {active_sql} AND normalized_subject=?{source_sql}",
+        [*active_params, subject, *source_params],
+    ).fetchall()
+    return bool(rows) and all(str(row[0]) != action for row in rows)
+
+
 def validate_hard_negative_outcome(
     database_path: str | Path,
     intent: PredicateQuery,
@@ -141,52 +227,49 @@ def validate_hard_negative_outcome(
     *,
     source_id: str | None,
 ) -> tuple[str, ...]:
-    """Return failure codes for hard-negative labels not established by evidence."""
+    """Return failure codes for labels not established by indexed facts/query evidence."""
 
     failures: list[str] = []
-    tag_set = set(tags)
     connection = sqlite3.connect(f"file:{Path(database_path)}?mode=ro", uri=True)
     connection.execute("PRAGMA query_only=ON")
     try:
-        for tag in sorted(tag_set):
-            established = True
+        for tag in sorted(set(tags)):
             if tag == "relation_direction":
                 established = _relation_direction_exists(connection, intent, source_id)
             elif tag == "numeric_prefix":
                 established = _numeric_prefix_collision_exists(connection, intent, source_id)
             elif tag == "temporal_scope":
-                established = "TEMPORAL_SCOPE_REQUIRED" in packet.reason_codes
+                established = (
+                    "TEMPORAL_SCOPE_REQUIRED" in packet.reason_codes
+                    and _temporal_scope_exists(connection, intent, source_id)
+                )
             elif tag == "contested_fact":
-                established = "CONTESTED_FACTS_PRESENT" in packet.reason_codes
+                established = (
+                    "CONTESTED_FACTS_PRESENT" in packet.reason_codes
+                    and _contested_fact_exists(connection, intent, source_id)
+                )
             elif tag == "lexical_distractor":
                 established = (
                     packet.decision == "refused_insufficient_evidence"
                     and packet.lexical_evidence_count > 0
+                    and not _matching_fact_rows(connection, intent, source_id)
                 )
-            elif tag == "entity_only_no_predicate":
+            elif tag in {"entity_only_no_predicate", "unsupported_open_predicate"}:
                 established = (
                     packet.decision == "refused_unsupported"
+                    and not intent.supported
                     and _entity_name_present(connection, intent, source_id)
                 )
-            elif tag == "unsupported_open_predicate":
-                established = packet.decision == "refused_unsupported"
             elif tag == "absence_not_negative":
                 established = (
-                    intent.predicate == "permission"
-                    and packet.decision == "refused_insufficient_evidence"
+                    packet.decision == "refused_insufficient_evidence"
                     and packet.answer_claim is None
                     and not packet.citations
+                    and _absence_not_negative_exists(connection, intent, source_id)
                 )
-            if tag in {
-                "relation_direction",
-                "numeric_prefix",
-                "temporal_scope",
-                "contested_fact",
-                "lexical_distractor",
-                "entity_only_no_predicate",
-                "unsupported_open_predicate",
-                "absence_not_negative",
-            } and not established:
+            else:
+                continue
+            if not established:
                 failures.append(f"HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:{tag}")
     finally:
         connection.close()

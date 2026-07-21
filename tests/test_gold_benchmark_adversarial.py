@@ -57,6 +57,72 @@ class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
             "METRIC_HARD_NEGATIVE_VALIDATION_ERROR_COUNT_ABOVE_POLICY_CEILING",
             report.blockers,
         )
+        self.assertEqual(report.coverage["hard_negative_tag_counts"]["relation_direction"], 0)
+        self.assertEqual(
+            report.coverage["declared_hard_negative_tag_counts"]["relation_direction"], 1
+        )
+
+    def test_each_hard_negative_family_requires_observable_index_evidence(self):
+        attacks = (
+            ("R-CONTESTED", "旅客有多少名？", ["numeric_prefix"], "numeric_prefix"),
+            ("R-TEMPORAL", "旅客有多少名？", ["temporal_scope"], "temporal_scope"),
+            ("R-TEMPORAL", "旅客有多少名？", ["contested_fact"], "contested_fact"),
+            ("R-LEXICAL", "旅客有多少层？", ["lexical_distractor"], "lexical_distractor"),
+            (
+                "R-OPEN-2",
+                "银河是谁发明的？",
+                ["entity_only_no_predicate"],
+                "entity_only_no_predicate",
+            ),
+            (
+                "R-OPEN-1",
+                "银河为何发光？",
+                ["unsupported_open_predicate"],
+                "unsupported_open_predicate",
+            ),
+            (
+                "R-ABSENCE",
+                "访客允许进入吗？",
+                ["absence_not_negative"],
+                "absence_not_negative",
+            ),
+        )
+        for case_id, question, tags, failed_tag in attacks:
+            with self.subTest(tag=failed_tag), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                paths, gold, rows = self.make_benchmark(root)
+                spoofed = deepcopy(rows)
+                target = next(row for row in spoofed if row["case_id"] == case_id)
+                target["question"] = question
+                target["tags"] = tags
+                self.write_rows(gold, spoofed)
+                report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+                result = next(item for item in report.cases if item.case_id == case_id)
+            self.assertFalse(report.passed)
+            self.assertIn(
+                f"HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:{failed_tag}",
+                result.reason_codes,
+            )
+            self.assertLess(
+                report.coverage["hard_negative_tag_counts"][failed_tag],
+                report.coverage["declared_hard_negative_tag_counts"][failed_tag],
+            )
+
+    def test_numeric_prefix_requires_same_subject_and_unit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths, gold, rows = self.make_benchmark(root)
+            spoofed = deepcopy(rows)
+            target = next(row for row in spoofed if row["case_id"] == "R-CONTESTED")
+            target["question"] = "守卫有多少名？"
+            target["tags"] = ["numeric_prefix"]
+            self.write_rows(gold, spoofed)
+            report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+            result = next(item for item in report.cases if item.case_id == "R-CONTESTED")
+        self.assertIn(
+            "HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:numeric_prefix",
+            result.reason_codes,
+        )
 
     def test_smoke_report_cannot_satisfy_required_release_profile(self):
         with tempfile.TemporaryDirectory() as directory:

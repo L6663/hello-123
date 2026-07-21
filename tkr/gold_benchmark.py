@@ -352,7 +352,7 @@ def _validate_hard_negative_tags(
         if expected_decision != "refused_unsupported" or expected_predicate != "unsupported":
             raise BenchmarkError(f"Gold case {case_id} has a spoofed unsupported hard-negative tag")
     if "relation_direction" in tag_set:
-        if expected_predicate not in {"alias", "defeats", "located_in"} or expected_decision not in REFUSAL_DECISIONS:
+        if expected_predicate not in {"defeats", "located_in"} or expected_decision not in REFUSAL_DECISIONS:
             raise BenchmarkError(f"Gold case {case_id} has a spoofed relation-direction tag")
     if "numeric_prefix" in tag_set:
         if expected_predicate != "count" or expected_decision == "refused_unsupported":
@@ -463,25 +463,46 @@ def load_gold_cases(path: str | Path) -> tuple[GoldCase, ...]:
     return tuple(cases)
 
 
-def _coverage(cases: Sequence[GoldCase]) -> dict[str, object]:
+def _coverage(
+    cases: Sequence[GoldCase],
+    results: Sequence[CaseEvaluation],
+) -> dict[str, object]:
     decisions = Counter(case.expected_decision for case in cases)
     predicates = Counter(
         case.expected_predicate for case in cases if case.expected_decision == "answered"
     )
-    tags = Counter(tag for case in cases for tag in case.tags)
+    result_by_id = {result.case_id: result for result in results}
+    declared_tags = Counter(tag for case in cases for tag in case.tags)
+    verified_tags: Counter[str] = Counter()
+    for case in cases:
+        result = result_by_id[case.case_id]
+        failed = {
+            code.partition(":")[2]
+            for code in result.reason_codes
+            if code.startswith("HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:")
+        }
+        for tag in case.tags:
+            if tag not in HARD_NEGATIVE_TAGS or tag not in failed:
+                verified_tags[tag] += 1
     return {
         "decision_counts": {key: decisions.get(key, 0) for key in EXPECTED_DECISIONS},
         "answered_predicate_counts": {
             key: predicates.get(key, 0) for key in SUPPORTED_PREDICATES
         },
         "hard_negative_tag_counts": {
-            key: tags.get(key, 0) for key in sorted(HARD_NEGATIVE_TAGS)
+            key: verified_tags.get(key, 0) for key in sorted(HARD_NEGATIVE_TAGS)
+        },
+        "declared_hard_negative_tag_counts": {
+            key: declared_tags.get(key, 0) for key in sorted(HARD_NEGATIVE_TAGS)
         },
     }
 
 
-def _coverage_blockers(cases: Sequence[GoldCase], policy: BenchmarkPolicy) -> list[str]:
-    coverage = _coverage(cases)
+def _coverage_blockers(
+    cases: Sequence[GoldCase],
+    policy: BenchmarkPolicy,
+    coverage: Mapping[str, object],
+) -> list[str]:
     decisions = coverage["decision_counts"]
     predicates = coverage["answered_predicate_counts"]
     tags = coverage["hard_negative_tag_counts"]
@@ -698,10 +719,14 @@ def evaluate_gold_benchmark(
             raise BenchmarkError(f"benchmark {label} is missing")
 
     cases = load_gold_cases(gold_file)
-    coverage = _coverage(cases)
     results = tuple(_case_result(database, case, index_report=index_report) for case in cases)
+    coverage = _coverage(cases, results)
     metrics = _metrics(cases, results)
-    blockers = list(dict.fromkeys(_coverage_blockers(cases, policy) + _metric_blockers(metrics, policy)))
+    blockers = list(
+        dict.fromkeys(
+            _coverage_blockers(cases, policy, coverage) + _metric_blockers(metrics, policy)
+        )
+    )
     passed = not blockers
     logical_cases = [case.to_dict() for case in cases]
     base: dict[str, object] = {
