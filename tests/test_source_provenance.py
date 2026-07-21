@@ -10,6 +10,7 @@ import zipfile
 
 from tkr.source_provenance import (
     SourceProvenanceError,
+    audit_wheel_installable_payload,
     build_source_provenance,
     verify_source_provenance,
 )
@@ -19,6 +20,7 @@ from tkr.source_provenance import (
 class SourceProvenanceTests(unittest.TestCase):
     VERSION = "5.8.0a1"
     EPOCH = 1700000000
+    DIST_INFO = "text_knowledge_reader_core-5.8.0a1.dist-info/"
 
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -48,21 +50,8 @@ class SourceProvenanceTests(unittest.TestCase):
         )
         timestamp = list(time.gmtime(self.EPOCH)[:6])
         timestamp[5] -= timestamp[5] % 2
-        with zipfile.ZipFile(self.wheel, "w") as archive:
-            runtime_info = zipfile.ZipInfo(
-                "tkr/__init__.py", tuple(timestamp)
-            )
-            archive.writestr(runtime_info, self.runtime_bytes)
-            metadata_info = zipfile.ZipInfo(
-                "text_knowledge_reader_core-5.8.0a1.dist-info/METADATA",
-                tuple(timestamp),
-            )
-            archive.writestr(
-                metadata_info,
-                "Metadata-Version: 2.1\n"
-                "Name: text-knowledge-reader-core\n"
-                f"Version: {self.VERSION}\n",
-            )
+        self.timestamp = tuple(timestamp)
+        self._write_wheel()
 
         self.bundle = self.root / "source.bundle"
         self.provenance = self.root / "source-provenance.json"
@@ -80,6 +69,59 @@ class SourceProvenanceTests(unittest.TestCase):
             text=True,
         )
         return result.stdout
+
+    def _write_entry(
+        self,
+        archive: zipfile.ZipFile,
+        name: str,
+        content: str | bytes,
+    ) -> None:
+        info = zipfile.ZipInfo(name, self.timestamp)
+        archive.writestr(info, content)
+
+    def _write_wheel(
+        self,
+        *,
+        entry_point_target: str = "tkr:main",
+        extra_entries: dict[str, bytes] | None = None,
+    ) -> None:
+        with zipfile.ZipFile(self.wheel, "w") as archive:
+            self._write_entry(
+                archive, "tkr/__init__.py", self.runtime_bytes
+            )
+            self._write_entry(
+                archive,
+                f"{self.DIST_INFO}METADATA",
+                "Metadata-Version: 2.1\n"
+                "Name: text-knowledge-reader-core\n"
+                f"Version: {self.VERSION}\n",
+            )
+            self._write_entry(
+                archive,
+                f"{self.DIST_INFO}WHEEL",
+                "Wheel-Version: 1.0\n"
+                "Generator: test\n"
+                "Root-Is-Purelib: true\n"
+                "Tag: py3-none-any\n",
+            )
+            self._write_entry(
+                archive,
+                f"{self.DIST_INFO}entry_points.txt",
+                "[console_scripts]\n"
+                f"tkr-test = {entry_point_target}\n",
+            )
+            self._write_entry(
+                archive,
+                f"{self.DIST_INFO}top_level.txt",
+                "tkr\n",
+            )
+            self._write_entry(
+                archive,
+                f"{self.DIST_INFO}RECORD",
+                "",
+            )
+            for name, payload in (extra_entries or {}).items():
+                self._write_entry(archive, name, payload)
 
     def _build(self) -> None:
         build_source_provenance(
@@ -102,6 +144,7 @@ class SourceProvenanceTests(unittest.TestCase):
             release_version=self.VERSION,
         )
         self.assertTrue(result["source_provenance_verified"])
+        self.assertTrue(result["installable_payload_policy_verified"])
         self.assertEqual(result["source_commit"], self.commit)
         self.assertEqual(result["runtime_file_count"], 1)
 
@@ -121,8 +164,7 @@ class SourceProvenanceTests(unittest.TestCase):
 
     def test_modified_wheel_is_rejected(self) -> None:
         self._build()
-        with zipfile.ZipFile(self.wheel, "a") as archive:
-            archive.writestr("tampered.txt", b"tampered")
+        self._write_wheel(extra_entries={"tampered.txt": b"tampered"})
         with self.assertRaisesRegex(
             SourceProvenanceError, "wheel SHA-256 mismatch"
         ):
@@ -148,6 +190,35 @@ class SourceProvenanceTests(unittest.TestCase):
                 source_date_epoch=self.EPOCH + 2,
                 release_version=self.VERSION,
             )
+
+    def test_top_level_sitecustomize_is_rejected(self) -> None:
+        self._write_wheel(
+            extra_entries={"sitecustomize.py": b"raise SystemExit\n"}
+        )
+        violations = audit_wheel_installable_payload(self.wheel)
+        self.assertTrue(
+            any("unexpected installable wheel entry" in item for item in violations)
+        )
+        with self.assertRaisesRegex(
+            SourceProvenanceError, "unexpected installable wheel entry"
+        ):
+            self._build()
+
+    def test_top_level_pth_is_rejected(self) -> None:
+        self._write_wheel(extra_entries={"execute.pth": b"import evil\n"})
+        violations = audit_wheel_installable_payload(self.wheel)
+        self.assertTrue(any("execute.pth" in item for item in violations))
+
+    def test_entry_point_outside_tkr_is_rejected(self) -> None:
+        self._write_wheel(entry_point_target="evil_module:main")
+        violations = audit_wheel_installable_payload(self.wheel)
+        self.assertTrue(
+            any("unbound module" in item for item in violations)
+        )
+        with self.assertRaisesRegex(
+            SourceProvenanceError, "unbound module"
+        ):
+            self._build()
 
 
 if __name__ == "__main__":
