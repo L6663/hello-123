@@ -18,7 +18,7 @@ The release candidate adds two integration gates beyond the stage-specific unit 
 - `benchmark/release_benchmark.py` builds a versioned 108-case Release Gold corpus with 48 answered cases, 20 cases for each refusal class, complete six-predicate coverage, and repeated database-grounded hard negatives;
 - `.github/workflows/release-acceptance.yml` builds the wheel, installs it into an isolated environment, checks every console script, audits wheel contents and installed size, runs the Release Gold gate from the installed wheel, verifies the report exactly, and uploads the evidence bundle on Python 3.10, 3.11, and 3.12.
 
-Expected decisions and structured answer Claims are first-party curated. Fact IDs and evidence hashes are mechanically bound only after exact Claim equality checks. This is a reproducible release behavior gate, not independent external annotation and not an open-domain understanding claim.
+Expected decisions and structured answer Claims are first-party curated. The complete case specifications and full Gold JSONL bytes are bound to immutable SHA-256 commitments, so candidate-generated Fact IDs and evidence hashes are accepted only when the entire Gold artifact reproduces the pre-existing commitment exactly. This is a reproducible release behavior gate, not independent external annotation and not an open-domain understanding claim.
 
 ## Phase 7 contract
 
@@ -77,6 +77,7 @@ Unknown fields, duplicate case IDs, parser-label mismatches, invalid hashes, vac
 ## Usage
 
 ```bash
+# Install the package before using either the console commands or the benchmark script.
 python -m pip install .
 
 # Run the non-certifying integration gate.
@@ -100,7 +101,7 @@ tkr-gold-benchmark verify \
   project/benchmark/release-report.json \
   --require-profile release
 
-# Build the versioned RC benchmark and evidence manifest.
+# Build the versioned RC benchmark and evidence manifest with the installed package.
 python benchmark/release_benchmark.py --output build/release-benchmark
 ```
 
