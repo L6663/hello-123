@@ -8,7 +8,13 @@ from pathlib import Path
 import sys
 import zipfile
 
-from tkr.source_provenance import audit_wheel_installable_payload
+# The policy must come from the reviewed checkout, never from the wheel under test.
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_TEXT = str(REPOSITORY_ROOT)
+if not sys.path or sys.path[0] != REPOSITORY_TEXT:
+    sys.path.insert(0, REPOSITORY_TEXT)
+
+import tkr.source_provenance as source_provenance  # noqa: E402
 
 DISTRIBUTION = "text-knowledge-reader-core"
 EXPECTED_VERSION = "5.8.0a1"
@@ -35,10 +41,21 @@ REQUIRED_MODULES = {
     "tkr/source_provenance.py",
 }
 FORBIDDEN_PREFIXES = ("tests/", "benchmark/", "tools/", ".github/")
+TRUSTED_POLICY_PATH = (REPOSITORY_ROOT / "tkr" / "source_provenance.py").resolve()
 
 
 def digest(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()
+
+
+def _assert_checkout_policy() -> Path:
+    loaded = Path(source_provenance.__file__).resolve()
+    if loaded != TRUSTED_POLICY_PATH:
+        raise SystemExit(
+            "wheel audit policy was not loaded from the reviewed checkout: "
+            f"{loaded} != {TRUSTED_POLICY_PATH}"
+        )
+    return loaded
 
 
 def installed_size(distribution: importlib.metadata.Distribution) -> int:
@@ -54,6 +71,7 @@ def installed_size(distribution: importlib.metadata.Distribution) -> int:
 
 
 def audit(wheel: Path) -> dict[str, object]:
+    verifier_path = _assert_checkout_policy()
     if not wheel.is_file():
         raise SystemExit(f"wheel does not exist: {wheel}")
     try:
@@ -71,7 +89,7 @@ def audit(wheel: Path) -> dict[str, object]:
         or name.endswith((".pyc", ".pyo"))
     )
     installable_payload_violations = list(
-        audit_wheel_installable_payload(wheel)
+        source_provenance.audit_wheel_installable_payload(wheel)
     )
 
     distribution = importlib.metadata.distribution(DISTRIBUTION)
@@ -113,6 +131,8 @@ def audit(wheel: Path) -> dict[str, object]:
         "installable_payload_violations": installable_payload_violations,
         "missing_commands": missing_commands,
         "unexpected_commands": unexpected_commands,
+        "verifier_origin": "reviewed_checkout",
+        "verifier_source_sha256": digest(verifier_path),
         "failures": failures,
         "accepted": not failures,
     }
