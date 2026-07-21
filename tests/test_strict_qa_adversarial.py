@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from test_hybrid_retrieval import RetrievalFixture
-from tkr.strict_qa import answer_strict, verify_strict_packet
+from tkr.strict_qa import StrictQAError, answer_strict, verify_strict_packet
 
 
 class StrictQAAdversarialTests(RetrievalFixture):
@@ -148,6 +148,17 @@ class StrictQAAdversarialTests(RetrievalFixture):
             result = verify_strict_packet(paths[4], forged)
         self.assertFalse(result.accepted)
         self.assertIn("CITATIONS_NOT_ENTAILED", result.reason_codes)
+
+    def test_integrity_bypass_is_rejected_before_answer_generation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["守卫共有100名。"],
+                [{"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"}],
+            )
+            with self.assertRaises(StrictQAError):
+                answer_strict(paths[4], "守卫有多少名？", verify_database=False)
 
 
 if __name__ == "__main__":
