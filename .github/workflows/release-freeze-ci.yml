@@ -1,8 +1,5 @@
 name: release-freeze-ci
 on:
-  push:
-    branches:
-      - feature/full-ingestion-v5.9-alpha1
   pull_request:
 permissions:
   contents: write
@@ -31,25 +28,15 @@ jobs:
       - name: Compile integrated source
         run: python -m compileall -q tkr tests tools benchmark
       - name: Run integrated tests
-        id: tests
-        continue-on-error: true
+        shell: bash
+        run: python -m unittest discover -s tests -q
+      - name: Commit integrated implementation
         shell: bash
         run: |
-          set -o pipefail
-          python -m unittest discover -s tests -v 2>&1 | tee v59-tests-python-3.11.log
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: v59-integration-tests-python-3.11
-          path: v59-tests-python-3.11.log
-          if-no-files-found: error
-      - name: Require integrated tests
-        if: steps.tests.outcome != 'success'
-        run: exit 1
-      - name: Commit integrated implementation
-        run: |
+          set -euo pipefail
+          rm -f v59-tests-python-3.11.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "feat(v5.9): complete full ingestion and long-corpus validation"
-          git push
+          git push origin HEAD:feature/full-ingestion-v5.9-alpha1
