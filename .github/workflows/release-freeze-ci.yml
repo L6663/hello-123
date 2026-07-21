@@ -28,10 +28,24 @@ jobs:
           rm -rf .github/v59-delta .github/v59-payload
           rm -f .github/v59-delta-trigger.txt
           rm -f .github/workflows/apply-v59-delta.yml
-      - name: Validate integrated source
+      - name: Compile integrated source
+        run: python -m compileall -q tkr tests tools benchmark
+      - name: Run integrated tests
+        id: tests
+        continue-on-error: true
+        shell: bash
         run: |
-          python -m compileall -q tkr tests tools benchmark
-          python -m unittest discover -s tests -q
+          set -o pipefail
+          python -m unittest discover -s tests -v 2>&1 | tee v59-tests-python-3.11.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v59-integration-tests-python-3.11
+          path: v59-tests-python-3.11.log
+          if-no-files-found: error
+      - name: Require integrated tests
+        if: steps.tests.outcome != 'success'
+        run: exit 1
       - name: Commit integrated implementation
         run: |
           git config user.name "github-actions[bot]"
