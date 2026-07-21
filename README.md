@@ -11,6 +11,15 @@ This repository hardens one subsystem at a time and keeps every stage independen
 - **v5.6 Phase 6:** strict answers, evidence packets, citation entailment, and refusal decisions;
 - **v5.7 Phase 7:** immutable Gold Benchmark coverage, accuracy, refusal, citation, and hallucination gates.
 
+## v5.7.0-rc1 acceptance
+
+The release candidate adds two integration gates beyond the stage-specific unit and adversarial suites:
+
+- `benchmark/release_benchmark.py` builds a versioned 108-case Release Gold corpus with 48 answered cases, 20 cases for each refusal class, complete six-predicate coverage, and repeated database-grounded hard negatives;
+- `.github/workflows/release-acceptance.yml` builds the wheel, installs it into an isolated environment, checks every console script, audits wheel contents and installed size, runs the Release Gold gate from the installed wheel, verifies the report exactly, and uploads the evidence bundle on Python 3.10, 3.11, and 3.12.
+
+Expected decisions and structured answer Claims are first-party curated. Fact IDs and evidence hashes are mechanically bound only after exact Claim equality checks. This is a reproducible release behavior gate, not independent external annotation and not an open-domain understanding claim.
+
 ## Phase 7 contract
 
 Phase 7 evaluates Phase 6 against a JSONL Gold set. The dataset cannot provide thresholds. The CLI exposes only two built-in policy profiles:
@@ -90,6 +99,9 @@ tkr-gold-benchmark verify \
   project/benchmark/gold-release.jsonl \
   project/benchmark/release-report.json \
   --require-profile release
+
+# Build the versioned RC benchmark and evidence manifest.
+python benchmark/release_benchmark.py --output build/release-benchmark
 ```
 
 A report binds the SQLite database SHA-256, index-report SHA-256, raw Gold-file SHA-256, logical Gold-case SHA-256, evaluator version, complete immutable policy, per-case outcomes, metrics, blockers, and report ID. Editing a threshold, score, case result, authority flag, or hash invalidates verification.
@@ -97,11 +109,11 @@ A report binds the SQLite database SHA-256, index-report SHA-256, raw Gold-file 
 ## Validation
 
 ```bash
-python -m compileall -q tkr tests
+python -m compileall -q tkr tests benchmark tools
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the complete stack on Python 3.10, 3.11, and 3.12.
+GitHub Actions runs the complete stack and independent wheel acceptance on Python 3.10, 3.11, and 3.12.
 
 ## Deliberate limits
 
