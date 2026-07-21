@@ -29,9 +29,12 @@ jobs:
           code=$?
           PYTHONPATH=tests python - <<'PY' >> phase7-review-fix.log 2>&1
           from pathlib import Path
+          import sqlite3
           import tempfile
           from test_gold_benchmark import GoldBenchmarkFixture
           from tkr.gold_benchmark import evaluate_gold_benchmark
+          from tkr.hybrid_retrieval import parse_predicate_query, _normalize_surface
+          from tkr.gold_hard_negatives import _numeric_prefix_collision_exists
 
           fixture = GoldBenchmarkFixture()
           with tempfile.TemporaryDirectory() as directory:
@@ -45,6 +48,19 @@ jobs:
                   ]
                   if failures:
                       print(case.case_id, case.actual_decision, failures)
+              intent = parse_predicate_query("来客有多少名？")
+              print("COUNT_INTENT", intent.to_dict())
+              print("COUNT_NORMALIZED", _normalize_surface(intent.subject), _normalize_surface(intent.raw_query))
+              connection = sqlite3.connect(paths[4])
+              rows = connection.execute(
+                  "SELECT fact_id,subject,normalized_subject,value_json,value_text,unit,canonical_status,evidence_text "
+                  "FROM facts WHERE claim_type='count' ORDER BY evidence_start"
+              ).fetchall()
+              print("COUNT_ROWS")
+              for row in rows:
+                  print(row)
+              print("PREFIX_RESULT", _numeric_prefix_collision_exists(connection, intent, None))
+              connection.close()
           PY
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
