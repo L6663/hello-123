@@ -1,0 +1,23 @@
+name: phase8-review-fixes-pr
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/apply_phase8_review_fixes.py"
+      - ".github/workflows/phase8-review-fixes-pr.yml"
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/release-freeze-v5.8-alpha1
+          fetch-depth: 0
+      - run: python .github/scripts/apply_phase8_review_fixes.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(phase8): validate provenance and protect evidence paths"
+          git push origin HEAD:feature/release-freeze-v5.8-alpha1
