@@ -1,7 +1,6 @@
 name: phase7-debug
 on:
-  push:
-    branches: [feature/gold-benchmark-v5.7-alpha1]
+  pull_request:
     paths: [".github/workflows/phase7-debug.yml"]
 permissions:
   contents: read
