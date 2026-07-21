@@ -230,15 +230,27 @@ class ReleaseFreezeTests(unittest.TestCase):
             source_date_epoch=1700000000,
             output_path=path,
         )
+        self.assertFalse(payload["technical_gate_passed"])
+        self.assertTrue(payload["verification_required"])
         self.assertFalse(payload["may_freeze"])
         self.assertTrue(payload["requires_explicit_approval"])
+        self.assertEqual(payload["status"], "prepared")
+        self.assertFalse(payload["evidence"]["deep_verification_performed"])
         return path
 
-    def test_prepare_and_verify_candidate(self) -> None:
+    def test_prepare_is_lightweight_and_verify_is_strict(self) -> None:
         candidate = self._prepare()
+        self.assertEqual(self.verify_mock.call_count, 0)
+        self.assertEqual(self.source_mock.call_count, 0)
+
         result = verify_freeze_candidate(candidate, root=self.root)
         self.assertTrue(result["accepted"])
+        self.assertTrue(result["technical_gate_passed"])
         self.assertFalse(result["may_freeze"])
+        self.assertIn(
+            "PREPARED_MANIFEST_RECOMPUTED",
+            result["reason_codes"],
+        )
         self.assertIn(
             "RELEASE_BENCHMARK_RECOMPUTED",
             result["reason_codes"],
@@ -247,7 +259,8 @@ class ReleaseFreezeTests(unittest.TestCase):
             "REPRODUCIBLE_WHEELS_REHASHED",
             result["reason_codes"],
         )
-        self.assertGreaterEqual(self.verify_mock.call_count, 2)
+        self.assertEqual(self.verify_mock.call_count, 1)
+        self.assertEqual(self.source_mock.call_count, 1)
 
     def test_tampered_artifact_is_rejected(self) -> None:
         candidate = self._prepare()
@@ -284,16 +297,11 @@ class ReleaseFreezeTests(unittest.TestCase):
             json.dumps(payload),
             encoding="utf-8",
         )
+        candidate = self._prepare()
         with self.assertRaisesRegex(
             FreezeError, "disagree on wheel SHA-256"
         ):
-            prepare_freeze_candidate(
-                self.root,
-                self._specs(),
-                release_version=self.VERSION,
-                source_commit=self.SOURCE_COMMIT,
-                source_date_epoch=1700000000,
-            )
+            verify_freeze_candidate(candidate, root=self.root)
 
     def test_phase7_cannot_self_grant_freeze(self) -> None:
         payload = json.loads(
@@ -305,16 +313,11 @@ class ReleaseFreezeTests(unittest.TestCase):
             encoding="utf-8",
         )
         self._rewrite_manifest_hash("release-report.json")
+        candidate = self._prepare()
         with self.assertRaisesRegex(
             FreezeError, "may_freeze must be False"
         ):
-            prepare_freeze_candidate(
-                self.root,
-                self._specs(),
-                release_version=self.VERSION,
-                source_commit=self.SOURCE_COMMIT,
-                source_date_epoch=1700000000,
-            )
+            verify_freeze_candidate(candidate, root=self.root)
 
     def test_forged_release_verification_is_rejected(self) -> None:
         payload = json.loads(
@@ -326,29 +329,19 @@ class ReleaseFreezeTests(unittest.TestCase):
             encoding="utf-8",
         )
         self._rewrite_manifest_hash("release-verification.json")
+        candidate = self._prepare()
         with self.assertRaisesRegex(
             FreezeError, "independent recomputation"
         ):
-            prepare_freeze_candidate(
-                self.root,
-                self._specs(),
-                release_version=self.VERSION,
-                source_commit=self.SOURCE_COMMIT,
-                source_date_epoch=1700000000,
-            )
+            verify_freeze_candidate(candidate, root=self.root)
 
     def test_manifest_hash_mismatch_is_rejected(self) -> None:
         self.release_gold.write_bytes(b"tampered-gold")
+        candidate = self._prepare()
         with self.assertRaisesRegex(
             FreezeError, "release manifest hash mismatch"
         ):
-            prepare_freeze_candidate(
-                self.root,
-                self._specs(),
-                release_version=self.VERSION,
-                source_commit=self.SOURCE_COMMIT,
-                source_date_epoch=1700000000,
-            )
+            verify_freeze_candidate(candidate, root=self.root)
 
     def test_missing_second_reproducible_wheel_is_rejected(self) -> None:
         specs = [
@@ -382,16 +375,11 @@ class ReleaseFreezeTests(unittest.TestCase):
             json.dumps(payload),
             encoding="utf-8",
         )
+        candidate = self._prepare()
         with self.assertRaisesRegex(
             FreezeError, "not byte-identical"
         ):
-            prepare_freeze_candidate(
-                self.root,
-                self._specs(),
-                release_version=self.VERSION,
-                source_commit=self.SOURCE_COMMIT,
-                source_date_epoch=1700000000,
-            )
+            verify_freeze_candidate(candidate, root=self.root)
 
     def test_explicit_approval_creates_and_verifies_seal(self) -> None:
         candidate = self._prepare()
