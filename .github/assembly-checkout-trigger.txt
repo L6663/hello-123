@@ -1,1 +1,0 @@
-Apply checkout verifier import patch.
