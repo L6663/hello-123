@@ -13,50 +13,12 @@ on:
       - "pyproject.toml"
       - "README.md"
       - ".github/workflows/strict-qa-ci.yml"
-      - ".phase6-review-fix.patch"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply_review_fix:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.apply.outputs.changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Apply reviewed integrity correction
-        id: apply
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ ! -f .phase6-review-fix.patch ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git apply --check .phase6-review-fix.patch
-          git apply .phase6-review-fix.patch
-          python -m pip install .
-          python -m compileall -q tkr tests
-          python -m unittest discover -s tests -v
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tkr/strict_qa.py tests/test_strict_qa_adversarial.py
-          git rm .phase6-review-fix.patch
-          git commit -m "fix(qa): require database integrity verification"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-
   test:
-    needs: apply_review_fix
-    if: github.event_name == 'pull_request' && needs.apply_review_fix.result == 'success' && needs.apply_review_fix.outputs.changed != 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
