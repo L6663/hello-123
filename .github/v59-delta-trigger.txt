@@ -1,1 +1,1 @@
-Apply the verified v5.9 full-ingestion delta. Retry 2.
+Apply the verified v5.9 full-ingestion delta. Retry after PR registration.
