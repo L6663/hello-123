@@ -322,13 +322,19 @@ def _text(value: object, label: str) -> str:
     return value.strip()
 
 
-def _strings(value: object, label: str, *, required: bool) -> tuple[str, ...]:
+def _strings(
+    value: object,
+    label: str,
+    *,
+    required: bool,
+    unique: bool = True,
+) -> tuple[str, ...]:
     if not isinstance(value, list):
         raise BenchmarkError(f"{label} must be a JSON array")
     result: list[str] = []
     for item in value:
         text = _text(item, label)
-        if text in result:
+        if unique and text in result:
             raise BenchmarkError(f"{label} contains duplicate value: {text}")
         result.append(text)
     if required and not result:
@@ -394,7 +400,10 @@ def _parse_case(row: Mapping[str, object], line_number: int) -> GoldCase:
     tags = _strings(row.get("tags"), "tags", required=True)
     fact_ids = _strings(row.get("expected_fact_ids", []), "expected_fact_ids", required=False)
     evidence_hashes = _strings(
-        row.get("expected_evidence_sha256", []), "expected_evidence_sha256", required=False
+        row.get("expected_evidence_sha256", []),
+        "expected_evidence_sha256",
+        required=False,
+        unique=False,
     )
     if any(not _HEX64.fullmatch(value) for value in evidence_hashes):
         raise BenchmarkError(f"Gold case {case_id} has an invalid evidence SHA-256")
