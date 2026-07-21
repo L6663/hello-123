@@ -35,13 +35,14 @@ Phase 8 separates technical readiness from human release authority.
 
 `tkr-release-freeze prepare` requires and binds:
 
-- one exact wheel;
-- one Release Gold manifest, report, and verification result;
+- one exact release wheel;
+- the Release Gold manifest and every file committed by it: normalized source, Unit index, accepted Claims, SQLite database, index report, Gold JSONL, benchmark report, and benchmark verification;
 - accepted package reports from Python 3.10, 3.11, and 3.12;
-- one reproducible-build report containing at least two byte-identical wheel builds;
+- one reproducible-build report;
+- at least two actual reproducible-build wheel files whose bytes are independently rehashed;
 - release version, source commit, and fixed source-date epoch.
 
-The candidate recomputes every file size and SHA-256, rechecks the Release Gold authority boundary, confirms all package reports point to the same wheel, and verifies byte-for-byte reproducibility. A technical candidate always contains:
+The candidate recomputes every file size and SHA-256, reruns Release Gold verification from the bound database and Gold inputs, confirms all package reports point to the same wheel, and verifies byte-for-byte reproducibility from the bound wheel files. A technical candidate always contains:
 
 ```json
 {
@@ -94,6 +95,7 @@ tkr-gold-benchmark verify \
   --require-profile release
 
 # Prepare a non-authorizing technical candidate.
+# Every path below must be inside --root.
 tkr-release-freeze prepare \
   --root release-evidence \
   --version 5.8.0a1 \
@@ -101,12 +103,20 @@ tkr-release-freeze prepare \
   --source-date-epoch 1700000000 \
   --artifact wheel=release-evidence/text_knowledge_reader_core-5.8.0a1-py3-none-any.whl \
   --artifact release_manifest=release-evidence/release-manifest.json \
+  --artifact release_source=release-evidence/normalized-text.txt \
+  --artifact release_units=release-evidence/unit-index.csv \
+  --artifact release_claims=release-evidence/claims.accepted.jsonl \
+  --artifact release_database=release-evidence/knowledge.sqlite3 \
+  --artifact release_index_report=release-evidence/knowledge.report.json \
+  --artifact release_gold=release-evidence/gold-release.jsonl \
   --artifact release_report=release-evidence/release-report.json \
   --artifact release_verification=release-evidence/release-verification.json \
   --artifact reproducible_build_report=release-evidence/reproducible-build-report.json \
   --artifact package_acceptance=release-evidence/package-acceptance-python-3.10.json \
   --artifact package_acceptance=release-evidence/package-acceptance-python-3.11.json \
-  --artifact package_acceptance=release-evidence/package-acceptance-python-3.12.json
+  --artifact package_acceptance=release-evidence/package-acceptance-python-3.12.json \
+  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-01.whl \
+  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-02.whl
 
 # Recompute candidate evidence and hashes.
 tkr-release-freeze verify release-evidence/freeze-candidate.json \
@@ -119,6 +129,8 @@ tkr-release-freeze seal \
   --root release-evidence \
   --output release-evidence/freeze-seal.json
 ```
+
+For CI-produced evidence, `tools/assemble_freeze_candidate.py` copies the complete benchmark chain and both build wheels into a dedicated candidate directory before invoking the same verifier.
 
 ## Validation
 
