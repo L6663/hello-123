@@ -235,6 +235,37 @@ class ReleaseFreezeTests(unittest.TestCase):
                 root=self.root,
             )
 
+    def _rewrite_candidate_id(self, payload: dict[str, object]) -> None:
+        core = dict(payload)
+        core.pop("candidate_id", None)
+        canonical = json.dumps(
+            core,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        payload["candidate_id"] = "freeze_candidate_" + sha256(
+            canonical.encode("utf-8")
+        ).hexdigest()[:24]
+
+    def test_verify_rejects_malformed_source_commit_even_with_recomputed_id(self) -> None:
+        candidate = self._prepare()
+        payload = json.loads(candidate.read_text(encoding="utf-8"))
+        payload["source_commit"] = "not-a-git-sha"
+        self._rewrite_candidate_id(payload)
+        candidate.write_text(json.dumps(payload), encoding="utf-8")
+        with self.assertRaisesRegex(FreezeError, "lowercase 40-character Git SHA"):
+            verify_freeze_candidate(candidate, root=self.root)
+
+    def test_verify_rejects_negative_source_epoch_even_with_recomputed_id(self) -> None:
+        candidate = self._prepare()
+        payload = json.loads(candidate.read_text(encoding="utf-8"))
+        payload["source_date_epoch"] = -1
+        self._rewrite_candidate_id(payload)
+        candidate.write_text(json.dumps(payload), encoding="utf-8")
+        with self.assertRaisesRegex(FreezeError, "non-negative integer"):
+            verify_freeze_candidate(candidate, root=self.root)
+
 
 if __name__ == "__main__":
     unittest.main()

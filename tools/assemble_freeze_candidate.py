@@ -28,6 +28,25 @@ def python_minor(value: object) -> str:
     return match.group(1)
 
 
+def ensure_disjoint_output(
+    matrix_root: Path,
+    output_root: Path,
+    reproducible_wheels: list[Path],
+) -> None:
+    """Reject output paths that could delete or overwrite release evidence."""
+
+    matrix = matrix_root.resolve()
+    output = output_root.resolve()
+    if output == matrix or output in matrix.parents or matrix in output.parents:
+        raise SystemExit(
+            "output root must be a dedicated directory disjoint from matrix input"
+        )
+    for wheel in reproducible_wheels:
+        resolved = wheel.resolve()
+        if output == resolved or output in resolved.parents:
+            raise SystemExit("output root must not contain a reproducible wheel input")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Assemble a Phase 8 technical freeze candidate.")
     parser.add_argument("--matrix-root", type=Path, required=True)
@@ -40,7 +59,10 @@ def main() -> int:
 
     if len(args.reproducible_wheel) < 2:
         raise SystemExit("at least two reproducible wheels are required")
+    matrix_root = args.matrix_root.resolve()
+    reproducible_wheels = [item.resolve() for item in args.reproducible_wheel]
     output = args.output_root.resolve()
+    ensure_disjoint_output(matrix_root, output, reproducible_wheels)
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
@@ -48,7 +70,7 @@ def main() -> int:
     reports: dict[str, Path] = {}
     accepted_wheel_hashes: set[str] = set()
     accepted_wheel_names: set[str] = set()
-    for path in args.matrix_root.rglob("package-acceptance.json"):
+    for path in matrix_root.rglob("package-acceptance.json"):
         payload = load(path)
         if payload.get("accepted") is not True:
             raise SystemExit(f"package acceptance is not accepted: {path}")
@@ -66,7 +88,7 @@ def main() -> int:
     expected_wheel_sha = next(iter(accepted_wheel_hashes))
     wheel_name = next(iter(accepted_wheel_names))
 
-    source_wheels = list(args.matrix_root.rglob(wheel_name))
+    source_wheels = list(matrix_root.rglob(wheel_name))
     if not source_wheels:
         raise SystemExit(f"accepted wheel not found: {wheel_name}")
     if any(digest(path) != expected_wheel_sha for path in source_wheels):
@@ -74,7 +96,7 @@ def main() -> int:
     wheel = output / wheel_name
     shutil.copy2(source_wheels[0], wheel)
 
-    benchmark_roots = list(args.matrix_root.rglob("benchmark/release-manifest.json"))
+    benchmark_roots = list(matrix_root.rglob("benchmark/release-manifest.json"))
     if not benchmark_roots:
         raise SystemExit("release benchmark evidence not found")
     benchmark = benchmark_roots[0].parent
@@ -90,7 +112,7 @@ def main() -> int:
         shutil.copy2(reports[minor], target)
         package_targets.append(target)
 
-    build_hashes = [digest(path.resolve()) for path in args.reproducible_wheel]
+    build_hashes = [digest(item) for item in reproducible_wheels]
     reproducible = {
         "schema_version": "tkr-reproducible-build-v1",
         "accepted": len(set(build_hashes)) == 1 and build_hashes[0] == expected_wheel_sha,

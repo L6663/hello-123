@@ -368,6 +368,18 @@ def verify_freeze_candidate(
     if payload["status"] != "candidate":
         raise FreezeError("freeze candidate status must be candidate")
 
+    release_version = _nonempty_string(payload["release_version"], "release_version")
+    source_commit = _nonempty_string(payload["source_commit"], "source_commit")
+    if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
+        raise FreezeError("source_commit must be a lowercase 40-character Git SHA")
+    source_date_epoch = payload["source_date_epoch"]
+    if (
+        not isinstance(source_date_epoch, int)
+        or isinstance(source_date_epoch, bool)
+        or source_date_epoch < 0
+    ):
+        raise FreezeError("source_date_epoch must be a non-negative integer")
+
     root_path = Path(root).resolve() if root is not None else path.parent.resolve()
     raw_records = payload["artifacts"]
     if not isinstance(raw_records, list) or not raw_records:
@@ -386,7 +398,6 @@ def verify_freeze_candidate(
         if _sha256_path(artifact) != record.sha256:
             raise FreezeError(f"freeze artifact SHA-256 mismatch: {record.path}")
 
-    release_version = _nonempty_string(payload["release_version"], "release_version")
     evidence = _validate_release_evidence(root_path, records, release_version=release_version)
     if payload["evidence"] != evidence:
         raise FreezeError("freeze candidate evidence summary mismatch")
