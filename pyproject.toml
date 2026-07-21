@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text-knowledge-reader-core"
+version = "5.7.0rc1"
+description = "Auditable typed QA with immutable Gold Benchmark safety gates for Text Knowledge Reader"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Text Knowledge Reader project"}]
+dependencies = []
+
+[project.scripts]
+tkr-chunk = "tkr.cli:main"
+tkr-claim-validate = "tkr.claim_cli:main"
+tkr-entity-normalize = "tkr.entity_cli:main"
+tkr-retrieval = "tkr.retrieval_cli:main"
+tkr-strict-qa = "tkr.strict_qa_cli:main"
+tkr-gold-benchmark = "tkr.gold_benchmark_cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tkr*"]
