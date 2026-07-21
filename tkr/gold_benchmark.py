@@ -857,6 +857,14 @@ def verify_benchmark_report(
     unique = tuple(dict.fromkeys(reasons))
     if unique:
         return BenchmarkVerification("rejected", False, unique, supplied_id, expected.report_id)
+    if not expected.passed:
+        return BenchmarkVerification(
+            "rejected",
+            False,
+            ("BENCHMARK_RECOMPUTED_EXACTLY", "BENCHMARK_POLICY_NOT_PASSED"),
+            supplied_id,
+            expected.report_id,
+        )
     return BenchmarkVerification(
         "accepted",
         True,
