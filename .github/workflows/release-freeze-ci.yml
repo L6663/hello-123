@@ -1,0 +1,36 @@
+name: release-freeze-ci
+on:
+  push:
+    branches:
+      - "feature/release-freeze-v5.8-alpha1"
+  pull_request:
+    paths:
+      - "tkr/release_freeze.py"
+      - "tkr/release_freeze_cli.py"
+      - "tests/test_release_freeze.py"
+      - "tools/assemble_freeze_candidate.py"
+      - "tools/package_acceptance.py"
+      - "pyproject.toml"
+      - "README.md"
+      - ".github/workflows/release-freeze-ci.yml"
+      - ".github/workflows/release-acceptance.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install .
+      - run: python -m compileall -q tkr tests tools benchmark
+      - run: python -m unittest discover -s tests -v
+      - run: tkr-release-freeze --help
