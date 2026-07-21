@@ -1,0 +1,95 @@
+name: release-acceptance
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  package-and-benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build wheel and source distribution
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+      - name: Install wheel into an isolated environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install --upgrade pip
+          WHEEL=$(ls dist/*.whl)
+          .release-venv/bin/python -m pip install "$WHEEL"
+          .release-venv/bin/python -m pip check
+      - name: Verify installed console scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for command in \
+            tkr-chunk \
+            tkr-claim-validate \
+            tkr-entity-normalize \
+            tkr-retrieval \
+            tkr-strict-qa \
+            tkr-gold-benchmark
+          do
+            ".release-venv/bin/$command" --help >/dev/null
+          done
+      - name: Audit wheel contents and installed footprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "release-artifacts/python-${{ matrix.python-version }}"
+          WHEEL=$(realpath $(ls dist/*.whl))
+          cd /tmp
+          "$GITHUB_WORKSPACE/.release-venv/bin/python" \
+            "$GITHUB_WORKSPACE/tools/package_acceptance.py" \
+            --wheel "$WHEEL" \
+            --output "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/package-acceptance.json"
+          "$GITHUB_WORKSPACE/.release-venv/bin/python" -m pip freeze \
+            > "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/installed-packages.txt"
+      - name: Run the 108-case Release Gold gate from the installed wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp
+          "$GITHUB_WORKSPACE/.release-venv/bin/python" \
+            "$GITHUB_WORKSPACE/benchmark/release_benchmark.py" \
+            --output "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/benchmark"
+      - name: Assert release authority and non-freeze boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/.release-venv/bin/python" - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          root = Path(os.environ["GITHUB_WORKSPACE"]) / "release-artifacts" / "python-${{ matrix.python-version }}" / "benchmark"
+          report = json.loads((root / "release-report.json").read_text(encoding="utf-8"))
+          verification = json.loads((root / "release-verification.json").read_text(encoding="utf-8"))
+          manifest = json.loads((root / "release-manifest.json").read_text(encoding="utf-8"))
+          assert report["passed"] is True
+          assert report["may_certify_release"] is True
+          assert report["may_freeze"] is False
+          assert verification["accepted"] is True
+          assert manifest["case_count"] == 108
+          assert manifest["governance"]["may_freeze"] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tkr-v5.7.0-rc1-python-${{ matrix.python-version }}
+          path: |
+            dist/*
+            release-artifacts/python-${{ matrix.python-version }}/
+          if-no-files-found: error
