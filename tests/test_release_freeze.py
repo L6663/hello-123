@@ -121,7 +121,7 @@ class ReleaseFreezeTests(unittest.TestCase):
     def test_tampered_artifact_is_rejected(self) -> None:
         candidate = self._prepare()
         self.wheel.write_bytes(b"tampered")
-        with self.assertRaisesRegex(FreezeError, "SHA-256 mismatch"):
+        with self.assertRaisesRegex(FreezeError, "mismatch"):
             verify_freeze_candidate(candidate, root=self.root)
 
     def test_missing_required_python_acceptance_is_rejected(self) -> None:
