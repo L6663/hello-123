@@ -100,15 +100,21 @@ def claim(evidence: str, claim_type: str, subject: str, **fields: Any) -> dict[s
 
 def corpus_spec() -> list[tuple[str, list[dict[str, Any]]]]:
     rows: list[tuple[str, list[dict[str, Any]]]] = []
-    for subject, alias in ALIASES:
-        text = f"{subject}后来改称{alias}。"
-        rows.append((text, [claim(text, "alias", subject, object=alias)]))
+    for (subject, alias), (location_subject, place) in zip(ALIASES, LOCATIONS):
+        if alias != location_subject:
+            raise RuntimeError("alias/location fixture mismatch")
+        alias_text = f"{subject}后来改称{alias}。"
+        location_text = f"{location_subject}位于{place}。"
+        rows.append((
+            alias_text + location_text,
+            [
+                claim(alias_text, "alias", subject, object=alias),
+                claim(location_text, "located_in", location_subject, object=place),
+            ],
+        ))
     for subject, object_value in DEFEATS:
         text = f"{subject}击败{object_value}。"
         rows.append((text, [claim(text, "defeats", subject, object=object_value)]))
-    for subject, object_value in LOCATIONS:
-        text = f"{subject}位于{object_value}。"
-        rows.append((text, [claim(text, "located_in", subject, object=object_value)]))
     for subject, value in COUNTS:
         text = f"{subject}共有{value}名。"
         rows.append((text, [claim(text, "count", subject, value=value, unit="名")]))
@@ -194,16 +200,16 @@ def case_specs() -> list[dict[str, object]]:
     cases: list[dict[str, object]] = []
     for i, (subject, alias) in enumerate(ALIASES, 1):
         q = f"{subject}后来叫什么？"
-        cases.append(answer_case(f"A-ALIAS-{i:02d}", q, "alias", expected_claim(q, "alias", subject, object_value=alias), "answerable", "alias"))
+        cases.append(answer_case(f"A-ALIAS-{i:02d}", q, "alias", expected_claim(q, "alias", subject, object_value=alias, scope="identity"), "answerable", "alias"))
     for i, (subject, obj) in enumerate(DEFEATS, 1):
         q = f"{subject}击败了谁？"
-        cases.append(answer_case(f"A-DEFEATS-{i:02d}", q, "defeats", expected_claim(q, "defeats", subject, object_value=obj), "answerable", "defeats"))
+        cases.append(answer_case(f"A-DEFEATS-{i:02d}", q, "defeats", expected_claim(q, "defeats", subject, object_value=obj, scope="defeats"), "answerable", "defeats"))
     for i, (subject, obj) in enumerate(LOCATIONS, 1):
         q = f"{subject}位于哪里？"
-        cases.append(answer_case(f"A-LOCATION-{i:02d}", q, "located_in", expected_claim(q, "located_in", subject, object_value=obj), "answerable", "located_in"))
+        cases.append(answer_case(f"A-LOCATION-{i:02d}", q, "located_in", expected_claim(q, "located_in", subject, object_value=obj, scope="location"), "answerable", "located_in"))
     for i, (subject, value) in enumerate(COUNTS, 1):
         q = f"{subject}有多少名？"
-        cases.append(answer_case(f"A-COUNT-{i:02d}", q, "count", expected_claim(q, "count", subject, value=value, unit="名"), "answerable", "count"))
+        cases.append(answer_case(f"A-COUNT-{i:02d}", q, "count", expected_claim(q, "count", subject, value=value, unit="名", scope="count:名"), "answerable", "count"))
     for i, (subject, value) in enumerate(DATES, 1):
         q = f"{subject}什么时候开始？"
         cases.append(answer_case(f"A-DATE-{i:02d}", q, "date", expected_claim(q, "date", subject, value=value, scope="start_date"), "answerable", "date"))
@@ -211,7 +217,7 @@ def case_specs() -> list[dict[str, object]]:
         q = f"{subject}允许{action}吗？"
         cases.append(answer_case(
             f"A-PERMISSION-{i:02d}", q, "permission",
-            expected_claim(q, "permission", subject, object_value=action, fact_polarity=polarity, boolean_answer=polarity),
+            expected_claim(q, "permission", subject, object_value=action, scope=f"permission:{action}", fact_polarity=polarity, boolean_answer=polarity),
             "answerable", "permission", "explicit_positive" if polarity else "explicit_negative",
         ))
 
