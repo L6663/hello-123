@@ -7,12 +7,14 @@ import unittest
 
 from test_gold_benchmark import GoldBenchmarkFixture
 from tkr.gold_benchmark import (
+    GOLD_SCHEMA_VERSION,
     POLICIES,
     BenchmarkError,
     evaluate_gold_benchmark,
     load_gold_cases,
     verify_benchmark_report,
 )
+from tkr.strict_qa import answer_strict
 
 
 class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
@@ -171,6 +173,70 @@ class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
         self.assertFalse(result.accepted)
         self.assertEqual(result.status, "rejected")
         self.assertIn("BENCHMARK_POLICY_NOT_PASSED", result.reason_codes)
+
+    def test_distinct_fact_citations_may_share_evidence_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = self.build(
+                root,
+                ["守卫共有100名。守卫共有100名。"],
+                [
+                    {
+                        "evidence": "守卫共有100名。",
+                        "claim_type": "count",
+                        "subject": "守卫",
+                        "value": 100,
+                        "unit": "名",
+                    },
+                    {
+                        "evidence": "守卫共有100名。",
+                        "claim_type": "count",
+                        "subject": "守卫",
+                        "value": 100,
+                        "unit": "名",
+                    },
+                ],
+            )
+            packet = answer_strict(
+                paths[4], "守卫有多少名？", retrieval_limit=100, max_citations=20
+            )
+            fact_ids = [citation.fact_id for citation in packet.citations]
+            evidence_hashes = [citation.evidence_sha256 for citation in packet.citations]
+            self.assertEqual(packet.decision, "answered")
+            self.assertEqual(len(fact_ids), 2)
+            self.assertEqual(len(set(fact_ids)), 2)
+            self.assertEqual(len(set(evidence_hashes)), 1)
+
+            row = {
+                "gold_schema_version": GOLD_SCHEMA_VERSION,
+                "case_id": "A-DUPLICATE-EVIDENCE",
+                "question": "守卫有多少名？",
+                "expected_decision": packet.decision,
+                "expected_predicate": "count",
+                "expected_answer_claim": packet.answer_claim.to_dict(),
+                "expected_fact_ids": fact_ids,
+                "expected_evidence_sha256": evidence_hashes,
+                "source_id_filter": None,
+                "tags": ["answerable"],
+            }
+            gold = root / "duplicate-evidence-gold.jsonl"
+            self.write_rows(gold, [row])
+            loaded = load_gold_cases(gold)
+            exact_report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+            exact_result = exact_report.cases[0]
+
+            missing_occurrence = deepcopy(row)
+            missing_occurrence["expected_evidence_sha256"] = evidence_hashes[:1]
+            self.write_rows(gold, [missing_occurrence])
+            mismatch_report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+            mismatch_result = mismatch_report.cases[0]
+
+        self.assertEqual(loaded[0].expected_evidence_sha256, tuple(evidence_hashes))
+        self.assertTrue(exact_result.citations_correct)
+        self.assertTrue(exact_result.exact_pass)
+        self.assertFalse(mismatch_result.citations_correct)
+        self.assertFalse(mismatch_result.exact_pass)
+        self.assertIn("CITATION_EXPECTATION_MISMATCH", mismatch_result.reason_codes)
 
     def test_invalid_required_profile_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
