@@ -1,7 +1,7 @@
 """Strict evidence-bound question answering for the closed typed predicate set.
 
 Phase 6 never treats lexical similarity as proof and never generates open-ended
-prose.  It consumes a verified Phase 5 ``QueryResult``, renders one deterministic
+prose. It consumes a verified Phase 5 ``QueryResult``, renders one deterministic
 answer (or a deterministic refusal), attaches exact Fact citations, and can
 recompute the complete packet to detect any later modification.
 """
@@ -16,8 +16,6 @@ from typing import Mapping, Sequence
 import unicodedata
 
 from .hybrid_retrieval import (
-    INDEX_SCHEMA_VERSION,
-    QUERY_PARSER_VERSION,
     PredicateQuery,
     QueryResult,
     RetrievalError,
@@ -197,12 +195,11 @@ def _support_result(
     *,
     source_id: str | None,
     retrieval_limit: int,
-    verify_database: bool,
     report_path: str | Path | None,
 ) -> tuple[QueryResult, bool]:
     """Return explicit support, including the opposite permission polarity.
 
-    Absence is never treated as a negative answer.  For permission questions only,
+    Absence is never treated as a negative answer. For permission questions only,
     an explicit opposite-polarity Fact can support a deterministic ``no`` answer.
     """
 
@@ -216,12 +213,10 @@ def _support_result(
         _permission_inverse_question(intent),
         source_id=source_id,
         limit=retrieval_limit,
-        verify_database=verify_database,
+        verify_database=True,
         report_path=report_path,
     )
-    if inverse.answerability == "answerable":
-        return inverse, True
-    if inverse.answerability == "ambiguous":
+    if inverse.answerability in {"answerable", "ambiguous"}:
         return inverse, True
     return primary, False
 
@@ -232,8 +227,6 @@ def _alias_answer(intent: PredicateQuery, hit: RetrievalHit) -> str:
         return hit.object or ""
     if _normalized(hit.object or "") == query_name:
         return hit.subject or ""
-    # Entity resolution can connect an alias query to a Fact whose surface differs.
-    # In that case prefer the non-empty object side of the accepted alias Fact.
     return hit.object or hit.subject or ""
 
 
@@ -257,15 +250,11 @@ def _claim_from_hit(
         if requested_role == "object":
             object_value = _alias_answer(intent, hit)
         else:
-            subject = intent.subject
-            object_value = intent.object
             boolean_answer = bool(fact_polarity)
     elif predicate == "defeats":
         if requested_role == "subject":
             subject = hit.subject or ""
-            object_value = intent.object
         elif requested_role == "object":
-            subject = intent.subject
             object_value = hit.object or ""
         else:
             boolean_answer = bool(fact_polarity)
@@ -274,9 +263,7 @@ def _claim_from_hit(
             object_value = hit.object or ""
         else:
             boolean_answer = bool(fact_polarity)
-    elif predicate == "count":
-        value = hit.value
-    elif predicate == "date":
+    elif predicate in {"count", "date"}:
         value = hit.value
     elif predicate == "permission":
         expected = intent.polarity
@@ -475,6 +462,8 @@ def answer_strict(
 ) -> StrictQAPacket:
     """Return a deterministic answered or refused evidence packet."""
 
+    if verify_database is not True:
+        raise StrictQAError("strict QA requires database integrity verification")
     _validate_limits(retrieval_limit, max_citations)
     if not isinstance(question, str) or not question.strip():
         raise StrictQAError("question must be a non-empty string")
@@ -488,7 +477,7 @@ def answer_strict(
         question,
         source_id=source_id,
         limit=retrieval_limit,
-        verify_database=verify_database,
+        verify_database=True,
         report_path=report_path,
     )
     support, opposite_permission = _support_result(
@@ -496,7 +485,6 @@ def answer_strict(
         primary,
         source_id=source_id,
         retrieval_limit=retrieval_limit,
-        verify_database=verify_database,
         report_path=report_path,
     )
 
@@ -575,8 +563,12 @@ def answer_strict(
     answer_text = _render_answer(claim, citations)
     reasons = tuple(
         dict.fromkeys(
-            (*primary.reason_codes, *(support.reason_codes if opposite_permission else ()),
-             "STRICT_TYPED_ANSWER", "CITATIONS_STRUCTURALLY_ENTAILED")
+            (
+                *primary.reason_codes,
+                *(support.reason_codes if opposite_permission else ()),
+                "STRICT_TYPED_ANSWER",
+                "CITATIONS_STRUCTURALLY_ENTAILED",
+            )
         )
     )
     return _make_packet(
@@ -686,7 +678,6 @@ def verify_strict_packet(
         if supplied.get(field) != expected_payload.get(field):
             reasons.append(code)
 
-    # Compare the remaining fields as a final completeness gate.
     if _canonical_json(supplied) != _canonical_json(expected_payload):
         reasons.append("PACKET_RECOMPUTATION_MISMATCH")
 
