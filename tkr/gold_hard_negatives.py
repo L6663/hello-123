@@ -57,31 +57,54 @@ def _numeric_prefix_collision_exists(
     if intent.predicate != "count" or not intent.subject:
         return False
     source_sql, source_params = _source_clause(source_id)
-    params: list[object] = [_normalize_surface(intent.subject)]
-    unit_sql = ""
-    if intent.unit:
-        unit_sql = " AND unit=?"
-        params.append(intent.unit)
-    params.extend(source_params)
     rows = connection.execute(
-        "SELECT value_json FROM facts WHERE claim_type='count' AND normalized_subject=?"
-        f"{unit_sql}{source_sql} ORDER BY fact_id",
-        params,
+        "SELECT normalized_subject,value_text,unit FROM facts "
+        f"WHERE claim_type='count'{source_sql} ORDER BY fact_id",
+        source_params,
     ).fetchall()
+    subject = _normalize_surface(intent.subject)
+    question = _normalize_surface(intent.raw_query)
     values: list[str] = []
-    for row in rows:
-        try:
-            value = json.loads(row[0])
-        except (TypeError, json.JSONDecodeError):
+    for normalized_subject, value_text, unit in rows:
+        normalized_subject = str(normalized_subject)
+        if normalized_subject != subject and normalized_subject not in question:
             continue
-        normalized = str(value).strip()
-        if normalized and normalized not in values:
-            values.append(normalized)
+        if intent.unit and str(unit) != intent.unit:
+            continue
+        normalized_value = str(value_text).strip()
+        if normalized_value and normalized_value not in values:
+            values.append(normalized_value)
     return any(
         left != right and (left.startswith(right) or right.startswith(left))
         for index, left in enumerate(values)
         for right in values[index + 1 :]
     )
+
+
+def _entity_name_present(
+    connection: sqlite3.Connection,
+    intent: PredicateQuery,
+    source_id: str | None,
+) -> bool:
+    question = _normalize_surface(intent.raw_query)
+    rows = connection.execute(
+        "SELECT n.normalized_name,e.source_ids_json "
+        "FROM entity_names AS n JOIN entities AS e ON e.entity_id=n.entity_id "
+        "ORDER BY length(n.normalized_name) DESC,n.normalized_name"
+    ).fetchall()
+    for normalized_name, source_ids_json in rows:
+        name = str(normalized_name)
+        if len(name) < 2 or name not in question:
+            continue
+        if source_id is None:
+            return True
+        try:
+            source_ids = json.loads(source_ids_json)
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if isinstance(source_ids, list) and source_id in source_ids:
+            return True
+    return False
 
 
 def validate_hard_negative_outcome(
@@ -117,7 +140,7 @@ def validate_hard_negative_outcome(
             elif tag == "entity_only_no_predicate":
                 established = (
                     packet.decision == "refused_unsupported"
-                    and packet.lexical_evidence_count > 0
+                    and _entity_name_present(connection, intent, source_id)
                 )
             elif tag == "unsupported_open_predicate":
                 established = packet.decision == "refused_unsupported"
