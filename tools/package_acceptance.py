@@ -9,7 +9,7 @@ import sys
 import zipfile
 
 DISTRIBUTION = "text-knowledge-reader-core"
-EXPECTED_VERSION = "5.7.0a1"
+EXPECTED_VERSION = "5.7.0rc1"
 EXPECTED_COMMANDS = {
     "tkr-chunk",
     "tkr-claim-validate",
