@@ -16,7 +16,7 @@ This repository hardens one subsystem at a time and keeps every stage independen
 Phase 7 evaluates Phase 6 against a JSONL Gold set. The dataset cannot provide thresholds. The CLI exposes only two built-in policy profiles:
 
 - `smoke`: a non-certifying integration gate with at least 12 cases;
-- `release`: a release-candidate gate with at least 100 cases.
+- `release`: a supplied-Gold behavior gate with at least 100 cases.
 
 Both profiles impose immutable requirements for:
 
@@ -63,7 +63,7 @@ Each JSONL case declares the current parser predicate and exact expected decisio
 }
 ```
 
-Unknown fields, duplicate case IDs, parser-label mismatches, invalid hashes, vacuous answered cases, or refusal cases carrying answer expectations are rejected before scoring.
+Unknown fields, duplicate case IDs, parser-label mismatches, invalid hashes, vacuous answered cases, refusal cases carrying answer expectations, and hard-negative labels that contradict the case structure are rejected before scoring.
 
 ## Usage
 
@@ -77,18 +77,19 @@ tkr-gold-benchmark run \
   --profile smoke \
   --output project/benchmark/smoke-report.json
 
-# Run the immutable release-candidate gate.
+# Run the immutable release behavior gate.
 tkr-gold-benchmark run \
   project/index/knowledge.sqlite3 \
   project/benchmark/gold-release.jsonl \
   --profile release \
   --output project/benchmark/release-report.json
 
-# Recompute the database, Gold set, policy, cases, metrics, and report ID.
+# Recompute everything and require that the saved report used the release profile.
 tkr-gold-benchmark verify \
   project/index/knowledge.sqlite3 \
   project/benchmark/gold-release.jsonl \
-  project/benchmark/release-report.json
+  project/benchmark/release-report.json \
+  --require-profile release
 ```
 
 A report binds the SQLite database SHA-256, index-report SHA-256, raw Gold-file SHA-256, logical Gold-case SHA-256, evaluator version, complete immutable policy, per-case outcomes, metrics, blockers, and report ID. Editing a threshold, score, case result, authority flag, or hash invalidates verification.
@@ -104,4 +105,4 @@ GitHub Actions runs the complete stack on Python 3.10, 3.11, and 3.12.
 
 ## Deliberate limits
 
-Phase 7 certifies only measured behavior of the six closed predicates on the supplied Gold set. It does not prove open-ended novel understanding, causal reasoning, personality analysis, thematic interpretation, pronoun resolution, or unseen-domain generalization. A passing release benchmark may mark `may_certify_release=true`, but every Phase 7 report keeps `may_freeze=false`; final artifact-chain freezing remains a later stage.
+Phase 7 certifies only measured behavior of the six closed predicates on the supplied Gold set. It does not cryptographically attest who authored that Gold set and does not prove open-ended novel understanding, causal reasoning, personality analysis, thematic interpretation, pronoun resolution, or unseen-domain generalization. A passing release benchmark may mark `may_certify_release=true`, but every Phase 7 report keeps `may_freeze=false`; final artifact-chain freezing remains a later stage.
