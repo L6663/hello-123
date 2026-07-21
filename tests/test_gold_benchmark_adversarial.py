@@ -156,6 +156,22 @@ class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
         self.assertFalse(result.accepted)
         self.assertIn("BENCHMARK_REQUIRED_PROFILE_MISMATCH", result.reason_codes)
 
+    def test_exact_but_failed_release_report_is_not_accepted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths, gold, _ = self.make_benchmark(root)
+            failed_release = evaluate_gold_benchmark(paths[4], gold, profile="release")
+            self.assertFalse(failed_release.passed)
+            result = verify_benchmark_report(
+                paths[4],
+                gold,
+                failed_release.to_dict(),
+                expected_profile="release",
+            )
+        self.assertFalse(result.accepted)
+        self.assertEqual(result.status, "rejected")
+        self.assertIn("BENCHMARK_POLICY_NOT_PASSED", result.reason_codes)
+
     def test_invalid_required_profile_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
