@@ -1,8 +1,9 @@
 name: phase7-apply-hardening
 on:
-  push:
-    branches: [feature/gold-benchmark-v5.7-alpha1]
-    paths: [".phase7-hardening.patch"]
+  pull_request:
+    paths:
+      - ".phase7-hardening.patch"
+      - ".github/workflows/phase7-apply-hardening.yml"
 permissions:
   contents: write
 jobs:
@@ -16,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Apply hardening patch
+      - name: Apply, validate, and push hardening patch
         shell: bash
         run: |
           set -euo pipefail
