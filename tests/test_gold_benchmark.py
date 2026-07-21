@@ -51,7 +51,7 @@ class GoldBenchmarkFixture(RetrievalFixture):
             ("A-COUNT", "守卫有多少名？", ["answerable"]),
             ("A-DATE", "工程什么时候开始？", ["answerable"]),
             ("A-PERMISSION", "系统允许删除吗？", ["answerable"]),
-            ("R-OPEN-1", "张三为什么击败李四？", ["unsupported_open_predicate"]),
+            ("R-OPEN-1", "张三为何背叛师门？", ["unsupported_open_predicate"]),
             ("R-OPEN-2", "玄门是谁发明的？", ["entity_only_no_predicate", "unsupported_open_predicate"]),
             ("R-DIRECTION", "李四击败了谁？", ["relation_direction"]),
             ("R-LEXICAL", "玄门有多少层？", ["lexical_distractor"]),
@@ -95,7 +95,7 @@ class GoldBenchmarkTests(GoldBenchmarkFixture):
             paths, gold, _ = self.make_benchmark(Path(directory))
             report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
         self.assertEqual(report.benchmark_schema_version, BENCHMARK_SCHEMA_VERSION)
-        self.assertTrue(report.passed)
+        self.assertTrue(report.passed, report.blockers)
         self.assertFalse(report.may_certify_release)
         self.assertFalse(report.may_freeze)
         self.assertEqual(report.case_count, 13)
