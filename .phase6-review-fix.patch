@@ -1,0 +1,40 @@
+diff --git a/tkr/strict_qa.py b/tkr/strict_qa.py
+index 87f7db9..0000000 100644
+--- a/tkr/strict_qa.py
++++ b/tkr/strict_qa.py
+@@ -476,6 +476,8 @@ def answer_strict(
+ ) -> StrictQAPacket:
+     """Return a deterministic answered or refused evidence packet."""
+ 
++    if verify_database is not True:
++        raise StrictQAError("strict QA requires database integrity verification")
+     _validate_limits(retrieval_limit, max_citations)
+     if not isinstance(question, str) or not question.strip():
+         raise StrictQAError("question must be a non-empty string")
+diff --git a/tests/test_strict_qa_adversarial.py b/tests/test_strict_qa_adversarial.py
+index 2b42312..0000000 100644
+--- a/tests/test_strict_qa_adversarial.py
++++ b/tests/test_strict_qa_adversarial.py
+@@ -6,7 +6,7 @@ import unittest
+ 
+ from test_hybrid_retrieval import RetrievalFixture
+-from tkr.strict_qa import answer_strict, verify_strict_packet
++from tkr.strict_qa import StrictQAError, answer_strict, verify_strict_packet
+@@ -149,6 +149,19 @@ class StrictQAAdversarialTests(RetrievalFixture):
+         self.assertFalse(result.accepted)
+         self.assertIn("CITATIONS_NOT_ENTAILED", result.reason_codes)
+ 
++    def test_integrity_bypass_is_rejected_before_answer_generation(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            paths = self.build(
++                root,
++                ["守卫共有100名。"],
++                [{"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"}],
++            )
++            with self.assertRaises(StrictQAError):
++                answer_strict(paths[4], "守卫有多少名？", verify_database=False)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()
