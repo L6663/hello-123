@@ -124,6 +124,24 @@ class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
             result.reason_codes,
         )
 
+    def test_numeric_prefix_rejects_substring_subject_reuse(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths, gold, rows = self.make_benchmark(root)
+            spoofed = deepcopy(rows)
+            target = next(row for row in spoofed if row["case_id"] == "R-CONTESTED")
+            target["question"] = "大来客有多少名？"
+            target["tags"] = ["numeric_prefix"]
+            self.write_rows(gold, spoofed)
+            report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+            result = next(item for item in report.cases if item.case_id == "R-CONTESTED")
+        self.assertFalse(report.passed)
+        self.assertIn(
+            "HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:numeric_prefix",
+            result.reason_codes,
+        )
+        self.assertEqual(report.coverage["hard_negative_tag_counts"]["numeric_prefix"], 0)
+
     def test_smoke_report_cannot_satisfy_required_release_profile(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
