@@ -66,7 +66,8 @@ jobs:
           cd /tmp
           "$GITHUB_WORKSPACE/.release-venv/bin/python" \
             "$GITHUB_WORKSPACE/benchmark/release_benchmark.py" \
-            --output "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/benchmark"
+            --output "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/benchmark" \
+            2>&1 | tee "$GITHUB_WORKSPACE/release-artifacts/python-${{ matrix.python-version }}/benchmark-run.log"
       - name: Assert release authority and non-freeze boundary
         shell: bash
         run: |
@@ -87,6 +88,7 @@ jobs:
           assert manifest["governance"]["may_freeze"] is False
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: tkr-v5.7.0-rc1-python-${{ matrix.python-version }}
           path: |
