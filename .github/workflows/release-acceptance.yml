@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - "release/**"
+      - "feature/release-freeze-v5.8-alpha1"
   pull_request:
 permissions:
   contents: read
@@ -42,7 +43,8 @@ jobs:
             tkr-entity-normalize \
             tkr-retrieval \
             tkr-strict-qa \
-            tkr-gold-benchmark
+            tkr-gold-benchmark \
+            tkr-release-freeze
           do
             ".release-venv/bin/$command" --help >/dev/null
           done
@@ -90,7 +92,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tkr-v5.7.0-rc1-python-${{ matrix.python-version }}
+          name: tkr-v5.8.0-alpha1-python-${{ matrix.python-version }}
           path: |
             dist/*
             release-artifacts/python-${{ matrix.python-version }}/
