@@ -1,9 +1,9 @@
 """Database-grounded validation for Phase 7 hard-negative Gold categories."""
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
-import re
 import sqlite3
 from typing import Sequence
 
@@ -12,7 +12,6 @@ from .strict_qa import StrictQAPacket
 
 
 _ACTIVE_STATUSES = ("canonical", "temporal_variant", "compatible_variant", "contested")
-_DECIMAL_TEXT = re.compile(r"^[+-]?(?:0|[1-9]\d*)(?:\.\d+)?$")
 
 
 def _source_clause(source_id: str | None) -> tuple[str, list[object]]:
@@ -51,19 +50,29 @@ def _relation_direction_exists(
     return row is not None
 
 
+def _plain_decimal(value: object) -> str | None:
+    """Normalize SQLite count text such as ``1E+2`` to plain decimal ``100``."""
+
+    try:
+        number = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError):
+        return None
+    if not number.is_finite():
+        return None
+    rendered = format(number, "f")
+    if "." in rendered:
+        rendered = rendered.rstrip("0").rstrip(".")
+    if rendered in {"-0", ""}:
+        rendered = "0"
+    return rendered
+
+
 def _numeric_prefix_collision_exists(
     connection: sqlite3.Connection,
     intent: PredicateQuery,
     source_id: str | None,
 ) -> bool:
-    """Confirm that the queried count subject has two decimal prefix-colliding values.
-
-    The count query parser's optional unit capture is intentionally not used as an
-    evidence filter here.  Unit parsing is a query-shape concern; the adversarial
-    property being certified is the presence of exact values such as 100 and 1000
-    for the same subject.  Requiring the parsed unit previously allowed harmless
-    parser differences to erase a real numeric-prefix case.
-    """
+    """Confirm two exact decimal values with a strict textual prefix collision."""
 
     if intent.predicate != "count":
         return False
@@ -82,8 +91,8 @@ def _numeric_prefix_collision_exists(
             continue
         if fact_subject != parsed_subject and fact_subject not in question:
             continue
-        normalized_value = str(value_text).strip().lstrip("+")
-        if not _DECIMAL_TEXT.fullmatch(normalized_value):
+        normalized_value = _plain_decimal(value_text)
+        if normalized_value is None:
             continue
         values_by_subject.setdefault(fact_subject, set()).add(normalized_value)
 
