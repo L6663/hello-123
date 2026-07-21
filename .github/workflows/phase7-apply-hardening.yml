@@ -1,0 +1,33 @@
+name: phase7-apply-hardening
+on:
+  push:
+    branches: [feature/gold-benchmark-v5.7-alpha1]
+    paths: [".phase7-hardening.patch"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/gold-benchmark-v5.7-alpha1
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Apply hardening patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check .phase7-hardening.patch
+          git apply .phase7-hardening.patch
+          python -m pip install .
+          python -m compileall -q tkr tests
+          python -m unittest discover -s tests -v
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/gold_benchmark.py
+          git rm .phase7-hardening.patch
+          git commit -m "fix(benchmark): harden immutable policy and Gold labels"
+          git push origin HEAD:feature/gold-benchmark-v5.7-alpha1
