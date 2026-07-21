@@ -9,7 +9,7 @@ import sys
 import zipfile
 
 DISTRIBUTION = "text-knowledge-reader-core"
-EXPECTED_VERSION = "5.7.0rc1"
+EXPECTED_VERSION = "5.8.0a1"
 EXPECTED_COMMANDS = {
     "tkr-chunk",
     "tkr-claim-validate",
@@ -17,6 +17,7 @@ EXPECTED_COMMANDS = {
     "tkr-retrieval",
     "tkr-strict-qa",
     "tkr-gold-benchmark",
+    "tkr-release-freeze",
 }
 REQUIRED_MODULES = {
     "tkr/__init__.py",
@@ -27,6 +28,8 @@ REQUIRED_MODULES = {
     "tkr/strict_qa.py",
     "tkr/gold_benchmark.py",
     "tkr/gold_hard_negatives.py",
+    "tkr/release_freeze.py",
+    "tkr/release_freeze_cli.py",
 }
 FORBIDDEN_PREFIXES = ("tests/", "benchmark/", "tools/", ".github/")
 
