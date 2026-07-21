@@ -9,83 +9,80 @@ This repository hardens one subsystem at a time and keeps every stage independen
 - **v5.4 Phase 4:** entity, alias, homonym, timeline, and conflict normalization;
 - **v5.5 Phase 5:** hash-verified SQLite indexing and predicate-aware hybrid retrieval;
 - **v5.6 Phase 6:** strict answers, evidence packets, citation entailment, and refusal decisions;
-- **v5.7 Phase 7:** immutable Gold Benchmark coverage, accuracy, refusal, citation, and hallucination gates.
+- **v5.7 Phase 7:** immutable Gold Benchmark coverage, accuracy, refusal, citation, and hallucination gates;
+- **v5.8 Phase 8:** artifact-chain manifests, reproducible wheel checks, Git-backed source provenance, explicit approval, and freeze seals.
 
-## v5.7.0-rc1 acceptance
+## v5.7 release acceptance
 
-The release candidate adds two integration gates beyond the stage-specific unit and adversarial suites:
+`benchmark/release_benchmark.py` builds a versioned 108-case Release Gold corpus with 48 answered cases, 20 cases for each refusal class, complete six-predicate coverage, and repeated database-grounded hard negatives. The complete case specifications and full Gold JSONL bytes are bound to immutable SHA-256 commitments.
 
-- `benchmark/release_benchmark.py` builds a versioned 108-case Release Gold corpus with 48 answered cases, 20 cases for each refusal class, complete six-predicate coverage, and repeated database-grounded hard negatives;
-- `.github/workflows/release-acceptance.yml` builds the wheel, installs it into an isolated environment, checks every console script, audits wheel contents and installed size, runs the Release Gold gate from the installed wheel, verifies the report exactly, and uploads the evidence bundle on Python 3.10, 3.11, and 3.12.
-
-Expected decisions and structured answer Claims are first-party curated. The complete case specifications and full Gold JSONL bytes are bound to immutable SHA-256 commitments, so candidate-generated Fact IDs and evidence hashes are accepted only when the entire Gold artifact reproduces the pre-existing commitment exactly. This is a reproducible release behavior gate, not independent external annotation and not an open-domain understanding claim.
+`.github/workflows/release-acceptance.yml` builds the wheel with a fixed `SOURCE_DATE_EPOCH`, installs it into isolated Python 3.10, 3.11, and 3.12 environments, checks every console script, audits wheel contents and installed size, runs and verifies the Release Gold gate, rebuilds the wheel twice, and assembles a technical freeze candidate.
 
 ## Phase 7 contract
 
-Phase 7 evaluates Phase 6 against a JSONL Gold set. The dataset cannot provide thresholds. The CLI exposes only two built-in policy profiles:
+Phase 7 evaluates strict QA against a JSONL Gold set. The dataset cannot provide thresholds. The built-in policies are:
 
 - `smoke`: a non-certifying integration gate with at least 12 cases;
 - `release`: a supplied-Gold behavior gate with at least 100 cases.
 
-Both profiles impose immutable requirements for:
+Both profiles impose immutable coverage, answer, refusal, citation, integrity, and hallucination requirements. A passing release report may set `may_certify_release=true`, but Phase 7 must keep `may_freeze=false`.
 
-- total case count;
-- answerable and refusal-category counts;
-- answered coverage for all six supported predicates;
-- hard-negative category coverage;
-- exact decision accuracy;
-- structured answer-Claim accuracy;
-- exact Fact/evidence citation agreement;
-- answer and refusal precision/recall;
-- zero overanswers, wrong answers, citation mismatches, integrity failures, and evaluator failures;
-- zero measured hallucination rate.
+## Phase 8 contract
 
-The release profile additionally requires at least seven answered cases for each of `alias`, `defeats`, `located_in`, `permission`, `count`, and `date`, at least fifteen cases for each refusal class, and repeated coverage of all hard-negative families.
+Phase 8 separates technical readiness from human release authority.
+
+### Technical candidate
+
+`tkr-release-freeze prepare` requires and binds:
+
+- one exact release wheel;
+- the Release Gold manifest and every file committed by it: normalized source, Unit index, accepted Claims, SQLite database, index report, Gold JSONL, benchmark report, and benchmark verification;
+- accepted package reports from Python 3.10, 3.11, and 3.12;
+- one reproducible-build report;
+- at least two actual reproducible-build wheel files whose bytes are independently rehashed;
+- a Git bundle containing the claimed source commit;
+- a source-provenance record binding the bundle, wheel, runtime file set, package version, and fixed ZIP build timestamp;
+- release version, source commit, and fixed source-date epoch.
+
+The candidate recomputes every file size and SHA-256, reruns Release Gold verification from the bound database and Gold inputs, confirms all package reports point to the same wheel, verifies byte-for-byte reproducibility from the bound wheel files, clones the bound Git bundle, and compares every `tkr/` runtime file in the wheel byte-for-byte with the claimed commit. It also verifies that the wheel version matches `pyproject.toml` at that commit and that every wheel entry timestamp represents the declared `SOURCE_DATE_EPOCH`.
+
+A technical candidate always contains:
+
+```json
+{
+  "technical_gate_passed": true,
+  "requires_explicit_approval": true,
+  "may_freeze": false,
+  "status": "candidate"
+}
+```
+
+It cannot authorize itself.
+
+### Explicit approval and seal
+
+`tkr-release-freeze seal` requires a separate approval JSON object whose candidate ID, release version, and source commit exactly match the verified technical candidate. Only then can a seal contain `may_freeze=true`.
+
+The current approval record is an operator assertion rather than a cryptographically authenticated signature. Every seal states:
+
+```json
+{
+  "approval_authentication": "operator_asserted_not_cryptographically_verified"
+}
+```
+
+This prevents the tool from overstating identity assurance.
 
 ## Gold case format
 
 Each JSONL case declares the current parser predicate and exact expected decision. An answered case must include a complete structured answer Claim, at least one expected Fact ID, and at least one evidence SHA-256. Refusal cases must not contain answer or citation expectations.
-
-```json
-{
-  "gold_schema_version": "tkr-gold-cases-v1",
-  "case_id": "count-current-001",
-  "question": "守卫现在有多少名？",
-  "expected_decision": "answered",
-  "expected_predicate": "count",
-  "expected_answer_claim": {
-    "predicate": "count",
-    "requested_role": "value",
-    "subject": "守卫",
-    "object": "",
-    "value": 120,
-    "unit": "名",
-    "predicate_scope": "",
-    "fact_polarity": true,
-    "boolean_answer": null,
-    "temporal_scope": "current"
-  },
-  "expected_fact_ids": ["fact_..."],
-  "expected_evidence_sha256": ["..."],
-  "source_id_filter": null,
-  "tags": ["answered_current_count"]
-}
-```
 
 Unknown fields, duplicate case IDs, parser-label mismatches, invalid hashes, vacuous answered cases, refusal cases carrying answer expectations, and hard-negative labels that contradict the case structure are rejected before scoring.
 
 ## Usage
 
 ```bash
-# Install the package before using either the console commands or the benchmark script.
 python -m pip install .
-
-# Run the non-certifying integration gate.
-tkr-gold-benchmark run \
-  project/index/knowledge.sqlite3 \
-  project/benchmark/gold.jsonl \
-  --profile smoke \
-  --output project/benchmark/smoke-report.json
 
 # Run the immutable release behavior gate.
 tkr-gold-benchmark run \
@@ -94,18 +91,52 @@ tkr-gold-benchmark run \
   --profile release \
   --output project/benchmark/release-report.json
 
-# Recompute everything and require that the saved report used the release profile.
+# Recompute and verify the release report.
 tkr-gold-benchmark verify \
   project/index/knowledge.sqlite3 \
   project/benchmark/gold-release.jsonl \
   project/benchmark/release-report.json \
   --require-profile release
 
-# Build the versioned RC benchmark and evidence manifest with the installed package.
-python benchmark/release_benchmark.py --output build/release-benchmark
+# Prepare a non-authorizing technical candidate.
+# Every path below must be inside --root. Git is required for source verification.
+tkr-release-freeze prepare \
+  --root release-evidence \
+  --version 5.8.0a1 \
+  --source-commit 0123456789abcdef0123456789abcdef01234567 \
+  --source-date-epoch 1700000000 \
+  --artifact wheel=release-evidence/text_knowledge_reader_core-5.8.0a1-py3-none-any.whl \
+  --artifact release_manifest=release-evidence/release-manifest.json \
+  --artifact release_source=release-evidence/normalized-text.txt \
+  --artifact release_units=release-evidence/unit-index.csv \
+  --artifact release_claims=release-evidence/claims.accepted.jsonl \
+  --artifact release_database=release-evidence/knowledge.sqlite3 \
+  --artifact release_index_report=release-evidence/knowledge.report.json \
+  --artifact release_gold=release-evidence/gold-release.jsonl \
+  --artifact release_report=release-evidence/release-report.json \
+  --artifact release_verification=release-evidence/release-verification.json \
+  --artifact reproducible_build_report=release-evidence/reproducible-build-report.json \
+  --artifact package_acceptance=release-evidence/package-acceptance-python-3.10.json \
+  --artifact package_acceptance=release-evidence/package-acceptance-python-3.11.json \
+  --artifact package_acceptance=release-evidence/package-acceptance-python-3.12.json \
+  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-01.whl \
+  --artifact reproducible_wheel=release-evidence/reproducible-wheels/build-02.whl \
+  --artifact source_bundle=release-evidence/source.bundle \
+  --artifact source_provenance=release-evidence/source-provenance.json
+
+# Recompute candidate evidence and hashes, including Git source provenance.
+tkr-release-freeze verify release-evidence/freeze-candidate.json \
+  --root release-evidence
+
+# Seal only after a separate explicit approval record exists.
+tkr-release-freeze seal \
+  release-evidence/freeze-candidate.json \
+  release-evidence/freeze-approval.json \
+  --root release-evidence \
+  --output release-evidence/freeze-seal.json
 ```
 
-A report binds the SQLite database SHA-256, index-report SHA-256, raw Gold-file SHA-256, logical Gold-case SHA-256, evaluator version, complete immutable policy, per-case outcomes, metrics, blockers, and report ID. Editing a threshold, score, case result, authority flag, or hash invalidates verification.
+For CI-produced evidence, `tools/assemble_freeze_candidate.py` requires a clean checkout whose `HEAD` equals `--source-commit`, creates the Git bundle and provenance record, copies the complete benchmark chain and both build wheels into a dedicated candidate directory, and invokes the same independent verifier.
 
 ## Validation
 
@@ -114,8 +145,8 @@ python -m compileall -q tkr tests benchmark tools
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the complete stack and independent wheel acceptance on Python 3.10, 3.11, and 3.12.
+GitHub Actions runs the complete stack, independent wheel acceptance, reproducible builds, Git-backed source verification, technical-candidate assembly, and Phase 8 tests on Python 3.10, 3.11, and 3.12.
 
 ## Deliberate limits
 
-Phase 7 certifies only measured behavior of the six closed predicates on the supplied Gold set. It does not cryptographically attest who authored that Gold set and does not prove open-ended novel understanding, causal reasoning, personality analysis, thematic interpretation, pronoun resolution, or unseen-domain generalization. A passing release benchmark may mark `may_certify_release=true`, but every Phase 7 report keeps `may_freeze=false`; final artifact-chain freezing remains a later stage.
+The stack certifies measured behavior only for six closed predicates on the supplied Gold set. It does not prove open-ended novel understanding, causal reasoning, thematic interpretation, pronoun resolution, or unseen-domain generalization. Phase 8 adds an auditable technical freeze process, but the current approval identity remains operator-asserted rather than cryptographically signed.
