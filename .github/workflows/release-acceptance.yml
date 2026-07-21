@@ -8,6 +8,8 @@ on:
   pull_request:
 permissions:
   contents: read
+env:
+  SOURCE_DATE_EPOCH: "1700000000"
 jobs:
   package-and-benchmark:
     runs-on: ubuntu-latest
@@ -17,6 +19,8 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -96,4 +100,72 @@ jobs:
           path: |
             dist/*
             release-artifacts/python-${{ matrix.python-version }}/
+          if-no-files-found: error
+
+  freeze-candidate:
+    needs: package-and-benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tkr-v5.8.0-alpha1-python-*
+          path: matrix-artifacts
+      - name: Build the wheel twice with a fixed epoch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir reproducible-a
+          rm -rf build *.egg-info
+          python -m build --wheel --outdir reproducible-b
+          sha256sum reproducible-a/*.whl reproducible-b/*.whl
+      - name: Install one reproducible wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv .freeze-venv
+          .freeze-venv/bin/python -m pip install --upgrade pip
+          .freeze-venv/bin/python -m pip install reproducible-a/*.whl
+          .freeze-venv/bin/python -m pip check
+      - name: Assemble and verify the technical candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_COMMIT="${{ github.event.pull_request.head.sha || github.sha }}"
+          .freeze-venv/bin/python tools/assemble_freeze_candidate.py \
+            --matrix-root matrix-artifacts \
+            --reproducible-wheel reproducible-a/*.whl \
+            --reproducible-wheel reproducible-b/*.whl \
+            --output-root freeze-candidate \
+            --release-version 5.8.0a1 \
+            --source-commit "$SOURCE_COMMIT" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH"
+      - name: Assert candidate cannot self-authorize
+        shell: bash
+        run: |
+          set -euo pipefail
+          .freeze-venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          candidate = json.loads(Path("freeze-candidate/freeze-candidate.json").read_text())
+          verification = json.loads(Path("freeze-candidate/freeze-candidate-verification.json").read_text())
+          assert candidate["technical_gate_passed"] is True
+          assert candidate["requires_explicit_approval"] is True
+          assert candidate["may_freeze"] is False
+          assert verification["accepted"] is True
+          assert verification["may_freeze"] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tkr-v5.8.0-alpha1-freeze-candidate
+          path: |
+            freeze-candidate/
+            reproducible-a/*.whl
+            reproducible-b/*.whl
           if-no-files-found: error
