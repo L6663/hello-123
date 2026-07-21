@@ -42,6 +42,22 @@ class GoldBenchmarkAdversarialTests(GoldBenchmarkFixture):
             with self.assertRaises(BenchmarkError):
                 load_gold_cases(gold)
 
+    def test_relation_direction_tag_requires_reverse_fact_in_database(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths, gold, rows = self.make_benchmark(root)
+            spoofed = deepcopy(rows)
+            direction = next(row for row in spoofed if row["case_id"] == "R-DIRECTION")
+            direction["question"] = "王五击败了谁？"
+            self.write_rows(gold, spoofed)
+            report = evaluate_gold_benchmark(paths[4], gold, profile="smoke")
+        self.assertFalse(report.passed)
+        self.assertEqual(report.metrics["hard_negative_validation_error_count"], 1)
+        self.assertIn(
+            "METRIC_HARD_NEGATIVE_VALIDATION_ERROR_COUNT_ABOVE_POLICY_CEILING",
+            report.blockers,
+        )
+
     def test_smoke_report_cannot_satisfy_required_release_profile(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

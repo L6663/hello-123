@@ -28,7 +28,7 @@ class GoldBenchmarkFixture(RetrievalFixture):
             "守卫共有100名。"
             "工程始于2001-02-03。"
             "系统允许删除。"
-            "来客共有10名。来客共有12名。"
+            "来客共有100名。来客共有1000名。"
             "护卫共有20名。后来护卫共有30名。"
         )
         claims = [
@@ -38,8 +38,8 @@ class GoldBenchmarkFixture(RetrievalFixture):
             {"evidence": "守卫共有100名。", "claim_type": "count", "subject": "守卫", "value": 100, "unit": "名"},
             {"evidence": "工程始于2001-02-03。", "claim_type": "date", "subject": "工程", "value": "2001-02-03"},
             {"evidence": "系统允许删除。", "claim_type": "permission", "subject": "系统", "object": "删除", "polarity": True},
-            {"evidence": "来客共有10名。", "claim_type": "count", "subject": "来客", "value": 10, "unit": "名"},
-            {"evidence": "来客共有12名。", "claim_type": "count", "subject": "来客", "value": 12, "unit": "名"},
+            {"evidence": "来客共有100名。", "claim_type": "count", "subject": "来客", "value": 100, "unit": "名"},
+            {"evidence": "来客共有1000名。", "claim_type": "count", "subject": "来客", "value": 1000, "unit": "名"},
             {"evidence": "护卫共有20名。", "claim_type": "count", "subject": "护卫", "value": 20, "unit": "名"},
             {"evidence": "后来护卫共有30名。", "claim_type": "count", "subject": "护卫", "value": 30, "unit": "名"},
         ]

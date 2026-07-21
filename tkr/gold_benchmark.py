@@ -17,6 +17,7 @@ import re
 from types import MappingProxyType
 from typing import Mapping, Sequence
 
+from .gold_hard_negatives import validate_hard_negative_outcome
 from .hybrid_retrieval import RetrievalError, parse_predicate_query
 from .strict_qa import StrictQAError, StrictQAPacket, answer_strict, verify_strict_packet
 
@@ -108,6 +109,7 @@ _COMMON_CEILINGS = {
     "citation_mismatch_count": 0,
     "integrity_error_count": 0,
     "evaluator_error_count": 0,
+    "hard_negative_validation_error_count": 0,
 }
 POLICIES: Mapping[str, BenchmarkPolicy] = {
     "smoke": BenchmarkPolicy(
@@ -517,6 +519,13 @@ def _case_result(
             report_path=index_report,
         )
         verification = verify_strict_packet(database, packet.to_dict(), report_path=index_report)
+        hard_negative_failures = validate_hard_negative_outcome(
+            database,
+            parsed,
+            packet,
+            case.tags,
+            source_id=case.source_id_filter,
+        )
     except (OSError, UnicodeError, RetrievalError, StrictQAError) as exc:
         return CaseEvaluation(
             case.case_id,
@@ -543,6 +552,7 @@ def _case_result(
     integrity = verification.accepted
     if not integrity:
         reasons.append("STRICT_PACKET_RECOMPUTATION_FAILED")
+    reasons.extend(hard_negative_failures)
 
     if case.expected_decision == "answered":
         actual_claim = packet.answer_claim.to_dict() if packet.answer_claim else None
@@ -575,7 +585,14 @@ def _case_result(
     predicate_correct = parsed.predicate == case.expected_predicate
     if not predicate_correct:
         reasons.append("PREDICATE_MISMATCH")
-    exact = decision_correct and claim_correct and citations_correct and integrity and predicate_correct
+    exact = (
+        decision_correct
+        and claim_correct
+        and citations_correct
+        and integrity
+        and predicate_correct
+        and not hard_negative_failures
+    )
     if exact:
         reasons.append("GOLD_CASE_EXACT_MATCH")
 
@@ -638,6 +655,10 @@ def _metrics(cases: Sequence[GoldCase], results: Sequence[CaseEvaluation]) -> di
         ),
         "integrity_error_count": sum(not result.packet_integrity_verified for result in results),
         "evaluator_error_count": sum(result.actual_decision == "evaluator_error" for result in results),
+        "hard_negative_validation_error_count": sum(
+            any(code.startswith("HARD_NEGATIVE_EVIDENCE_NOT_ESTABLISHED:") for code in result.reason_codes)
+            for result in results
+        ),
     }
 
 
