@@ -1,0 +1,62 @@
+name: Phase 9 Stage 2 focused developer checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/structure_models.py"
+      - "tkr/heading_detection.py"
+      - "tkr/structure_continuity.py"
+      - "tkr/structure_detection.py"
+      - "tkr/structure_artifacts.py"
+      - "tkr/structure_cli.py"
+      - "tests/test_structure_detection.py"
+      - "schemas/heading-candidate.schema.json"
+      - "schemas/unit-record.schema.json"
+      - "schemas/structure-finding.schema.json"
+      - "schemas/structure-report.schema.json"
+      - "pyproject.toml"
+      - ".github/workflows/phase9-stage2-focused.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    name: Stage 2 implementation check / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install development package
+        run: python -m pip install --no-deps -e .
+      - name: Compile Stage 2 modules
+        run: >-
+          python -m py_compile
+          tkr/structure_models.py
+          tkr/heading_detection.py
+          tkr/structure_continuity.py
+          tkr/structure_detection.py
+          tkr/structure_artifacts.py
+          tkr/structure_cli.py
+      - name: Validate Stage 2 JSON Schema syntax
+        run: >-
+          python -c "import json,pathlib;
+          [json.loads(p.read_text(encoding='utf-8'))
+          for p in pathlib.Path('schemas').glob('*structure*.schema.json')];
+          json.loads(pathlib.Path('schemas/heading-candidate.schema.json').read_text(encoding='utf-8'));
+          json.loads(pathlib.Path('schemas/unit-record.schema.json').read_text(encoding='utf-8'))"
+      - name: Run Stage 2 focused tests
+        run: python -m unittest -v tests.test_structure_detection
+      - name: Verify Stage 2 command
+        run: tkr-structure-index --help > /dev/null
+      - name: State non-acceptance boundary
+        run: echo "Focused developer checks only; no project acceptance was performed."
