@@ -6,9 +6,16 @@
 stage: Stage 3
 estimated_engineering_time: 24_to_36_hours
 implementation: complete
+integration: merged_into_feature/phase9-0-baseline-cleanup
+pull_request: 13
+merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
 local_focused_tests: 31_passed
-github_focused_checks: pending
-integration: pending_pull_request
+github_focused_checks: passed
+python_versions:
+  - "3.10"
+  - "3.11"
+  - "3.12"
+workflow_run_id: 29892803967
 project_acceptance_performed: false
 release_candidate: false
 freeze_approved: false
@@ -118,9 +125,9 @@ schemas/accepted-claim-record.schema.json
 schemas/semantic-report.schema.json
 ```
 
-## Focused test coverage
+## Focused check coverage
 
-The 31 local focused tests cover:
+The 31 focused tests passed on Python 3.10, 3.11, and 3.12. They cover:
 
 - six-predicate extraction;
 - positive and negative permission;
@@ -138,6 +145,8 @@ The 31 local focused tests cover:
 - upstream anomaly-overlap blocking;
 - deterministic artifact publication;
 - CLI output and policy validation.
+
+The Stage 2 focused workflow also passed on the Stage 3 PR after the shared package configuration changed.
 
 ## Remaining final-acceptance measurements
 
