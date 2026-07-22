@@ -1,0 +1,104 @@
+name: Phase 9 Stage 5 focused developer checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/engineering.py"
+      - "tkr/project_security.py"
+      - "tkr/project_cli.py"
+      - "tkr/skill_audit.py"
+      - "tkr/skill_cli.py"
+      - "tests/test_engineering_productization.py"
+      - "schemas/engineering-*.json"
+      - "schemas/skill-*.json"
+      - "profiles/**"
+      - "examples/**"
+      - "docs/**"
+      - "SKILL.md"
+      - "MANIFEST.in"
+      - "pyproject.toml"
+      - ".github/workflows/phase9-stage5-focused-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage5-focused:
+    name: Stage 5 implementation and package check / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install development package
+        run: python -m pip install .
+
+      - name: Compile Stage 5 modules
+        run: |
+          python -m py_compile \
+            tkr/engineering.py \
+            tkr/project_security.py \
+            tkr/project_cli.py \
+            tkr/skill_audit.py \
+            tkr/skill_cli.py
+
+      - name: Validate Stage 5 JSON and profile syntax
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for pattern in ("schemas/*.json", "profiles/*.json"):
+              for path in sorted(Path(".").glob(pattern)):
+                  payload = json.loads(path.read_text(encoding="utf-8"))
+                  assert isinstance(payload, dict), path
+          PY
+
+      - name: Run Stage 5 focused tests
+        run: python -m unittest -v tests.test_engineering_productization
+
+      - name: Audit source checkout
+        run: |
+          tkr-skill doctor --root .
+          tkr-skill audit --root .
+          tkr-skill profiles
+          tkr-project --help
+
+      - name: Build wheel
+        run: python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Verify clean wheel installation
+        shell: bash
+        run: |
+          VENV="$RUNNER_TEMP/tkr-stage5-wheel-${{ matrix.python-version }}"
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$VENV/bin/tkr-skill" doctor
+          "$VENV/bin/tkr-skill" audit
+          "$VENV/bin/tkr-skill" profiles
+          "$VENV/bin/tkr-project" build \
+            "$GITHUB_WORKSPACE/examples/minimal-corpus.txt" \
+            --outdir "$RUNNER_TEMP/example-project-${{ matrix.python-version }}" \
+            --state-dir "$RUNNER_TEMP/example-state-${{ matrix.python-version }}" \
+            --profile balanced \
+            --no-cache
+          "$VENV/bin/tkr-project" verify "$RUNNER_TEMP/example-project-${{ matrix.python-version }}"
+          "$VENV/bin/tkr-project" query \
+            "$RUNNER_TEMP/example-project-${{ matrix.python-version }}" \
+            "陆川击败了谁？"
+
+      - name: State non-acceptance boundary
+        run: |
+          echo "Stage 5 checks are implementation and packaging evidence only."
+          echo "No private blind acceptance, final score, release candidate, or freeze is produced."
