@@ -555,6 +555,7 @@ def _load_annotations(path: Path | None) -> tuple[list[object], str | None]:
 
 
 def _merge_annotations(
+    source_text: str,
     chapters: list[ChapterRecord],
     anchors: list[EvidenceAnchor],
     entities: list[LiteraryEntity],
@@ -600,11 +601,14 @@ def _merge_annotations(
         if anchor.chapter_id not in chapter_map:
             raise LiteraryEngineError("evidence anchor references an unknown chapter")
         chapter = chapter_map[anchor.chapter_id]
-        assert isinstance(chapter, ChapterRecord)
+        if not isinstance(chapter, ChapterRecord):
+            raise LiteraryEngineError("chapter registry contains an invalid record")
         if not chapter.start_char <= anchor.evidence_start < anchor.evidence_end <= chapter.end_char:
             raise LiteraryEngineError("evidence anchor span is outside its chapter")
         if anchor.source_sha256 != chapter.source_sha256 or anchor.unit_content_sha256 != chapter.content_sha256:
             raise LiteraryEngineError("evidence anchor hash binding differs from chapter")
+        if source_text[anchor.evidence_start:anchor.evidence_end] != anchor.evidence_text:
+            raise LiteraryEngineError("evidence anchor text differs from the bound source span")
         if anchor.source_status != "clean" and anchor.evidence_role in {"direct_fact", "direct_dialogue"}:
             raise LiteraryEngineError("direct evidence cannot come from contaminated or review-only material")
 
@@ -884,7 +888,7 @@ def _insert_records(
 ) -> None:
     for item in chapters:
         connection.execute(
-            "INSERT INTO chapters VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO chapters VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 item.chapter_id, item.source_id, item.source_order, item.volume_ordinal,
                 item.chapter_ordinal, item.original_heading, item.normalized_heading, item.title,
@@ -1077,7 +1081,7 @@ def build_literary_engine(
     )
     annotations, annotation_sha = _load_annotations(Path(annotations_path) if annotations_path is not None else None)
     chapters, anchors, entities, assertions, relationships, events, revisions = _merge_annotations(
-        chapters, anchors, entities, assertions, annotations
+        source_text, chapters, anchors, entities, assertions, annotations
     )
 
     payloads: dict[str, bytes] = {
