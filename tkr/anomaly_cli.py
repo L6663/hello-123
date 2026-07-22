@@ -1,4 +1,4 @@
-"""CLI for Phase 9.4 anomaly and contamination candidate detection."""
+"""CLI for Phase 9.4 review candidates and deterministic artifact publication."""
 from __future__ import annotations
 
 import argparse
