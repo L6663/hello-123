@@ -5,6 +5,8 @@ on:
     branches:
       - feature/claim-validation-v5.3-alpha1
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
