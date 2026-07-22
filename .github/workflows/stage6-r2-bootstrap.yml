@@ -6,6 +6,7 @@ on:
       - feature/phase9-0-baseline-cleanup
     paths:
       - ".stage6/r2-remediation.patch"
+      - ".stage6/r2-canonical-compat.patch"
       - ".github/workflows/stage6-r2-bootstrap.yml"
 
 permissions:
@@ -19,7 +20,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: Diagnose and apply patch
+      - name: Diagnose and apply patches
         id: apply
         shell: bash
         run: |
@@ -27,8 +28,10 @@ jobs:
           {
             echo "HEAD=$(git rev-parse HEAD)"
             git status --short
-            git apply --check --verbose .stage6/r2-remediation.patch
-            git apply --verbose .stage6/r2-remediation.patch
+            git apply --check --recount --verbose .stage6/r2-remediation.patch
+            git apply --recount --verbose .stage6/r2-remediation.patch
+            git apply --check --verbose .stage6/r2-canonical-compat.patch
+            git apply --verbose .stage6/r2-canonical-compat.patch
           } 2>&1 | tee /tmp/r2-apply.log
       - name: Upload patch diagnostics
         if: always()
@@ -42,7 +45,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .stage6/r2-remediation.patch .github/workflows/stage6-r2-bootstrap.yml
+          rm -f \
+            .stage6/r2-remediation.patch \
+            .stage6/r2-canonical-compat.patch \
+            .github/workflows/stage6-r2-bootstrap.yml
           rmdir .stage6 2>/dev/null || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
