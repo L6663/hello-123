@@ -12,7 +12,7 @@
   ],
   "properties": {
     "schema_version": {"const": "tkr-knowledge-verification-v1"},
-    "system_version": {"const": "5.9.0-stage4"},
+    "system_version": {"const": "5.9.0-stage6-r1"},
     "project_id": {"type": "string"},
     "status": {"enum": ["verified", "rejected"]},
     "valid": {"type": "boolean"},

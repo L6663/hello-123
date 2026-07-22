@@ -204,6 +204,37 @@ class ClaimValidationTests(unittest.TestCase):
         )
         self.assertEqual(result.status, "accepted")
 
+    def test_digits_inside_subject_name_are_not_competing_count_values(self):
+        result = self.validate(
+            "阵列00共有3枚令牌。",
+            claim_type="count",
+            subject="阵列00",
+            value=3,
+            unit="枚",
+        )
+        self.assertEqual(result.status, "accepted")
+        self.assertNotIn("MULTIPLE_COUNT_VALUES", result.reason_codes)
+
+    def test_ordinal_digits_inside_subject_name_are_not_count_values(self):
+        result = self.validate(
+            "第2阵列共有3枚令牌。",
+            claim_type="count",
+            subject="第2阵列",
+            value=3,
+            unit="枚",
+        )
+        self.assertEqual(result.status, "accepted")
+
+    def test_chinese_digit_inside_count_cue_is_not_competing_value(self):
+        result = self.validate(
+            "阵列06一共9枚令牌。",
+            claim_type="count",
+            subject="阵列06",
+            value=9,
+            unit="枚令牌",
+        )
+        self.assertEqual(result.status, "accepted")
+
     def test_exact_chinese_count_is_accepted(self):
         result = self.validate(
             "城中共有一百名访客。",

@@ -1,0 +1,67 @@
+name: Phase 9 Stage 6 remediation R1 checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/**"
+      - "tests/**"
+      - "schemas/**"
+      - "pyproject.toml"
+      - ".github/workflows/phase9-stage6-remediation-r1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-regression:
+    name: Full remediation regression / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install candidate
+        run: python -m pip install .
+      - name: Compile remediated modules
+        run: |
+          python -m py_compile \
+            tkr/anomaly_detection.py \
+            tkr/heading_detection.py \
+            tkr/structure_continuity.py \
+            tkr/claim_validation.py \
+            tkr/knowledge_models.py
+      - name: Validate JSON schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in Path('schemas').glob('*.json'):
+              payload = json.loads(path.read_text(encoding='utf-8'))
+              assert isinstance(payload, dict), path
+          PY
+      - name: Run complete regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Build wheel
+        run: python -m pip wheel . --no-deps --wheel-dir dist
+      - name: Verify clean wheel installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          VENV="$RUNNER_TEMP/tkr-stage6-r1-${{ matrix.python-version }}"
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$VENV/bin/tkr-skill" doctor
+          "$VENV/bin/tkr-skill" audit
+      - name: State non-acceptance boundary
+        run: |
+          echo "This workflow is remediation regression evidence only."
+          echo "It does not perform final project acceptance, create an RC, or authorize Freeze."

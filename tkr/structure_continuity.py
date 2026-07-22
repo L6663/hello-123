@@ -36,10 +36,16 @@ def continuity_findings(*, source_sha256: str, units: list[UnitRecord],
             signals=(f"heading_id={heading_id}", f"candidate_text={text}"),
         ))
 
-    groups: dict[tuple[str | None, str], list[UnitRecord]] = defaultdict(list)
+    heading_container: dict[str, str] = {}
+    for heading in headings:
+        container = next((signal.split("=", 1)[1] for signal in heading.signals if signal.startswith("container_ordinal=")), "")
+        if container:
+            heading_container[heading.heading_id] = container
+    groups: dict[tuple[str | None, str, str], list[UnitRecord]] = defaultdict(list)
     for unit in units:
-        groups[(unit.parent_unit_id, unit.unit_type)].append(unit)
-    for (_, unit_type), group in groups.items():
+        virtual_container = heading_container.get(unit.heading_id or "", "")
+        groups[(unit.parent_unit_id, unit.unit_type, virtual_container)].append(unit)
+    for (_, unit_type, virtual_container), group in groups.items():
         previous: UnitRecord | None = None
         seen_ordinals: dict[int, UnitRecord] = {}
         seen_titles: dict[str, UnitRecord] = {}
@@ -53,7 +59,7 @@ def continuity_findings(*, source_sha256: str, units: list[UnitRecord],
                         action="review_duplicate_numbering", unit_id_value=unit.unit_id,
                         related=(first.unit_id,), start=unit.start_char, end=unit.end_char,
                         start_line=unit.start_line, end_line=unit.end_line,
-                        signals=(f"unit_type={unit_type}", f"ordinal={unit.ordinal}"),
+                        signals=(f"unit_type={unit_type}", f"ordinal={unit.ordinal}", *( (f"container_ordinal={virtual_container}",) if virtual_container else () )),
                     ))
                 else:
                     seen_ordinals[unit.ordinal] = unit
@@ -65,7 +71,7 @@ def continuity_findings(*, source_sha256: str, units: list[UnitRecord],
                             action="review_numbering_order", unit_id_value=unit.unit_id,
                             related=(previous.unit_id,), start=unit.start_char, end=unit.end_char,
                             start_line=unit.start_line, end_line=unit.end_line,
-                            signals=(f"previous={previous.ordinal}", f"current={unit.ordinal}", f"unit_type={unit_type}"),
+                            signals=(f"previous={previous.ordinal}", f"current={unit.ordinal}", f"unit_type={unit_type}", *( (f"container_ordinal={virtual_container}",) if virtual_container else () )),
                         ))
                     elif unit.ordinal > previous.ordinal + 1:
                         add(make_finding(
@@ -75,7 +81,8 @@ def continuity_findings(*, source_sha256: str, units: list[UnitRecord],
                             related=(previous.unit_id,), start=unit.start_char, end=unit.end_char,
                             start_line=unit.start_line, end_line=unit.end_line,
                             signals=(f"previous={previous.ordinal}", f"current={unit.ordinal}",
-                                     f"missing_start={previous.ordinal + 1}", f"missing_end={unit.ordinal - 1}"),
+                                     f"missing_start={previous.ordinal + 1}", f"missing_end={unit.ordinal - 1}",
+                                     *( (f"container_ordinal={virtual_container}",) if virtual_container else () )),
                         ))
                 previous = unit
             normalized_title = " ".join(unit.title.casefold().split())

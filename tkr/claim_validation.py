@@ -661,7 +661,18 @@ def _validate_count(candidate: ClaimCandidate, evidence: str) -> ClaimValidation
     observed_any: set[Decimal] = set()
     for clause_start, clause in relevant:
         clause_modal = bool(_MODALITY_RE.search(clause) or _QUESTION_RE.search(clause))
+        subject_spans = [match.span() for match in re.compile(_literal_pattern(candidate.subject), re.IGNORECASE).finditer(clause)]
+        cue_spans = [
+            match.span()
+            for cue in _COUNT_CUES
+            for match in re.compile(_literal_pattern(cue), re.IGNORECASE).finditer(clause)
+        ]
         for number, start, end in _extract_numbers(clause):
+            # Digits embedded in the subject identity (for example ``阵列00`` or
+            # ``第2阵列``) are not competing count values. They remain part of
+            # the entity name and therefore must be excluded from numeric scope.
+            if any(span_start < end and start < span_end for span_start, span_end in (*subject_spans, *cue_spans)):
+                continue
             observed_any.add(number)
             if not clause_modal:
                 observed_assertive.add(number)

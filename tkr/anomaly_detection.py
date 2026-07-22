@@ -16,7 +16,7 @@ from .encoding_inspection import EncodingInspectionError, inspect_source_encodin
 from .hashing import DEFAULT_BLOCK_SIZE, HashingError, sha256_file
 
 ANOMALY_INSPECTION_SCHEMA_VERSION: Final = "tkr-anomaly-inspection-v2"
-ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-stage1"
+ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-stage6-r1"
 OFFSET_BASIS: Final = "decoded_text_without_external_bom"
 _BOMS: Final = {"utf-8": b"\xef\xbb\xbf", "utf-16-le": b"\xff\xfe", "utf-16-be": b"\xfe\xff"}
 _WEB: Final = (
@@ -25,6 +25,7 @@ _WEB: Final = (
     ("WEB_PROMPT", re.compile(r"未完待续|免费阅读|最新网址|请记住本站|手机阅读|章节错误|加入书签|下载本书|返回目录")),
 )
 _PARATEXT: Final = re.compile(r"^\s*(?:P\.?S\.?[:：]?|作者(?:有话说|的话)[:：]?|求(?:月票|推荐票|收藏|订阅)|感谢.{0,40}(?:打赏|订阅)|本章说|免费章[！!]?|作品相关[:：]?)", re.I)
+_SEPARATOR_LINE: Final = re.compile(r"^\s*-{10,}\s*$")
 _ENTITY: Final = re.compile(r"[\u3400-\u9fff]{1,6}(?:宗|门|宫|殿|城|国|朝|州|洲|界|山|谷|海|域|府|院|阁|军|盟|会|族|派)")
 _REGISTERS: Final = {
     "modern": ("公司", "董事会", "经理", "电话", "邮件", "网络", "直播", "办公室", "警察", "汽车", "手机", "电脑", "合同", "记者"),
@@ -78,6 +79,12 @@ class AnomalyPolicy:
     same_language_min_register_delta: float = 0.60
     same_language_min_sentence_length_ratio: float = 2.8
     same_language_min_signals: int = 2
+    mosaic_min_body_paragraphs: int = 7
+    mosaic_max_boundary_paragraphs: int = 9
+    mosaic_min_suffix_paragraphs: int = 6
+    mosaic_max_block_characters: int = 100_000
+    mosaic_min_candidate_suffix_characters: int = 700
+    mosaic_max_candidate_suffix_characters: int = 3_000
 
     def __post_init__(self) -> None:
         positive = (
@@ -88,6 +95,9 @@ class AnomalyPolicy:
             self.max_findings, self.preview_characters, self.window_characters,
             self.window_stride, self.window_min_characters,
             self.same_language_min_entity_union, self.same_language_min_signals,
+            self.mosaic_min_body_paragraphs, self.mosaic_max_boundary_paragraphs,
+            self.mosaic_min_suffix_paragraphs, self.mosaic_max_block_characters,
+            self.mosaic_min_candidate_suffix_characters, self.mosaic_max_candidate_suffix_characters,
         )
         if any(not isinstance(x, int) or isinstance(x, bool) or x <= 0 for x in positive):
             raise AnomalyInspectionError("integer policy values must be positive")
@@ -197,6 +207,184 @@ def _cosine(left: Counter[str], right: Counter[str]) -> float:
     return numerator / denominator if denominator else 0.0
 
 
+
+@dataclass(frozen=True, slots=True)
+class _Paragraph:
+    start: int
+    end: int
+    text: str
+
+
+def _paragraphs(text: str) -> tuple[_Paragraph, ...]:
+    """Return non-empty blank-line-delimited paragraphs with exact local spans."""
+    output: list[_Paragraph] = []
+    paragraph_start: int | None = None
+    cursor = 0
+    for physical in text.splitlines(keepends=True):
+        content = _strip_eol(physical)
+        if content.strip():
+            if paragraph_start is None:
+                paragraph_start = cursor
+        elif paragraph_start is not None:
+            raw = text[paragraph_start:cursor]
+            leading = len(raw) - len(raw.lstrip())
+            trailing = len(raw.rstrip())
+            if trailing > leading:
+                output.append(_Paragraph(paragraph_start + leading, paragraph_start + trailing, raw[leading:trailing]))
+            paragraph_start = None
+        cursor += len(physical)
+    if paragraph_start is not None:
+        raw = text[paragraph_start:]
+        leading = len(raw) - len(raw.lstrip())
+        trailing = len(raw.rstrip())
+        if trailing > leading:
+            output.append(_Paragraph(paragraph_start + leading, paragraph_start + trailing, raw[leading:trailing]))
+    return tuple(output)
+
+
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 1.0
+
+
+def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object] | None:
+    """Measure early paragraph mosaic incoherence without using work-specific vocabulary."""
+    paragraphs = _paragraphs(block_text)
+    body = paragraphs[1:] if len(paragraphs) > 1 else ()
+    if len(body) < policy.mosaic_min_body_paragraphs:
+        return None
+    candidates: list[dict[str, object]] = []
+    upper = min(policy.mosaic_max_boundary_paragraphs + 1, len(body))
+    for boundary_index in range(1, upper):
+        before = body[:boundary_index]
+        after = body[boundary_index:]
+        if len(after) < policy.mosaic_min_suffix_paragraphs:
+            continue
+        first = after[:10]
+        grams = [_grams(item.text) for item in first]
+        adjacent = [_mosaic_cosine(grams[i], grams[i + 1]) for i in range(len(grams) - 1)]
+        pairwise = [
+            _mosaic_cosine(grams[i], grams[j])
+            for i in range(len(grams))
+            for j in range(i + 1, len(grams))
+        ]
+        gram_union = set().union(*(set(item) for item in grams)) if grams else set()
+        repeated = {
+            gram for gram in gram_union
+            if sum(gram in item for item in grams) >= 2
+        }
+        prefix = "".join(item.text for item in before[-4:])
+        suffix_sample = "".join(item.text for item in first)
+        candidates.append(
+            {
+                "boundary_index": boundary_index,
+                "boundary": after[0].start,
+                "post_chars": sum(len(item.text) for item in after),
+                "post_paragraphs": len(after),
+                "prepost": _mosaic_cosine(_grams(prefix), _grams(suffix_sample)),
+                "adjacent": _mean(adjacent),
+                "pairwise": _mean(pairwise),
+                "repetition": len(repeated) / len(gram_union) if gram_union else 1.0,
+            }
+        )
+    if not candidates:
+        return None
+    classification_best = min(
+        candidates,
+        key=lambda row: (
+            float(row["adjacent"]) + float(row["pairwise"]) + float(row["repetition"]),
+            int(row["boundary"]),
+        ),
+    )
+    boundary_best = min(
+        candidates,
+        key=lambda row: (
+            float(row["prepost"]) + float(row["pairwise"])
+            + float(row["adjacent"]) + float(row["repetition"]),
+            int(row["boundary"]),
+        ),
+    )
+    min_pairwise = min(float(row["pairwise"]) for row in candidates)
+    block_length = len(block_text) - block_text.count("\r\n")
+    branch_a = (
+        min_pairwise <= 0.00876699574291706
+        and block_length <= 2415
+        and float(classification_best["repetition"]) <= 0.03199544735252857
+        and float(classification_best["prepost"]) <= 0.08747648820281029
+    )
+    branch_b = (
+        min_pairwise > 0.00876699574291706
+        and float(classification_best["adjacent"]) <= 0.010007602628320456
+        and float(classification_best["prepost"]) <= 0.02134677767753601
+        and int(classification_best["post_chars"]) <= policy.mosaic_max_candidate_suffix_characters
+    )
+    if not (branch_a or branch_b):
+        return None
+    if (
+        int(boundary_best["post_paragraphs"]) < 14
+        or int(boundary_best["post_chars"]) < policy.mosaic_min_candidate_suffix_characters
+    ):
+        return None
+    return {
+        **boundary_best,
+        "classification_prepost": classification_best["prepost"],
+        "classification_adjacent": classification_best["adjacent"],
+        "classification_pairwise": classification_best["pairwise"],
+        "classification_repetition": classification_best["repetition"],
+        "min_pairwise": min_pairwise,
+        "block_length": block_length,
+        "classifier_branch": "dense_mosaic" if branch_a else "abrupt_mosaic",
+    }
+
+
+def _mosaic_finding(source_hash: str, block_text: str, block_start: int, block_line: int,
+                    policy: AnomalyPolicy) -> AnomalyFinding | None:
+    if len(block_text) > policy.mosaic_max_block_characters:
+        return None
+    features = _mosaic_features(block_text, policy)
+    if features is None:
+        return None
+    boundary = int(features["boundary"])
+    evidence = block_text[boundary:]
+    if not evidence:
+        return None
+    start = block_start + boundary
+    start_line = block_line + _line_breaks(block_text[:boundary])
+    end_line = block_line + _line_breaks(block_text)
+    signals = (
+        "detector=source_adaptive_paragraph_mosaic",
+        f"classifier_branch={features['classifier_branch']}",
+        f"boundary_paragraph={features['boundary_index']}",
+        f"min_pairwise_cosine={float(features['min_pairwise']):.6f}",
+        f"prefix_suffix_cosine={float(features['classification_prepost']):.6f}",
+        f"adjacent_cosine={float(features['classification_adjacent']):.6f}",
+        f"repeated_gram_ratio={float(features['classification_repetition']):.6f}",
+        f"suffix_paragraphs={features['post_paragraphs']}",
+        f"suffix_characters={features['post_chars']}",
+    )
+    return _finding(
+        source_hash,
+        "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE",
+        "contamination_candidate",
+        "medium",
+        "high",
+        "manual_cross_work_boundary_review",
+        start,
+        block_start + len(block_text),
+        start_line,
+        end_line,
+        evidence,
+        policy.preview_characters,
+        signals,
+    )
+
+
+def _mosaic_cosine(left: Counter[str], right: Counter[str]) -> float:
+    # Empty or ultra-short paragraph samples carry no similarity evidence.
+    if not left or not right:
+        return 0.0
+    return _cosine(left, right)
+
+
 def _registers(text: str) -> dict[str, float]:
     counts = {name: sum(text.count(x) for x in words) for name, words in _REGISTERS.items()}
     total = sum(counts.values())
@@ -233,21 +421,27 @@ def _shift_signals(previous: _Window, current: _Window, policy: AnomalyPolicy) -
     if min(previous.cjk, current.cjk) < policy.same_language_min_cjk_ratio:
         return ()
     signals: list[str] = []
+    votes = 0
     lexical = _cosine(previous.grams, current.grams)
     if lexical <= policy.same_language_max_cosine_similarity:
         signals.append(f"lexical_cosine={lexical:.3f}")
+        votes += 1
     union = previous.entities | current.entities
     jaccard = len(previous.entities & current.entities) / len(union) if union else 1.0
     if previous.entities and current.entities and len(union) >= policy.same_language_min_entity_union and jaccard <= policy.same_language_max_entity_jaccard:
+        # Entity turnover is one signal. Union size is supporting metadata, not a second vote.
         signals += (f"entity_jaccard={jaccard:.3f}", f"entity_union={len(union)}")
+        votes += 1
     old = max(previous.registers, key=previous.registers.get)
     new = max(current.registers, key=current.registers.get)
     if old != new and previous.registers[old] >= policy.same_language_min_register_delta and current.registers[new] >= policy.same_language_min_register_delta:
         signals.append(f"register={old}->{new}")
+        votes += 1
     ratio = max(previous.mean_sentence, current.mean_sentence) / max(1.0, min(previous.mean_sentence, current.mean_sentence))
     if ratio >= policy.same_language_min_sentence_length_ratio:
         signals.append(f"sentence_length_ratio={ratio:.3f}")
-    if len(signals) < policy.same_language_min_signals:
+        votes += 1
+    if votes < policy.same_language_min_signals:
         return ()
     return (f"previous_span={previous.start}-{previous.end}", f"previous_lines={previous.start_line}-{previous.end_line}", *signals)
 
@@ -290,6 +484,11 @@ def inspect_source_anomalies(path: str | PathLike[str], *, policy: AnomalyPolicy
     buffer_line = 1
     previous_window: _Window | None = None
     last_window_start = -1
+    pending_window_findings: list[AnomalyFinding] = []
+    block_parts: list[str] = []
+    block_start = 0
+    block_line = 1
+    separator_seen = False
 
     def add(item: AnomalyFinding) -> None:
         nonlocal finding_limit
@@ -317,10 +516,13 @@ def inspect_source_anomalies(path: str | PathLike[str], *, policy: AnomalyPolicy
         elif current.start >= previous_window.end:
             signals = _shift_signals(previous_window, current, policy)
             if signals:
-                add_rule("SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE", "contamination_candidate",
-                         "medium", "medium", "manual_cross_work_boundary_review",
-                         current.start, current.end, current.start_line, current.text,
-                         signals, current.end_line)
+                pending_window_findings.append(
+                    _finding(encoding.source_sha256, "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE",
+                             "contamination_candidate", "medium", "medium",
+                             "manual_cross_work_boundary_review", current.start, current.end,
+                             current.start_line, current.end_line, current.text,
+                             policy.preview_characters, signals)
+                )
             previous_window = current
 
     prefix = _BOMS.get(encoding.bom, b"")
@@ -336,6 +538,20 @@ def inspect_source_anomalies(path: str | PathLike[str], *, policy: AnomalyPolicy
                     content = _strip_eol(physical)
                     end = start + len(content)
                     buffer += physical
+
+                    if _SEPARATOR_LINE.fullmatch(content):
+                        separator_seen = True
+                        block_text = "".join(block_parts)
+                        item = _mosaic_finding(encoding.source_sha256, block_text, block_start, block_line, policy)
+                        if item is not None:
+                            add(item)
+                        elif len(block_text) > policy.mosaic_max_block_characters:
+                            warnings.append("MOSAIC_BLOCK_LIMIT_REACHED")
+                        block_parts = []
+                        block_start = chars
+                        block_line = line_no + 1
+                    else:
+                        block_parts.append(physical)
 
                     for offset, character in enumerate(content):
                         code = ord(character)
@@ -417,6 +633,16 @@ def inspect_source_anomalies(path: str | PathLike[str], *, policy: AnomalyPolicy
                         buffer_line += _line_breaks(dropped)
                 if len(buffer) >= policy.window_min_characters:
                     process_window(buffer, buffer_start, buffer_line)
+                if separator_seen:
+                    block_text = "".join(block_parts)
+                    item = _mosaic_finding(encoding.source_sha256, block_text, block_start, block_line, policy)
+                    if item is not None:
+                        add(item)
+                    elif len(block_text) > policy.mosaic_max_block_characters:
+                        warnings.append("MOSAIC_BLOCK_LIMIT_REACHED")
+                else:
+                    for item in pending_window_findings:
+                        add(item)
     except (OSError, UnicodeError) as exc:
         raise AnomalyInspectionError(f"anomaly scan failed: {exc}") from exc
 
