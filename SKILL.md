@@ -1,88 +1,123 @@
-# Text Knowledge Reader Skill
+---
+name: text-knowledge-reader
+description: Build an evidence-bound knowledge project from uploaded UTF-8 or BOM-marked UTF-16 text, detect contamination and structure, extract six typed fact relations, answer supported questions with exact citations, and refuse unsupported claims. Use for books, historical corpora, technical documents, notes, and other long text files when source integrity and auditable evidence matter.
+---
+
+# Text Knowledge Reader
+
+**Version:** 5.9.0  
+**Status:** Final, accepted, and frozen
 
 ## Purpose
 
-Text Knowledge Reader converts one text corpus into a source-bound, auditable, typed knowledge project. The Skill is designed for long-form books, historical corpora, technical documents, notes, and other text collections where every accepted fact and answer must remain traceable to exact source evidence.
+Use this skill to turn one or more uploaded text files into auditable, source-bound knowledge projects and answer factual questions only when the answer is supported by exact evidence.
 
-The Skill prioritizes evidence integrity over answer coverage. It may refuse to index or answer when decoding, corpus safety, structure, semantic status, entity identity, conflicts, citations, or project integrity remain unresolved.
-
-This Stage 5 package is a development candidate. It does not certify that the final product has passed the all-capability 9.0 acceptance threshold.
+The skill is self-contained. Do not ask the user to install a Wheel, clone a repository, or run commands manually. Use the bundled Python entry point in `scripts/tkr.py`.
 
 ## Inputs
 
-The primary input is one regular text file.
+Primary inputs:
 
-Supported decoding paths:
+- one uploaded `.txt` or `.md` file;
+- optionally several text files, processed as separate projects unless the user explicitly asks to combine them;
+- a factual question about a project already built in the current conversation;
+- an existing Text Knowledge Reader project directory or saved answer packet.
+
+Supported decoding:
 
 - strict UTF-8;
-- UTF-8 with an external BOM;
-- UTF-16 little-endian with BOM;
-- UTF-16 big-endian with BOM.
+- UTF-8 with BOM;
+- UTF-16 LE with BOM;
+- UTF-16 BE with BOM.
 
-The source must:
-
-- be a regular file rather than a directory, device, pipe, or symbolic link;
-- decode strictly without replacement-character recovery;
-- remain unchanged during inspection and extraction;
-- satisfy source-admission and Unicode-quality constraints;
-- be stored outside the immutable output project directory.
-
-Optional inputs:
-
-- a built-in engineering profile name;
-- a custom engineering profile JSON that conforms to `engineering-profile.schema.json`;
-- a separate mutable state directory for locks, journals, and verified cache entries;
-- supported typed questions for the completed project;
-- previously saved answer packets for exact recomputation.
+Never silently replace undecodable characters. Never mutate, overwrite, delete, or normalize the user's original source file in place.
 
 ## Workflow
 
-The complete deterministic workflow is:
+### 1. Locate the skill and inputs
 
-```text
-raw source bytes
-→ source identity and strict decoding
-→ Unicode and text-quality inspection
-→ anomaly, paratext, repetition, and contamination candidates
-→ deterministic headings and source-covering Unit Index
-→ six-predicate Claim candidates
-→ discourse and factual-status separation
-→ deterministic Claim validation
-→ entity, alias, timeline, conflict, and ambiguity normalization
-→ freshly revalidated compatibility bridge
-→ hash-bound SQLite typed knowledge index
-→ strict typed retrieval
-→ evidence citations or deterministic refusal
-→ project and answer recomputation verification
+Treat the directory containing this `SKILL.md` as `SKILL_DIR`.
+
+Use only files actually available in the current conversation or sandbox. Do not infer file paths from filenames alone. Do not use prior model knowledge to fill missing corpus content.
+
+### 2. Choose the operation
+
+Use these operations:
+
+- **Build** when the user uploads a corpus or asks to create a knowledge base.
+- **Verify** when the user asks whether a built project is intact.
+- **Query** when the user asks a supported factual question.
+- **Verify answer** when the user provides a saved answer packet.
+- **Inspect** when the user asks for source, anomaly, structure, or semantic diagnostics.
+
+### 3. Run the bundled entry point
+
+Use the current Python interpreter:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" doctor
+python "${SKILL_DIR}/scripts/tkr.py" audit
 ```
 
-The engineering wrapper adds:
+Build a project:
 
-```text
-path validation
-→ exclusive build lock
-→ build journal
-→ orphan backup and stale workspace recovery
-→ content-addressed cache lookup
-→ atomic project build or verified cache restore
-→ enhanced non-symlink filesystem verification
-→ immutable project publication
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" build INPUT.txt \
+  --outdir OUTPUT_PROJECT \
+  --state-dir OUTPUT_STATE \
+  --profile balanced
 ```
 
-Mutable engineering state is always kept outside the immutable project directory.
+Use `strict` only when the user explicitly requests canonical/final indexing. Use `high-recall` for difficult or irregular corpora when review findings are acceptable.
 
-## Supported semantic predicates
+Verify:
 
-The deterministic extraction, validation, retrieval, and answer stack supports:
-
-```text
-alias
-beats / defeats
-located_in
-permission
-count
-date
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" verify OUTPUT_PROJECT
 ```
+
+Query:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" query OUTPUT_PROJECT "QUESTION"
+```
+
+Save an answer packet when useful:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" query OUTPUT_PROJECT "QUESTION" --output ANSWER.json
+python "${SKILL_DIR}/scripts/tkr.py" verify-answer OUTPUT_PROJECT ANSWER.json
+```
+
+### 4. Interpret results
+
+A completed build produces a self-contained project with:
+
+- original and normalized source identity;
+- anomaly and contamination candidates;
+- deterministic heading and Unit Index artifacts;
+- semantic candidates and accepted claims;
+- entity, fact, timeline, conflict, and ambiguity artifacts;
+- SQLite knowledge index;
+- project report and immutable manifest.
+
+A query may either:
+
+- return a supported answer with exact evidence and citation chain; or
+- return a deterministic refusal because the predicate is unsupported, evidence is missing, identity is ambiguous, facts conflict, or integrity verification failed.
+
+Do not rewrite a refusal as a speculative answer.
+
+## Supported predicates
+
+The deterministic fact and QA stack supports:
+
+- `alias` — names and aliases;
+- `defeats` — who defeated whom;
+- `located_in` — where an entity is located;
+- `permission` — who may or may not perform an action;
+- `count` — explicit quantities;
+- `date` — explicit dates.
 
 Examples:
 
@@ -93,13 +128,12 @@ Examples:
 - `剑阵共有十二柄飞剑。`
 - `大战发生于2026年7月22日。`
 
-Open-ended literary interpretation, motive analysis, symbolism, theme, foreshadowing, and unsupported predicates are not mechanically accepted as typed facts.
+Open-ended theme, symbolism, motive, emotional interpretation, literary criticism, and unsupported predicates are outside the deterministic fact contract unless the user explicitly requests a non-authoritative reading separate from the knowledge project.
 
-## Factual-status model
+## Factual-status handling
 
-The Skill separates:
+Separate direct assertions from:
 
-- direct assertions;
 - negated assertions;
 - beliefs;
 - suspicions;
@@ -109,158 +143,26 @@ The Skill separates:
 - questions;
 - future intentions.
 
-Only direct assertions that pass deterministic validation and every upstream safety gate may enter accepted typed Claims. A statement that a character believes, suspects, reports, or accuses something may be retained as an attributed proposition, while the embedded proposition remains unconfirmed.
-
-## Engineering profiles
-
-### `balanced`
-
-Default review-mode profile. It preserves Stage 4 behavior, emits bounded model proposal tasks, and enables verified content-addressed caching.
-
-### `strict`
-
-Canonical-mode profile. It blocks unresolved Stage 1, Stage 2, Stage 3, conflict, and ambiguity findings and disables model proposal tasks.
-
-### `high-recall`
-
-Review-mode profile with expanded deterministic candidate, finding, model-task, and clause limits for complex long-form corpora.
-
-Profile identity is included in the Stage 5 build key. Any profile change invalidates the prior cache entry.
-
-## Commands
-
-### Environment and package checks
-
-```bash
-tkr-skill doctor
-tkr-skill audit
-tkr-skill profiles
-tkr-skill show-profile balanced
-```
-
-### Build
-
-```bash
-tkr-project build corpus.txt --outdir project --profile balanced
-```
-
-Use a separate state directory when desired:
-
-```bash
-tkr-project build corpus.txt \
-  --outdir project \
-  --state-dir .tkr-state/project \
-  --profile balanced
-```
-
-Disable cache or automatic workspace recovery:
-
-```bash
-tkr-project build corpus.txt --outdir project --no-cache
-tkr-project build corpus.txt --outdir project --no-resume
-```
-
-Reuse an exact existing project or atomically replace it:
-
-```bash
-tkr-project build corpus.txt --outdir project --reuse
-tkr-project build corpus.txt --outdir project --force
-```
-
-Recover a sufficiently old lock only after the recorded process is no longer alive:
-
-```bash
-tkr-project build corpus.txt \
-  --outdir project \
-  --recover-stale-lock
-```
-
-### Verify
-
-```bash
-tkr-project verify project
-```
-
-Verification includes the Stage 4 hash chain plus Stage 5 exact filesystem membership and symbolic-link rejection.
-
-### Query
-
-```bash
-tkr-project query project "陆川击败了谁？"
-```
-
-Save the complete answer packet:
-
-```bash
-tkr-project query project "陆川击败了谁？" --output answer.json
-```
-
-### Verify a saved answer
-
-```bash
-tkr-project verify-answer project answer.json
-```
+Only direct assertions that pass source, structure, anomaly, evidence, validation, entity, conflict, and integrity gates may enter accepted facts.
 
 ## Safety boundaries
 
-The Skill must never:
+Always enforce these rules:
 
-- modify the source corpus;
-- silently replace undecodable characters;
-- follow source, project, cache, state, or package symbolic links as authority;
-- auto-delete suspected contamination from the source;
-- promote a rumor, belief, suspicion, accusation, hypothetical, question, or intention into a fact;
-- index Evidence that overlaps blocked contamination or non-body content;
-- trust copied Stage 3 semantic files without fresh deterministic normalization;
-- answer from lexical similarity alone;
-- treat absence of evidence as a negative fact;
-- accept a changed answer or citation without exact recomputation;
-- store mutable lock, cache, or journal files inside the immutable project;
-- reuse a cache entry whose source, profile, system version, Manifest, or SQLite identity differs;
-- declare project acceptance, a Release Candidate, or Freeze approval during an intermediate stage.
-
-Manifest paths must be normalized relative POSIX paths. Absolute paths, parent traversal, duplicates, undeclared files, missing files, symbolic links, devices, and non-regular files are rejected.
-
-## Recovery model
-
-Stage 5 records build state in `build-state.json` under the external state directory.
-
-Recorded phases include:
-
-- prepared;
-- restoring cache;
-- building project;
-- publishing cache;
-- completed;
-- failed.
-
-Recovery may:
-
-- restore an orphaned verified replacement backup;
-- remove a redundant backup after the current project verifies;
-- roll back an invalid replacement when the backup verifies;
-- remove sufficiently old temporary build and cache directories;
-- discard an invalid cache entry;
-- reject a live or insufficiently old build lock.
-
-Recovery never treats an unverified backup or cache entry as authoritative.
-
-## Cache model
-
-The content-addressed build key is derived from:
-
-```text
-raw source SHA-256
-+ engineering profile SHA-256
-+ engineering runtime version
-+ knowledge system version
-```
-
-A cache entry contains a complete immutable project and a cache record stored beside, not inside, the project. Cache restoration copies into a temporary directory, verifies the copied project, and only then publishes it atomically.
+1. Preserve original source bytes and SHA-256 identity.
+2. Do not repair text through replacement decoding.
+3. Do not auto-delete suspected pollution, paratext, or anomalous spans.
+4. Do not accept a claim whose evidence span or evidence text does not exactly match the source.
+5. Do not treat belief, rumor, suspicion, accusation, question, hypothetical, or future intent as established fact.
+6. Do not answer from model memory when the project lacks evidence.
+7. Do not continue after project, database, manifest, source, or answer-packet integrity verification fails.
+8. Do not combine separate source files without explicit user authorization and a documented combination method.
+9. Keep mutable locks, journals, and caches outside the immutable project directory.
+10. Never claim successful processing when a command failed or returned a blocked status.
 
 ## Standard artifacts
 
-A completed immutable project contains:
+For each project, preserve and offer the relevant artifacts to the user:
 
 ```text
 source/
@@ -273,93 +175,70 @@ project-report.json
 project-manifest.json
 ```
 
-The external mutable state directory may contain:
+When the user asks for a downloadable result, package the project directory rather than only pasting console output.
+
+## Commands
+
+The bundled entry point exposes:
 
 ```text
-build.lock
-build-state.json
-cache/<build_key>/cache-record.json
-cache/<build_key>/project/
+doctor
+ audit
+ profiles
+ show-profile
+ build
+ verify
+ query
+ verify-answer
 ```
 
-The state directory is not part of the immutable knowledge project and must not be cited as evidence.
-
-## Project identity and citations
-
-A typed answer is bound through:
-
-```text
-answer packet
-→ strict QA packet
-→ Fact
-→ accepted Claim
-→ exact Evidence span
-→ Unit
-→ normalized source SHA-256
-→ original source SHA-256
-→ project Manifest SHA-256
-```
-
-Any mismatch causes rejection or refusal.
-
-## Failure behavior
-
-Expected failures include:
-
-- unsafe source or output path;
-- unsupported or ambiguous encoding;
-- source mutation during processing;
-- unresolved canonical blockers;
-- no accepted typed Claims;
-- active build lock;
-- invalid cache or project;
-- existing output without `--reuse` or `--force`;
-- unsupported question;
-- insufficient typed evidence;
-- unresolved conflict or entity ambiguity;
-- citation, answer, Manifest, database, or package tampering.
-
-Failures must leave no project that is presented as verified. The build journal records the failure type and a bounded message without changing acceptance authority.
-
-## Installation and package audit
-
-A complete installation includes:
-
-```text
-SKILL.md
-README.md
-PROJECT_STATUS.yaml
-profiles/
-examples/
-docs/
-schemas/
-tkr Python package
-console scripts
-```
-
-Run both checks after installation:
+Examples:
 
 ```bash
-tkr-skill doctor
-tkr-skill audit
+python scripts/tkr.py profiles
+python scripts/tkr.py show-profile balanced
+python scripts/tkr.py build corpus.txt --outdir project --profile balanced
+python scripts/tkr.py verify project
+python scripts/tkr.py query project "陆川击败了谁？"
 ```
 
-The audit validates required files, UTF-8 readability, JSON Schema syntax, profile contracts, example JSONL, console-script declarations, package-data declarations, and symbolic-link absence.
+## Output format
+
+For a build, report:
+
+- source filename and SHA-256;
+- selected encoding;
+- project status and project ID;
+- Unit, candidate, accepted-claim, conflict, and ambiguity counts;
+- important blockers or review findings;
+- links to the project package and key reports.
+
+For a supported answer, report:
+
+- answer;
+- predicate and normalized entities/value;
+- exact evidence excerpt;
+- Unit identifier or title;
+- source identifier and source SHA-256;
+- answer packet when requested.
+
+For a refusal, report:
+
+- refusal decision;
+- concrete reason code or reason category;
+- what additional evidence or clarification would be required.
+
+## Final checks
+
+Before responding:
+
+1. Verify the project.
+2. Confirm cited evidence exactly matches the source span.
+3. Confirm the answer is supported by an accepted claim.
+4. Confirm no unresolved conflict or ambiguity invalidates the answer.
+5. Confirm no unsupported inference was introduced.
+6. Confirm any downloadable package exists at the exact path being linked.
 
 ## Acceptance boundary
 
-Stage 5 developer checks establish implementation and packaging evidence only.
-
-They do not perform:
-
-- private blind evaluation;
-- final retrieval Recall@10 or MRR measurement;
-- final answer or refusal accuracy measurement;
-- final citation-correctness measurement;
-- real long-corpus performance acceptance;
-- final hostile-input campaign;
-- final drift comparison;
-- Release Candidate approval;
-- Freeze authorization.
-
-Final project acceptance occurs once, after the complete Skill is frozen for Stage 6 evaluation. Every capability domain must score at least 9.0. Average scores cannot compensate for any domain below 9.0, and blocking integrity defects remain automatic failures.
+This is the directly usable Text Knowledge Reader skill bundle. Its bundled engine completed the integrated capability acceptance used to produce this package. That does not permit false claims about a new user corpus: every new corpus and every answer must still pass its own source-bound checks.

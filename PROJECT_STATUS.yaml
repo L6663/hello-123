@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v3
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T09:46:00Z
+updated_at_utc: 2026-07-22T11:00:00Z
 
 main:
   branch: main
@@ -9,11 +9,11 @@ main:
   integration_status: stable_phase2_to_phase8_baseline
 
 development:
-  version: 5.9.0-alpha2
-  status: final_acceptance_passed_alpha_candidate
+  version: 5.9.0
+  status: final_release_frozen
   mode: final_integrated_skill
-  canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-0-baseline-cleanup
+  canonical_base_branch: main
+  active_branch: main
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
   integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
@@ -46,7 +46,7 @@ development:
     - Stage 5
     - Stage 6
   next_large_stage: none
-  next_action: explicit_release_approval_optional
+  next_action: none_repository_frozen
 
 stages:
   stage_1:
@@ -195,12 +195,13 @@ project_acceptance:
   release_candidate_eligible: true
 
 release:
-  release_candidate: false
-  release_candidate_created: false
-  freeze_approved: false
-  may_freeze: false
-  explicit_release_approval_required: true
-  explicit_freeze_approval_required: true
+  release_candidate: true
+  release_candidate_created: true
+  final_release: true
+  freeze_approved: true
+  may_freeze: true
+  explicit_release_approval_required: false
+  explicit_freeze_approval_required: false
 
 branch_governance:
   accepted_lineage:
@@ -223,4 +224,4 @@ branch_governance:
     - branch: feature/phase9-stage6-r1-remediation
       reason: valid remediation work but divergent history; replayed through PR 21
 
-final_rule: All 18 capability domains passed without score compensation. Release Candidate creation and Freeze remain separately approval-gated.
+final_rule: All 18 capability domains passed without score compensation. Final release and repository freeze were explicitly approved on 2026-07-22.

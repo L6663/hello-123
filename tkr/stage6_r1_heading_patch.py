@@ -6,10 +6,12 @@ import re
 from . import heading_detection as _heading
 
 _PREVIOUS_DETECTOR = _heading.detect_heading
-_NUMBER = (
-    r"[0-9０-９零〇○一二三四五六七八九十百千万萬亿億两兩]"
-    r"(?:[ \t]*[0-9０-９零〇○一二三四五六七八九十百千万萬亿億两兩])*?"
+_ARABIC_NUMBER = r"[0-9０-９]+"
+_CHINESE_NUMBER = (
+    r"[零〇○一二三四五六七八九十百千万萬亿億两兩]"
+    r"(?:[ \t]*[零〇○一二三四五六七八九十百千万萬亿億两兩])*?"
 )
+_NUMBER = rf"(?:{_ARABIC_NUMBER}|{_CHINESE_NUMBER})"
 _COMBINED_RE = re.compile(
     rf"^(?:"
     rf"第[ \t]*(?P<volume_prefix>{_NUMBER})[ \t]*[卷集]"

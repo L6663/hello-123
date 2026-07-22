@@ -8,7 +8,7 @@ STRUCTURE_REPORT_SCHEMA_VERSION: Final = "tkr-structure-report-v1"
 HEADING_CANDIDATE_SCHEMA_VERSION: Final = "tkr-heading-candidate-v1"
 UNIT_INDEX_SCHEMA_VERSION: Final = "tkr-unit-index-v1"
 STRUCTURE_FINDING_SCHEMA_VERSION: Final = "tkr-structure-finding-v1"
-STRUCTURE_DETECTOR_VERSION: Final = "5.9.0-stage2-stage6-r1"
+STRUCTURE_DETECTOR_VERSION: Final = "5.9.0-stage2-final"
 OFFSET_BASIS: Final = "decoded_text_without_external_bom"
 
 class StructureInspectionError(ValueError):
