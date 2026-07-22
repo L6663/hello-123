@@ -1,0 +1,101 @@
+diff --git a/tkr/literary_engine.py b/tkr/literary_engine.py
+--- a/tkr/literary_engine.py
++++ b/tkr/literary_engine.py
+@@ -882,6 +882,9 @@ def _insert_records(
+     relationships: Sequence[RelationshipInterval],
+     events: Sequence[LiteraryEvent],
+     revisions: Sequence[RevisionRecord],
++    dialogues: Sequence[DialogueSpan],
++    candidates: Sequence[MentionCandidate],
++    review_tasks: Sequence[EntityReviewTask],
+     *,
+     fts5: bool,
+ ) -> None:
+@@ -1023,6 +1026,74 @@ def _insert_records(
+         for anchor_id in item.evidence_anchor_ids:
+             connection.execute("INSERT INTO revision_evidence VALUES(?,?)", (item.revision_id, anchor_id))
++
++    for item in dialogues:
++        connection.execute(
++            "INSERT INTO dialogues VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
++            (
++                item.dialogue_id,
++                item.source_id,
++                item.source_sha256,
++                item.unit_id,
++                item.chapter_id,
++                item.volume_ordinal,
++                item.chapter_ordinal,
++                item.start_char,
++                item.end_char,
++                item.dialogue_text,
++                item.dialogue_sha256,
++                item.speaker_surface,
++                item.speaker_entity_id,
++                item.speaker_resolution,
++                item.review_status,
++            ),
++        )
++        if fts5:
++            connection.execute(
++                "INSERT INTO literary_fts VALUES(?,?,?)",
++                ("dialogue", item.dialogue_id, " ".join(filter(None, (item.speaker_surface, item.dialogue_text)))),
++            )
++
++    for item in candidates:
++        anchor_id = evidence_anchor_id(
++            item.source_sha256,
++            item.unit_id,
++            item.start_char,
++            item.end_char,
++            item.evidence_sha256,
++        )
++        connection.execute(
++            "INSERT INTO mention_candidates VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
++            (
++                item.candidate_id,
++                item.candidate_type,
++                item.surface,
++                item.normalized_surface,
++                item.source_id,
++                item.source_sha256,
++                item.unit_id,
++                item.chapter_id,
++                item.volume_ordinal,
++                item.chapter_ordinal,
++                item.start_char,
++                item.end_char,
++                item.evidence_text,
++                item.evidence_sha256,
++                anchor_id,
++                item.rule_id,
++                float(item.confidence),
++                _canonical_json(list(item.known_entity_ids)),
++                item.review_status,
++            ),
++        )
++        if fts5:
++            connection.execute(
++                "INSERT INTO literary_fts VALUES(?,?,?)",
++                ("candidate", item.candidate_id, item.surface),
++            )
++
++    for item in review_tasks:
++        connection.execute(
++            "INSERT INTO entity_review_tasks VALUES(?,?,?,?,?,?,?)",
++            (
++                item.task_id,
++                item.candidate_type,
++                item.surface,
++                item.normalized_surface,
++                _canonical_json(list(item.allowed_decisions)),
++                _canonical_json(list(item.forbidden_authority)),
++                item.task_status,
++            ),
++        )
++        for candidate_id in item.candidate_ids:
++            connection.execute("INSERT INTO entity_task_candidates VALUES(?,?)", (item.task_id, candidate_id))
++        for chapter_id_value in item.chapter_ids:
++            connection.execute("INSERT INTO entity_task_chapters VALUES(?,?)", (item.task_id, chapter_id_value))
++        for anchor_id in item.evidence_anchor_ids:
++            connection.execute("INSERT INTO entity_task_evidence VALUES(?,?)", (item.task_id, anchor_id))
