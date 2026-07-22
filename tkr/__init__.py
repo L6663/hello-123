@@ -1,6 +1,6 @@
-"""Text Knowledge Reader staged hardening package."""
+"""Text Knowledge Reader staged hardening and literary knowledge package."""
 
-__version__ = "5.9.0"
+__version__ = "6.0.0-alpha1"
 
 # Stage 6-R1 applies narrow deterministic correctness fixes before public
 # submodules are imported. They grant no acceptance, release-candidate,
