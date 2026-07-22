@@ -1,0 +1,154 @@
+name: Text Knowledge Reader 5.9.0 final freeze
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/**"
+      - "tests/**"
+      - "schemas/**"
+      - "profiles/**"
+      - "scripts/**"
+      - "SKILL.md"
+      - "README.md"
+      - "PROJECT_STATUS.yaml"
+      - "FREEZE_MANIFEST.json"
+      - "pyproject.toml"
+      - "MANIFEST.in"
+      - ".github/workflows/final-freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  final-freeze:
+    name: Final freeze / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install final candidate
+        run: python -m pip install .
+
+      - name: Compile final runtime
+        run: |
+          python -m py_compile \
+            scripts/tkr.py \
+            tkr/anomaly_detection.py \
+            tkr/heading_detection.py \
+            tkr/stage6_r1_heading_patch.py \
+            tkr/claim_validation.py \
+            tkr/knowledge_models.py
+
+      - name: Validate Skill metadata and freeze manifest
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('.')
+          skill = (root / 'SKILL.md').read_text(encoding='utf-8')
+          assert skill.startswith('---\n'), 'SKILL.md must begin with YAML frontmatter'
+          assert '\nname: text-knowledge-reader\n' in skill
+          assert '\ndescription:' in skill
+          assert (root / 'scripts/tkr.py').is_file()
+
+          manifest = json.loads((root / 'FREEZE_MANIFEST.json').read_text(encoding='utf-8'))
+          assert manifest['version'] == '5.9.0'
+          assert manifest['freeze_approved'] is True
+          assert manifest['repository_sealed'] is True
+          for record in manifest['files']:
+              path = root / record['path']
+              assert path.is_file(), record['path']
+              data = path.read_bytes()
+              assert len(data) == record['size_bytes'], record['path']
+              assert hashlib.sha256(data).hexdigest() == record['sha256'], record['path']
+          PY
+
+      - name: Run complete regression
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Run deterministic R2 freeze review
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+          import random
+          from tkr.anomaly_detection import inspect_source_anomalies
+          from tkr.structure_detection import inspect_source_structure
+
+          random.seed(20260722)
+          topics = [
+              '法庭书记员核对证词', '极地科考队测量冰层', '剧院演员整理戏服', '农场收割机驶过麦田',
+              '空间站机器人更换阀门', '考古员描摹壁画', '裁判确认计时器', '厨师加入香草',
+              '教师分发器材', '安全员检查通风', '地勤引导客机', '护林员记录鸟群',
+              '证券所发布报告', '港口核对集装箱', '博物馆修复青铜器', '气象台更新路径',
+              '医生查看影像', '程序员检查日志', '船长校准罗盘', '工程师测试桥梁',
+          ]
+
+          def scan(text):
+              with TemporaryDirectory() as directory:
+                  path = Path(directory) / 'source.txt'
+                  path.write_text(text, encoding='utf-8', newline='')
+                  return inspect_source_anomalies(path)
+
+          detected = 0
+          for case in range(80):
+              random.shuffle(topics)
+              count = random.randint(14, 18)
+              prefix = [f'第{case + 1}章 盲测', '主人公沿石桥寻找铜铃。', '同伴查看地图后向北。', '夜色中传来钟声。']
+              suffix = [f'{topics[index]}。编号{case:02d}-{index:02d}记录已经归档。' for index in range(count)]
+              report = scan('\n\n'.join(prefix + suffix) + '\n\n----------\n\n下一章 正常\n\n正文连贯。\n')
+              detected += any(item.rule_id == 'SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE' for item in report.findings)
+          assert detected == 80
+
+          false_positives = 0
+          clean_topics = ['青云宗弟子在剑阁修炼剑意', '长老讲解同一套剑阵', '众人沿山路寻找灵石', '弟子返回宗门整理法器']
+          for case in range(80):
+              paragraphs = [f'{clean_topics[index % 4]}。第{index:02d}次记录已经归档。' for index in range(18)]
+              report = scan(f'第{case + 1}章 连贯\n\n' + '\n\n'.join(paragraphs) + '\n\n----------\n\n下一章\n\n青云宗继续修炼。\n')
+              false_positives += any(item.rule_id == 'SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE' for item in report.findings)
+          assert false_positives == 0
+
+          with TemporaryDirectory() as directory:
+              path = Path(directory) / 'headings.txt'
+              for volume in list(range(1, 51)) + [88, 99, 100, 123]:
+                  for chapter in [1, 2, 9, 10, 13, 20, 81, 108, 220, 999]:
+                      path.write_text(f'卷{volume} {chapter}章 标题\n正文。\n', encoding='utf-8', newline='')
+                      report = inspect_source_structure(path)
+                      container = next(item for item in report.headings[0].signals if item.startswith('container_ordinal='))
+                      assert report.units[0].ordinal == chapter
+                      assert container == f'container_ordinal={volume}'
+          PY
+
+      - name: Doctor and Audit
+        run: |
+          tkr-skill doctor --root .
+          tkr-skill audit --root .
+
+      - name: Build final Wheel
+        run: python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Verify clean installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          VENV="$RUNNER_TEMP/tkr-final-${{ matrix.python-version }}"
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$VENV/bin/tkr-skill" doctor
+          "$VENV/bin/tkr-skill" audit
+          "$VENV/bin/python" "$GITHUB_WORKSPACE/scripts/tkr.py" doctor
