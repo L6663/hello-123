@@ -36,6 +36,8 @@ NUMBERED_SUFFIX_RE = re.compile(rf"^(?P<unit>[卷部篇集章回幕节節])\s*(?
 ENGLISH_NUMBERED_RE = re.compile(r"^(?P<kind>volume|book|part|chapter|section)\s+(?P<number>[0-9]+)(?P<rest>.*)$", re.IGNORECASE)
 SPLIT_PREFIX_RE = re.compile(rf"^第\s*(?P<number>{NUMBER_TOKEN})\s*$")
 SPLIT_SUFFIX_RE = re.compile(r"^(?P<unit>[卷部篇集章回幕节節])(?P<rest>.*)$")
+COMBINED_VOLUME_CHAPTER_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{NUMBER_TOKEN}))\s*(?:第\s*)?(?P<chapter>{NUMBER_TOKEN})\s*(?P<unit>[章回幕])(?P<rest>.*)$")
+COMBINED_VOLUME_SPECIAL_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{NUMBER_TOKEN}))\s*(?P<special>尾声|尾聲|终章|終章|番外|外传|外傳|特别篇|特別篇)(?P<rest>.*)$")
 MARKDOWN_RE = re.compile(r"^(?P<indent>\s*)(?P<marks>#{1,6})[ \t]+(?P<body>.+?)\s*$")
 FENCE_RE = re.compile(r"^\s*(?P<fence>`{3,}|~{3,})")
 SENTENCE_MARKS = "。！？!?；;"
@@ -108,6 +110,64 @@ def _numbered(search_text: str, offset: int, signals: list[str], policy: Structu
         confidence, accepted, tuple(signals + extras),
     )
 
+
+def _combined_volume_heading(search_text: str, offset: int, signals: list[str], policy: StructurePolicy) -> DetectedHeading | None:
+    match = COMBINED_VOLUME_CHAPTER_RE.match(search_text)
+    if match is not None:
+        volume_text = match.group("volume_before") or match.group("volume_after")
+        chapter_text = match.group("chapter")
+        volume_ordinal = parse_ordinal(volume_text)
+        chapter_ordinal = parse_ordinal(chapter_text)
+        marker_end = match.start("rest")
+        rest = match.group("rest")
+        title, heading_end, body_start, split_signals = split_title_and_body(
+            rest, marker_end, policy.inline_title_max_characters
+        )
+        separated = not rest or rest[:1].isspace() or rest[:1] in "—–-:：·.．\t　"
+        accepted = volume_ordinal is not None and chapter_ordinal is not None and (
+            len(search_text) <= policy.max_heading_characters or separated or split_signals
+        )
+        extras = [
+            f"container_type=volume",
+            f"container_ordinal={volume_ordinal if volume_ordinal is not None else ''}",
+            f"container_ordinal_text={''.join(volume_text.split())}",
+            *split_signals,
+        ]
+        if not separated:
+            extras.append("compact_combined_heading")
+        if not accepted:
+            extras.append("ambiguous_combined_heading")
+        return DetectedHeading(
+            "COMBINED_VOLUME_CHAPTER_HEADING", "chapter", 2, chapter_ordinal,
+            chapter_text, title, search_text[:heading_end], offset, offset + marker_end,
+            offset + heading_end, offset + body_start,
+            "high" if accepted and separated else "medium" if accepted else "low",
+            accepted, tuple(signals + extras),
+        )
+    special = COMBINED_VOLUME_SPECIAL_RE.match(search_text)
+    if special is None:
+        return None
+    volume_text = special.group("volume_before") or special.group("volume_after")
+    volume_ordinal = parse_ordinal(volume_text)
+    special_text = special.group("special")
+    unit_type = "epilogue" if special_text in {"尾声", "尾聲", "终章", "終章"} else "extra_story"
+    marker_end = special.start("rest")
+    title, heading_end, body_start, split_signals = split_title_and_body(
+        special.group("rest"), marker_end, policy.inline_title_max_characters
+    )
+    accepted = volume_ordinal is not None and (len(search_text) <= policy.max_heading_characters or bool(split_signals))
+    return DetectedHeading(
+        "COMBINED_VOLUME_SPECIAL_HEADING", unit_type, 2, None, "",
+        title, search_text[:heading_end], offset, offset + marker_end, offset + heading_end,
+        offset + body_start, "high" if accepted else "low", accepted,
+        tuple(signals + [
+            "container_type=volume",
+            f"container_ordinal={volume_ordinal if volume_ordinal is not None else ''}",
+            f"container_ordinal_text={''.join(volume_text.split())}",
+            *split_signals,
+        ]),
+    )
+
 def detect_heading(content: str, policy: StructurePolicy) -> DetectedHeading | None:
     markdown = MARKDOWN_RE.match(content)
     signals: list[str] = []
@@ -122,6 +182,9 @@ def detect_heading(content: str, policy: StructurePolicy) -> DetectedHeading | N
         markdown_level = None
     if not search_text:
         return None
+    combined = _combined_volume_heading(search_text, offset, signals, policy)
+    if combined is not None:
+        return combined
     numbered = _numbered(search_text, offset, signals, policy)
     if numbered is not None:
         return numbered

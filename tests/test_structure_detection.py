@@ -48,6 +48,26 @@ class StructureTests(unittest.TestCase):
             self.assertEqual(r.units[3].parent_unit_id,r.units[0].unit_id)
             self.assertEqual(r.units[5].parent_unit_id,r.units[4].unit_id)
 
+    def test_combined_volume_chapter_heading_uses_chapter_ordinal(self):
+        with tempfile.TemporaryDirectory() as d:
+            text = "卷五 第二十六章 风雪夜归人\n正文。\n卷五 第二十七章 山河入梦\n正文。\n"
+            p = self.make_file(Path(d), text)
+            report = inspect_source_structure(p)
+            self.assertEqual([unit.unit_type for unit in report.units], ["chapter", "chapter"])
+            self.assertEqual([unit.ordinal for unit in report.units], [26, 27])
+            self.assertIn("container_ordinal=5", report.headings[0].signals)
+            self.assertNotIn("ORDINAL_GAP_CANDIDATE", {item.rule_id for item in report.findings})
+
+    def test_combined_numbered_volume_and_chapter_variants(self):
+        with tempfile.TemporaryDirectory() as d:
+            text = "第5卷 第26章 风起\n正文。\n卷十一 尾声\n正文。\n"
+            p = self.make_file(Path(d), text)
+            report = inspect_source_structure(p)
+            self.assertEqual(report.units[0].unit_type, "chapter")
+            self.assertEqual(report.units[0].ordinal, 26)
+            self.assertEqual(report.units[1].unit_type, "epilogue")
+            self.assertIn("container_ordinal=11", report.headings[1].signals)
+
     def test_special_units(self):
         with tempfile.TemporaryDirectory() as d:
             p=self.make_file(Path(d),'序章 起源\n文\n第一章 正文\n文\n终章 落幕\n文\n番外 小事\n文\n后记\n文\n')
