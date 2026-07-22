@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-relationship.schema.json",
+  "title": "Time-bounded literary relationship",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "relationship_id", "tier", "subject_entity_id",
+    "relation_type", "object_entity_id", "start_chapter_id", "end_chapter_id",
+    "start_source_order", "end_source_order", "change_reason_assertion_ids",
+    "evidence_anchor_ids", "status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-relationship-v1"},
+    "relationship_id": {"type": "string", "pattern": "^lre_[0-9a-f]{32}$"},
+    "tier": {"enum": ["A", "B", "C"]},
+    "subject_entity_id": {"type": "string", "minLength": 1},
+    "relation_type": {"type": "string", "minLength": 1},
+    "object_entity_id": {"type": "string", "minLength": 1},
+    "start_chapter_id": {"type": ["string", "null"]},
+    "end_chapter_id": {"type": ["string", "null"]},
+    "start_source_order": {"type": ["integer", "null"], "minimum": 0},
+    "end_source_order": {"type": ["integer", "null"], "minimum": 0},
+    "change_reason_assertion_ids": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"},
+      "uniqueItems": true
+    },
+    "evidence_anchor_ids": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^lea_[0-9a-f]{32}$"},
+      "uniqueItems": true
+    },
+    "status": {"enum": ["active", "ended", "contested", "needs_review"]}
+  }
+}
