@@ -5,6 +5,8 @@ on:
     branches:
       - feature/hybrid-retrieval-v5.5-alpha1
   pull_request:
+    branches:
+      - main
     paths:
       - "tkr/hybrid_retrieval.py"
       - "tkr/retrieval_cli.py"
