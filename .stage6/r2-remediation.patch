@@ -1,0 +1,291 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 625b160..e075029 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "text-knowledge-reader-core"
+-version = "5.9.0a2"
++version = "5.9.0a3"
+ description = "Auditable staged text ingestion, typed evidence validation, strict QA, recoverable builds, and approval-gated release freezing"
+ requires-python = ">=3.10"
+ license = {text = "MIT"}
+diff --git a/schemas/knowledge-answer-packet.schema.json b/schemas/knowledge-answer-packet.schema.json
+index 6fffefe..cbfa8ae 100644
+--- a/schemas/knowledge-answer-packet.schema.json
++++ b/schemas/knowledge-answer-packet.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-answer-v1"},
+-    "system_version": {"const": "5.9.0-stage6-r1"},
++    "system_version": {"const": "5.9.0-stage6-r2"},
+     "answer_packet_id": {"type": "string", "pattern": "^kap_[0-9a-f]{32}$"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "project_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+diff --git a/schemas/knowledge-answer-verification.schema.json b/schemas/knowledge-answer-verification.schema.json
+index 8b013ec..72466b6 100644
+--- a/schemas/knowledge-answer-verification.schema.json
++++ b/schemas/knowledge-answer-verification.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-answer-verification-v1"},
+-    "system_version": {"const": "5.9.0-stage6-r1"},
++    "system_version": {"const": "5.9.0-stage6-r2"},
+     "status": {"enum": ["accepted", "rejected"]},
+     "accepted": {"type": "boolean"},
+     "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+diff --git a/schemas/knowledge-project-manifest.schema.json b/schemas/knowledge-project-manifest.schema.json
+index 5ed7f98..f939894 100644
+--- a/schemas/knowledge-project-manifest.schema.json
++++ b/schemas/knowledge-project-manifest.schema.json
+@@ -11,7 +11,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-manifest-v1"},
+-    "system_version": {"const": "5.9.0-stage6-r1"},
++    "system_version": {"const": "5.9.0-stage6-r2"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "source_id": {"type": "string", "minLength": 1},
+     "raw_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+diff --git a/schemas/knowledge-project-report.schema.json b/schemas/knowledge-project-report.schema.json
+index 56b3ad7..dbecd71 100644
+--- a/schemas/knowledge-project-report.schema.json
++++ b/schemas/knowledge-project-report.schema.json
+@@ -17,7 +17,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-project-v1"},
+-    "system_version": {"const": "5.9.0-stage6-r1"},
++    "system_version": {"const": "5.9.0-stage6-r2"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "status": {"const": "completed"},
+     "index_mode": {"enum": ["review", "canonical"]},
+diff --git a/schemas/knowledge-project-verification.schema.json b/schemas/knowledge-project-verification.schema.json
+index 8272e98..53a76b3 100644
+--- a/schemas/knowledge-project-verification.schema.json
++++ b/schemas/knowledge-project-verification.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-verification-v1"},
+-    "system_version": {"const": "5.9.0-stage6-r1"},
++    "system_version": {"const": "5.9.0-stage6-r2"},
+     "project_id": {"type": "string"},
+     "status": {"enum": ["verified", "rejected"]},
+     "valid": {"type": "boolean"},
+diff --git a/tests/test_anomaly_detection.py b/tests/test_anomaly_detection.py
+index 8944628..197f540 100644
+--- a/tests/test_anomaly_detection.py
++++ b/tests/test_anomaly_detection.py
+@@ -169,6 +169,21 @@ class AnomalyDetectionTests(unittest.TestCase):
+         self.assertIn("detector=source_adaptive_paragraph_mosaic", matches[0].signals)
+         self.assertTrue(matches[0].evidence_preview.startswith("黑衣刺客"))
+ 
++    def test_short_shared_template_mosaic_is_detected_without_clean_false_positive(self) -> None:
++        prefix = ["第一章 盲测", "主人公沿石桥寻找铜铃。", "同伴查看地图后向北。", "夜色中传来钟声。"]
++        topics = [
++            "法庭书记员核对证词。", "极地科考队测量冰层。", "剧院演员整理旧戏服。", "农场收割机驶过麦田。",
++            "空间站机器人更换阀门。", "古墓考古员描摹壁画。", "赛场裁判确认计时器。", "餐厅厨师加入香草。",
++            "校园教师分发器材。", "矿井安全员检查通风。", "机场地勤引导客机。", "森林护林员记录鸟群。",
++            "证券所发布风险报告。", "港口核对集装箱。", "博物馆修复青铜器。", "气象台更新风暴路径。",
++        ]
++        suffix = [f"{text}第{index:02d}号记录已归档。" for index, text in enumerate(topics)]
++        polluted = "\n\n".join(prefix + suffix) + "\n\n----------\n\n第二章 正常\n\n正文连贯。\n"
++        report = inspect_source_anomalies(self._write("short-template-mosaic.txt", polluted))
++        matches = [item for item in report.findings if item.rule_id == "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE"]
++        self.assertEqual(len(matches), 1)
++        self.assertIn("classifier_branch=template_resistant_mosaic", matches[0].signals)
++
+     def test_separator_delimited_coherent_chapters_do_not_emit_mosaic_candidate(self) -> None:
+         first = "\n\n".join(["青云宗弟子在剑阁修炼灵气与剑意。"] * 12)
+         second = "\n\n".join(["青云宗长老带领弟子进入秘境寻找灵石。"] * 12)
+diff --git a/tests/test_structure_detection.py b/tests/test_structure_detection.py
+index e476406..fac4d66 100644
+--- a/tests/test_structure_detection.py
++++ b/tests/test_structure_detection.py
+@@ -58,6 +58,15 @@ class StructureTests(unittest.TestCase):
+             self.assertIn("container_ordinal=5", report.headings[0].signals)
+             self.assertNotIn("ORDINAL_GAP_CANDIDATE", {item.rule_id for item in report.findings})
+ 
++    def test_compact_arabic_volume_chapter_numbers_do_not_merge_digits(self):
++        with tempfile.TemporaryDirectory() as d:
++            text = "卷1 13章 风起\n正文。\n卷12 20章 云涌\n正文。\n"
++            p = self.make_file(Path(d), text)
++            report = inspect_source_structure(p)
++            self.assertEqual([unit.ordinal for unit in report.units], [13, 20])
++            containers = [next(signal for signal in heading.signals if signal.startswith("container_ordinal=")) for heading in report.headings]
++            self.assertEqual(containers, ["container_ordinal=1", "container_ordinal=12"])
++
+     def test_combined_numbered_volume_and_chapter_variants(self):
+         with tempfile.TemporaryDirectory() as d:
+             text = "第5卷 第26章 风起\n正文。\n卷十一 尾声\n正文。\n"
+diff --git a/tkr/__init__.py b/tkr/__init__.py
+index b5da211..374ca75 100644
+--- a/tkr/__init__.py
++++ b/tkr/__init__.py
+@@ -1,3 +1,3 @@
+ """Text Knowledge Reader staged hardening package."""
+ 
+-__version__ = "5.9.0-alpha2"
++__version__ = "5.9.0-alpha3"
+diff --git a/tkr/anomaly_detection.py b/tkr/anomaly_detection.py
+index 51246ae..37e26b3 100644
+--- a/tkr/anomaly_detection.py
++++ b/tkr/anomaly_detection.py
+@@ -16,7 +16,7 @@ from .encoding_inspection import EncodingInspectionError, inspect_source_encodin
+ from .hashing import DEFAULT_BLOCK_SIZE, HashingError, sha256_file
+ 
+ ANOMALY_INSPECTION_SCHEMA_VERSION: Final = "tkr-anomaly-inspection-v2"
+-ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-stage6-r1"
++ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-stage6-r2"
+ OFFSET_BASIS: Final = "decoded_text_without_external_bom"
+ _BOMS: Final = {"utf-8": b"\xef\xbb\xbf", "utf-16-le": b"\xff\xfe", "utf-16-be": b"\xfe\xff"}
+ _WEB: Final = (
+@@ -84,6 +84,7 @@ class AnomalyPolicy:
+     mosaic_min_suffix_paragraphs: int = 6
+     mosaic_max_block_characters: int = 100_000
+     mosaic_min_candidate_suffix_characters: int = 700
++    mosaic_min_template_suffix_characters: int = 300
+     mosaic_max_candidate_suffix_characters: int = 3_000
+ 
+     def __post_init__(self) -> None:
+@@ -97,7 +98,8 @@ class AnomalyPolicy:
+             self.same_language_min_entity_union, self.same_language_min_signals,
+             self.mosaic_min_body_paragraphs, self.mosaic_max_boundary_paragraphs,
+             self.mosaic_min_suffix_paragraphs, self.mosaic_max_block_characters,
+-            self.mosaic_min_candidate_suffix_characters, self.mosaic_max_candidate_suffix_characters,
++            self.mosaic_min_candidate_suffix_characters, self.mosaic_min_template_suffix_characters,
++            self.mosaic_max_candidate_suffix_characters,
+         )
+         if any(not isinstance(x, int) or isinstance(x, bool) or x <= 0 for x in positive):
+             raise AnomalyInspectionError("integer policy values must be positive")
+@@ -272,6 +274,16 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
+             gram for gram in gram_union
+             if sum(gram in item for item in grams) >= 2
+         }
++        document_frequency = Counter(gram for item in grams for gram in item)
++        common_threshold = max(2, len(grams) // 2)
++        common_grams = {gram for gram, count in document_frequency.items() if count >= common_threshold}
++        residual = [Counter({gram: count for gram, count in item.items() if gram not in common_grams}) for item in grams]
++        residual_pairwise = [
++            _mosaic_cosine(residual[i], residual[j])
++            for i in range(len(residual))
++            for j in range(i + 1, len(residual))
++        ]
++        total_grams = sum(sum(item.values()) for item in grams)
+         prefix = "".join(item.text for item in before[-4:])
+         suffix_sample = "".join(item.text for item in first)
+         candidates.append(
+@@ -283,6 +295,8 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
+                 "prepost": _mosaic_cosine(_grams(prefix), _grams(suffix_sample)),
+                 "adjacent": _mean(adjacent),
+                 "pairwise": _mean(pairwise),
++                "residual_pairwise": _mean(residual_pairwise),
++                "type_token_ratio": len(gram_union) / total_grams if total_grams else 0.0,
+                 "repetition": len(repeated) / len(gram_union) if gram_union else 1.0,
+             }
+         )
+@@ -317,22 +331,44 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
+         and float(classification_best["prepost"]) <= 0.02134677767753601
+         and int(classification_best["post_chars"]) <= policy.mosaic_max_candidate_suffix_characters
+     )
+-    if not (branch_a or branch_b):
+-        return None
+-    if (
+-        int(boundary_best["post_paragraphs"]) < 14
+-        or int(boundary_best["post_chars"]) < policy.mosaic_min_candidate_suffix_characters
+-    ):
++    template_rows = [
++        row for row in candidates
++        if 0.40 <= float(row["type_token_ratio"]) <= 0.75
++        and float(row["residual_pairwise"]) <= 0.01
++        and int(row["post_paragraphs"]) >= 14
++        and policy.mosaic_min_template_suffix_characters <= int(row["post_chars"])
++        <= policy.mosaic_max_candidate_suffix_characters
++    ]
++    template_best = min(
++        template_rows,
++        key=lambda row: (
++            float(row["residual_pairwise"]), float(row["prepost"]), int(row["boundary"])
++        ),
++    ) if template_rows else None
++    if template_best is not None:
++        boundary_best = template_best
++        classification_best = template_best
++        classifier_branch = "template_resistant_mosaic"
++    elif branch_a or branch_b:
++        if (
++            int(boundary_best["post_paragraphs"]) < 14
++            or int(boundary_best["post_chars"]) < policy.mosaic_min_candidate_suffix_characters
++        ):
++            return None
++        classifier_branch = "dense_mosaic" if branch_a else "abrupt_mosaic"
++    else:
+         return None
+     return {
+         **boundary_best,
+         "classification_prepost": classification_best["prepost"],
+         "classification_adjacent": classification_best["adjacent"],
+         "classification_pairwise": classification_best["pairwise"],
++        "classification_residual_pairwise": classification_best["residual_pairwise"],
++        "classification_type_token_ratio": classification_best["type_token_ratio"],
+         "classification_repetition": classification_best["repetition"],
+         "min_pairwise": min_pairwise,
+         "block_length": block_length,
+-        "classifier_branch": "dense_mosaic" if branch_a else "abrupt_mosaic",
++        "classifier_branch": classifier_branch,
+     }
+@@ -357,6 +393,8 @@ def _mosaic_finding(source_hash: str, block_text: str, block_start: int, block_l
+         f"min_pairwise_cosine={float(features['min_pairwise']):.6f}",
+         f"prefix_suffix_cosine={float(features['classification_prepost']):.6f}",
+         f"adjacent_cosine={float(features['classification_adjacent']):.6f}",
++        f"residual_pairwise_cosine={float(features['classification_residual_pairwise']):.6f}",
++        f"type_token_ratio={float(features['classification_type_token_ratio']):.6f}",
+         f"repeated_gram_ratio={float(features['classification_repetition']):.6f}",
+         f"suffix_paragraphs={features['post_paragraphs']}",
+         f"suffix_characters={features['post_chars']}",
+diff --git a/tkr/heading_detection.py b/tkr/heading_detection.py
+index c84484f..3f17a9e 100644
+--- a/tkr/heading_detection.py
++++ b/tkr/heading_detection.py
+@@ -36,8 +36,9 @@ NUMBERED_SUFFIX_RE = re.compile(rf"^(?P<unit>[卷部篇集章回幕节節])\s*(?
+ ENGLISH_NUMBERED_RE = re.compile(r"^(?P<kind>volume|book|part|chapter|section)\s+(?P<number>[0-9]+)(?P<rest>.*)$", re.IGNORECASE)
+ SPLIT_PREFIX_RE = re.compile(rf"^第\s*(?P<number>{NUMBER_TOKEN})\s*$")
+ SPLIT_SUFFIX_RE = re.compile(r"^(?P<unit>[卷部篇集章回幕节節])(?P<rest>.*)$")
+-COMBINED_VOLUME_CHAPTER_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{NUMBER_TOKEN}))\s*(?:第\s*)?(?P<chapter>{NUMBER_TOKEN})\s*(?P<unit>[章回幕])(?P<rest>.*)$")
+-COMBINED_VOLUME_SPECIAL_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{NUMBER_TOKEN}))\s*(?P<special>尾声|尾聲|终章|終章|番外|外传|外傳|特别篇|特別篇)(?P<rest>.*)$")
++COMBINED_NUMBER_TOKEN = r"(?:[0-9０-９]+|[零〇○一二三四五六七八九十百千万萬亿億两兩]+)"
++COMBINED_VOLUME_CHAPTER_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{COMBINED_NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{COMBINED_NUMBER_TOKEN}))\s*(?:第\s*)?(?P<chapter>{COMBINED_NUMBER_TOKEN})\s*(?P<unit>[章回幕])(?P<rest>.*)$")
++COMBINED_VOLUME_SPECIAL_RE = re.compile(rf"^(?:(?:第\s*)?(?P<volume_before>{COMBINED_NUMBER_TOKEN})\s*(?:卷|集)|(?:卷|集)\s*(?P<volume_after>{COMBINED_NUMBER_TOKEN}))\s*(?P<special>尾声|尾聲|终章|終章|番外|外传|外傳|特别篇|特別篇)(?P<rest>.*)$")
+ MARKDOWN_RE = re.compile(r"^(?P<indent>\s*)(?P<marks>#{1,6})[ \t]+(?P<body>.+?)\s*$")
+ FENCE_RE = re.compile(r"^\s*(?P<fence>`{3,}|~{3,})")
+ SENTENCE_MARKS = "。！？!?；;"
+diff --git a/tkr/knowledge_models.py b/tkr/knowledge_models.py
+index a8a78f2..c5a5542 100644
+--- a/tkr/knowledge_models.py
++++ b/tkr/knowledge_models.py
+@@ -13,7 +13,7 @@ KNOWLEDGE_MANIFEST_SCHEMA_VERSION: Final = "tkr-knowledge-manifest-v1"
+ KNOWLEDGE_VERIFICATION_SCHEMA_VERSION: Final = "tkr-knowledge-verification-v1"
+ KNOWLEDGE_ANSWER_SCHEMA_VERSION: Final = "tkr-knowledge-answer-v1"
+ KNOWLEDGE_ANSWER_VERIFICATION_SCHEMA_VERSION: Final = "tkr-knowledge-answer-verification-v1"
+-KNOWLEDGE_SYSTEM_VERSION: Final = "5.9.0-stage6-r1"
++KNOWLEDGE_SYSTEM_VERSION: Final = "5.9.0-stage6-r2"
+ 
+ 
+ class KnowledgeProjectError(ValueError):
+diff --git a/tkr/structure_models.py b/tkr/structure_models.py
+index 70ac3ce..bc9a4d8 100644
+--- a/tkr/structure_models.py
++++ b/tkr/structure_models.py
+@@ -8,7 +8,7 @@ STRUCTURE_REPORT_SCHEMA_VERSION: Final = "tkr-structure-report-v1"
+ HEADING_CANDIDATE_SCHEMA_VERSION: Final = "tkr-heading-candidate-v1"
+ UNIT_INDEX_SCHEMA_VERSION: Final = "tkr-unit-index-v1"
+ STRUCTURE_FINDING_SCHEMA_VERSION: Final = "tkr-structure-finding-v1"
+-STRUCTURE_DETECTOR_VERSION: Final = "5.9.0-stage2-stage6-r1"
++STRUCTURE_DETECTOR_VERSION: Final = "5.9.0-stage2-stage6-r2"
+ OFFSET_BASIS: Final = "decoded_text_without_external_bom"
+ 
+ class StructureInspectionError(ValueError):
