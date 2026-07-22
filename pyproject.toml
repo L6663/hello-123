@@ -19,6 +19,7 @@ tkr-retrieval = "tkr.retrieval_cli:main"
 tkr-strict-qa = "tkr.strict_qa_cli:main"
 tkr-gold-benchmark = "tkr.gold_benchmark_cli:main"
 tkr-release-freeze = "tkr.release_freeze_cli:main"
+tkr-anomaly-scan = "tkr.anomaly_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
