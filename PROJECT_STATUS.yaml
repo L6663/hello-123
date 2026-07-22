@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T04:03:00Z
+updated_at_utc: 2026-07-22T04:06:00Z
 
 main:
   branch: main
@@ -13,18 +13,23 @@ development:
   status: alpha
   mode: skill_optimization_only
   canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-stage2-deterministic-structure
+  active_branch: feature/phase9-0-baseline-cleanup
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+  integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
     - Phase 9.2
     - Phase 9.3
     - Phase 9.4
+    - Phase 9.5
+    - Phase 9.6
+    - Phase 9.7
   completed_large_stages:
     - Stage 1
-  current_large_stage: Stage 2
-  current_scope: deterministic_heading_detection_unit_index_and_continuity
+    - Stage 2
+  next_large_stage: Stage 3
+  next_stage_status: not_started
 
 stage_1:
   estimated_engineering_time: 4_to_6_hours
@@ -47,6 +52,9 @@ stage_1:
 stage_2:
   estimated_engineering_time: 12_to_18_hours
   implementation_status: complete
+  integration_status: merged_into_canonical_phase9_base
+  pull_request: 12
+  merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
   local_focused_checks:
     status: passed
     test_count: 21
@@ -57,8 +65,6 @@ stage_2:
       - "3.11"
       - "3.12"
     workflow_run_id: 29890012483
-  integration_status: ready_to_merge
-  pull_request: 12
   capabilities:
     multilingual_numbered_heading_candidates: implemented
     special_unit_classification: implemented
@@ -127,12 +133,12 @@ large_stage_plan:
   - stage: Stage 2
     scope: deterministic heading detection, Unit Index, and continuity validation
     estimate: 12_to_18_hours
-    status: complete_ready_to_merge
+    status: complete_integrated
     project_acceptance: false
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
     estimate: 24_to_36_hours
-    status: planned
+    status: planned_not_started
     project_acceptance: false
   - stage: Stage 4
     scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
