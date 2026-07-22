@@ -10,6 +10,11 @@ from .stage6_r1_remediation import apply_stage6_r1_remediation as _apply_stage6_
 _apply_stage6_r1_remediation()
 del _apply_stage6_r1_remediation
 
+from .stage6_r1_heading_patch import apply_stage6_r1_heading_patch as _apply_stage6_r1_heading_patch
+
+_apply_stage6_r1_heading_patch()
+del _apply_stage6_r1_heading_patch
+
 # Structured sources require one splice candidate per incoherent chapter
 # suffix rather than hundreds of fixed-window transitions.
 from . import anomaly_detection as _stage6_r1_anomaly
