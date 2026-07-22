@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.invalid/schemas/engineering-build-result.schema.json",
+  "title": "Text Knowledge Reader Engineering Build Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "engineering_version", "status", "source_sha256", "build_key",
+    "profile_name", "profile_sha256", "project_directory", "state_directory", "project_id",
+    "cache_status", "reused_existing_project", "recovered_actions", "project_report",
+    "project_acceptance_performed", "may_accept_project", "release_candidate", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-engineering-build-result-v1"},
+    "engineering_version": {"const": "5.9.0-stage5"},
+    "status": {"const": "completed"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "build_key": {"type": "string", "pattern": "^bld_[0-9a-f]{40}$"},
+    "profile_name": {"type": "string", "minLength": 1},
+    "profile_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "project_directory": {"type": "string", "minLength": 1},
+    "state_directory": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+    "cache_status": {"enum": ["hit", "miss", "disabled", "not_used"]},
+    "reused_existing_project": {"type": "boolean"},
+    "recovered_actions": {"type": "array", "items": {"type": "string"}},
+    "project_report": {"type": "object"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "release_candidate": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

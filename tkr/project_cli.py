@@ -1,14 +1,19 @@
-"""Unified CLI for Stage 4 end-to-end typed knowledge projects."""
+"""Unified CLI for recoverable evidence-bound typed knowledge projects."""
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import json
 from pathlib import Path
 from typing import Sequence
 
-from .knowledge_models import KnowledgeProjectPolicy
-from .knowledge_project import build_knowledge_project, verify_knowledge_project
-from .knowledge_query import answer_knowledge_project, verify_knowledge_answer
+from .engineering import load_engineering_profile
+from .project_security import (
+    answer_secure_knowledge_project,
+    build_secure_engineered_project,
+    verify_secure_knowledge_answer,
+    verify_secure_knowledge_project,
+)
 
 
 def _write_json(path: Path | None, payload: dict[str, object]) -> None:
@@ -26,26 +31,39 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tkr-project",
         description=(
-            "Build, verify, and query one evidence-bound typed knowledge project. "
+            "Build, verify, and query one recoverable evidence-bound typed knowledge project. "
             "This command does not perform final project acceptance."
         ),
     )
     commands = parser.add_subparsers(dest="command", required=True)
 
-    build = commands.add_parser("build", help="build a self-contained project atomically")
+    build = commands.add_parser("build", help="build a cached and recoverable self-contained project")
     build.add_argument("source", type=Path)
     build.add_argument("--outdir", type=Path, required=True)
-    build.add_argument("--index-mode", choices=("review", "canonical"), default="review")
-    build.add_argument("--max-candidates", type=int, default=200_000)
-    build.add_argument("--max-findings", type=int, default=50_000)
-    build.add_argument("--max-model-tasks", type=int, default=50_000)
-    build.add_argument("--max-clause-characters", type=int, default=600)
+    build.add_argument(
+        "--profile",
+        default="balanced",
+        help="built-in profile name or a path to a strict engineering profile JSON",
+    )
+    build.add_argument("--state-dir", type=Path, help="mutable lock, journal, and cache directory")
+    build.add_argument("--index-mode", choices=("review", "canonical"))
+    build.add_argument("--max-candidates", type=int)
+    build.add_argument("--max-findings", type=int)
+    build.add_argument("--max-model-tasks", type=int)
+    build.add_argument("--max-clause-characters", type=int)
     build.add_argument("--no-model-tasks", action="store_true")
+    build.add_argument("--no-cache", action="store_true", help="disable verified content-addressed cache reuse")
+    build.add_argument("--no-resume", action="store_true", help="skip orphan backup and stale workspace recovery")
+    build.add_argument(
+        "--recover-stale-lock",
+        action="store_true",
+        help="remove a sufficiently old lock only when its recorded process is not alive",
+    )
     mode = build.add_mutually_exclusive_group()
-    mode.add_argument("--reuse", action="store_true", help="reuse only after full verification")
+    mode.add_argument("--reuse", action="store_true", help="reuse an exact verified existing project")
     mode.add_argument("--force", action="store_true", help="atomically replace an existing project")
 
-    verify = commands.add_parser("verify", help="verify the complete immutable project hash chain")
+    verify = commands.add_parser("verify", help="verify hashes and exact non-symlink project membership")
     verify.add_argument("project", type=Path)
     verify.add_argument("--output", type=Path)
 
@@ -64,35 +82,46 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _selected_profile(args):
+    profile = load_engineering_profile(args.profile)
+    overrides: dict[str, object] = {}
+    for argument, field in (
+        (args.index_mode, "index_mode"),
+        (args.max_candidates, "max_candidates"),
+        (args.max_findings, "max_findings"),
+        (args.max_model_tasks, "max_model_tasks"),
+        (args.max_clause_characters, "max_clause_characters"),
+    ):
+        if argument is not None:
+            overrides[field] = argument
+    if args.no_model_tasks:
+        overrides["emit_model_tasks"] = False
+    return replace(profile, **overrides) if overrides else profile
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "build":
-            report = build_knowledge_project(
+            result = build_secure_engineered_project(
                 args.source,
                 args.outdir,
-                policy=KnowledgeProjectPolicy(
-                    index_mode=args.index_mode,
-                    max_candidates=args.max_candidates,
-                    max_findings=args.max_findings,
-                    max_model_tasks=args.max_model_tasks,
-                    max_clause_characters=args.max_clause_characters,
-                    emit_model_tasks=not args.no_model_tasks,
-                    reuse_verified_project=args.reuse,
-                    replace_existing_project=args.force,
-                ),
+                profile=_selected_profile(args),
+                state_directory=args.state_dir,
+                reuse_existing=args.reuse,
+                replace_existing=args.force,
+                use_cache=not args.no_cache,
+                resume=not args.no_resume,
+                recover_stale_lock=args.recover_stale_lock,
             )
-            payload = report.to_dict()
-            payload["project_directory"] = str(args.outdir)
-            payload["reused_verified_project"] = bool(args.reuse)
-            print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+            print(json.dumps(result.to_dict(), ensure_ascii=False, sort_keys=True))
             return 0
         if args.command == "verify":
-            result = verify_knowledge_project(args.project)
+            result = verify_secure_knowledge_project(args.project)
             _write_json(args.output, result.to_dict())
             return 0 if result.valid else 2
         if args.command == "query":
-            packet = answer_knowledge_project(
+            packet = answer_secure_knowledge_project(
                 args.project,
                 args.question,
                 source_id=args.source_id,
@@ -101,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             _write_json(args.output, packet.to_dict())
             return 0
-        result = verify_knowledge_answer(args.project, args.packet)
+        result = verify_secure_knowledge_answer(args.project, args.packet)
         _write_json(args.output, result.to_dict())
         return 0 if result.accepted else 2
     except (OSError, UnicodeError, TypeError, ValueError, KeyError) as exc:

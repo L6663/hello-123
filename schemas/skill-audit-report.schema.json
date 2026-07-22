@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.invalid/schemas/skill-audit-report.schema.json",
+  "title": "Text Knowledge Reader Skill Audit Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "audit_version", "root", "status", "passed", "checked_file_count",
+    "schema_count", "profile_count", "finding_count", "findings",
+    "project_acceptance_performed", "may_accept_project", "release_candidate", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-skill-audit-v1"},
+    "audit_version": {"const": "5.9.0-stage5"},
+    "root": {"type": "string", "minLength": 1},
+    "status": {"enum": ["passed", "failed"]},
+    "passed": {"type": "boolean"},
+    "checked_file_count": {"type": "integer", "minimum": 0},
+    "schema_count": {"type": "integer", "minimum": 0},
+    "profile_count": {"type": "integer", "minimum": 0},
+    "finding_count": {"type": "integer", "minimum": 0},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "path", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["low", "medium", "high", "blocker"]},
+          "path": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    },
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "release_candidate": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

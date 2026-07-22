@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-knowledge-reader-core"
 version = "5.9.0a1"
-description = "Auditable staged text ingestion, typed evidence validation, strict QA, and approval-gated release freezing"
+description = "Auditable staged text ingestion, typed evidence validation, strict QA, recoverable builds, and approval-gated release freezing"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -23,11 +23,21 @@ tkr-anomaly-scan = "tkr.anomaly_cli:main"
 tkr-structure-index = "tkr.structure_cli:main"
 tkr-semantic-extract = "tkr.semantic_cli:main"
 tkr-project = "tkr.project_cli:main"
+tkr-skill = "tkr.skill_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
 
 [tool.setuptools.data-files]
+"share/text-knowledge-reader" = [
+  "SKILL.md",
+  "README.md",
+  "PROJECT_STATUS.yaml",
+  "pyproject.toml",
+]
+"share/text-knowledge-reader/tkr" = [
+  "tkr/__init__.py",
+]
 "share/text-knowledge-reader/schemas" = [
   "schemas/anomaly-finding.schema.json",
   "schemas/anomaly-report.schema.json",
@@ -45,4 +55,23 @@ include = ["tkr*"]
   "schemas/knowledge-project-verification.schema.json",
   "schemas/knowledge-answer-packet.schema.json",
   "schemas/knowledge-answer-verification.schema.json",
+  "schemas/engineering-profile.schema.json",
+  "schemas/engineering-build-result.schema.json",
+  "schemas/engineering-build-state.schema.json",
+  "schemas/skill-audit-report.schema.json",
+  "schemas/skill-doctor-report.schema.json",
+]
+"share/text-knowledge-reader/profiles" = [
+  "profiles/balanced.json",
+  "profiles/strict.json",
+  "profiles/high-recall.json",
+]
+"share/text-knowledge-reader/examples" = [
+  "examples/minimal-corpus.txt",
+  "examples/questions.jsonl",
+]
+"share/text-knowledge-reader/docs" = [
+  "docs/INSTALL.md",
+  "docs/SECURITY.md",
+  "docs/MIGRATION_STAGE5.md",
 ]

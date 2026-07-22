@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.invalid/schemas/engineering-profile.schema.json",
+  "title": "Text Knowledge Reader Engineering Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "name", "description", "index_mode", "max_candidates",
+    "max_findings", "max_model_tasks", "max_clause_characters", "emit_model_tasks",
+    "cache_enabled", "lock_stale_seconds", "cleanup_stale_seconds"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-engineering-profile-v1"},
+    "name": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "index_mode": {"enum": ["review", "canonical"]},
+    "max_candidates": {"type": "integer", "minimum": 1},
+    "max_findings": {"type": "integer", "minimum": 1},
+    "max_model_tasks": {"type": "integer", "minimum": 1},
+    "max_clause_characters": {"type": "integer", "minimum": 1},
+    "emit_model_tasks": {"type": "boolean"},
+    "cache_enabled": {"type": "boolean"},
+    "lock_stale_seconds": {"type": "integer", "minimum": 1},
+    "cleanup_stale_seconds": {"type": "integer", "minimum": 1}
+  }
+}

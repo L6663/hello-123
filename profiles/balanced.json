@@ -1,0 +1,14 @@
+{
+  "schema_version": "tkr-engineering-profile-v1",
+  "name": "balanced",
+  "description": "Default review-mode build with bounded candidate generation and verified content-addressed caching.",
+  "index_mode": "review",
+  "max_candidates": 200000,
+  "max_findings": 50000,
+  "max_model_tasks": 50000,
+  "max_clause_characters": 600,
+  "emit_model_tasks": true,
+  "cache_enabled": true,
+  "lock_stale_seconds": 21600,
+  "cleanup_stale_seconds": 86400
+}

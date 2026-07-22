@@ -1,0 +1,14 @@
+{
+  "schema_version": "tkr-engineering-profile-v1",
+  "name": "strict",
+  "description": "Canonical-mode build that blocks unresolved safety, structure, semantic, conflict, and ambiguity findings.",
+  "index_mode": "canonical",
+  "max_candidates": 150000,
+  "max_findings": 40000,
+  "max_model_tasks": 10000,
+  "max_clause_characters": 500,
+  "emit_model_tasks": false,
+  "cache_enabled": true,
+  "lock_stale_seconds": 21600,
+  "cleanup_stale_seconds": 86400
+}
