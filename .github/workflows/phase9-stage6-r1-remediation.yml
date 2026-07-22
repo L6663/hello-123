@@ -74,6 +74,14 @@ jobs:
       - name: Build wheel
         run: python -m pip wheel . --no-deps --wheel-dir dist
 
+      - name: Upload exact-head wheel
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r1-exact-head-wheel
+          path: dist/*.whl
+          retention-days: 3
+
       - name: Verify clean installed product
         shell: bash
         run: |
