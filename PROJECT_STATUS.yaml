@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T04:33:00Z
+updated_at_utc: 2026-07-22T05:50:00Z
 
 main:
   branch: main
@@ -13,9 +13,10 @@ development:
   status: alpha
   mode: skill_optimization_only
   canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-stage3-evidence-semantics
+  active_branch: feature/phase9-stage4-end-to-end-knowledge-v2
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
+  integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
@@ -25,11 +26,16 @@ development:
     - Phase 9.5
     - Phase 9.6
     - Phase 9.7
+    - Phase 9.8
+    - Phase 9.9
+    - Phase 9.10
+    - Phase 9.11
   completed_large_stages:
     - Stage 1
     - Stage 2
-  current_large_stage: Stage 3
-  current_scope: evidence_grounded_claim_extraction_and_factual_status_semantics
+    - Stage 3
+  current_large_stage: Stage 4
+  current_scope: end_to_end_knowledge_orchestration_retrieval_strict_qa_citations_and_refusal
 
 stage_1:
   estimated_engineering_time: 4_to_6_hours
@@ -37,9 +43,7 @@ stage_1:
   integration_status: merged_into_canonical_phase9_base
   pull_request: 11
   merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-  local_focused_checks:
-    status: passed
-    test_count: 15
+  local_focused_checks: {status: passed, test_count: 15}
   github_focused_checks:
     status: passed
     python_versions: ["3.10", "3.11", "3.12"]
@@ -52,9 +56,7 @@ stage_2:
   integration_status: merged_into_canonical_phase9_base
   pull_request: 12
   merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
-  local_focused_checks:
-    status: passed
-    test_count: 21
+  local_focused_checks: {status: passed, test_count: 21}
   github_focused_checks:
     status: passed
     python_versions: ["3.10", "3.11", "3.12"]
@@ -64,27 +66,51 @@ stage_2:
 stage_3:
   estimated_engineering_time: 24_to_36_hours
   implementation_status: complete
+  integration_status: merged_into_canonical_phase9_base
+  pull_request: 13
+  merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
+  local_focused_checks: {status: passed, test_count: 31}
+  github_focused_checks:
+    status: passed
+    python_versions: ["3.10", "3.11", "3.12"]
+    workflow_run_id: 29892803967
+  project_acceptance: false
+
+stage_4:
+  estimated_engineering_time: 18_to_28_hours
+  implementation_status: complete
+  integration_status: pending_pull_request
+  pull_request: 14
   local_focused_checks:
     status: passed
-    test_count: 31
+    test_count: 27
   github_focused_checks:
-    status: pending
+    status: passed
     python_versions: ["3.10", "3.11", "3.12"]
-  integration_status: pending_pull_request
+    workflow_run_id: 29894867214
+  regression_checks:
+    stage_2_workflow_run_id: 29894867249
+    stage_2_status: passed
+    stage_3_workflow_run_id: 29894867280
+    stage_3_status: passed
   capabilities:
-    claim_candidate_contract: implemented
-    six_predicate_deterministic_extraction: implemented
-    exact_evidence_spans_and_hashes: implemented
-    factual_status_and_polarity_separation: implemented
-    belief_suspicion_rumor_accusation_separation: implemented
-    hypothetical_question_future_intent_separation: implemented
-    nonassertive_indexing_block: implemented
-    structure_review_unit_indexing_block: implemented
-    upstream_anomaly_overlap_indexing_block: implemented
-    deterministic_claim_validation_bridge: implemented
-    entity_fact_timeline_conflict_bridge: implemented
-    constrained_model_task_interface: implemented
-    deterministic_artifact_set: implemented
+    unified_project_cli: implemented
+    raw_to_index_orchestration: implemented
+    original_and_normalized_source_binding: implemented
+    stage_1_to_3_artifact_publication: implemented
+    stage_3_to_phase_5_compatibility_bridge: implemented
+    fresh_entity_normalization_revalidation: implemented
+    sqlite_index_build: implemented
+    immutable_project_manifest: implemented
+    source_and_database_integrity_verification: implemented
+    typed_query_and_strict_refusal: implemented
+    exact_citation_chain: implemented
+    project_bound_answer_packets: implemented
+    answer_recomputation_verification: implemented
+    canonical_index_gate: implemented
+    verified_project_reuse: implemented
+    atomic_project_replacement: implemented
+    deterministic_project_identity: implemented
     json_schema_contracts: implemented
   project_acceptance: false
 
@@ -123,6 +149,7 @@ branch_governance:
     - feature/phase9-stage1-safety-hardening
     - feature/phase9-stage2-deterministic-structure
     - feature/phase9-stage3-evidence-semantics
+    - feature/phase9-stage4-end-to-end-knowledge-v2
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
       reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
@@ -130,6 +157,8 @@ branch_governance:
       reason: Created from main without Phase 9.2 and Phase 9.3; do not merge.
     - branch: feature/phase9-4-anomaly-contamination
       reason: Superseded by the converged Stage 1 implementation.
+    - branch: feature/phase9-stage4-end-to-end-knowledge
+      reason: Created before the final Stage 3 documentation state; superseded by the v2 Stage 4 branch.
 
 large_stage_plan:
   - stage: Stage 1
@@ -145,12 +174,12 @@ large_stage_plan:
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
     estimate: 24_to_36_hours
-    status: implementation_complete_checks_pending
+    status: complete_integrated
     project_acceptance: false
   - stage: Stage 4
     scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
     estimate: 18_to_28_hours
-    status: planned
+    status: implementation_complete_checks_passed_pending_integration
     project_acceptance: false
   - stage: Stage 5
     scope: engineering hardening and complete Skill productization
