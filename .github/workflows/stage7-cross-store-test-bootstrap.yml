@@ -1,0 +1,42 @@
+name: Stage 7 one-time cross-store test bootstrap
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+    paths:
+      - ".stage7/cross-store-test.patch"
+      - ".github/workflows/stage7-cross-store-test-bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-cross-store-test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Apply and compile test
+        id: apply
+        run: |
+          set -euo pipefail
+          git apply --check --recount --verbose .stage7/cross-store-test.patch
+          git apply --recount --verbose .stage7/cross-store-test.patch
+          python -m py_compile tests/test_literary_engine.py
+
+      - name: Commit regression test
+        if: steps.apply.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/test_literary_engine.py
+          git rm .stage7/cross-store-test.patch .github/workflows/stage7-cross-store-test-bootstrap.yml
+          git commit -m "test(stage7): reject cross-store literary divergence"
+          git push origin "HEAD:${{ github.head_ref }}"
