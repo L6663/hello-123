@@ -1,227 +1,126 @@
-schema_version: tkr-project-status-v3
+schema_version: tkr-project-status-v4
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T11:00:00Z
+updated_at_utc: 2026-07-22T13:00:00Z
 
-main:
-  branch: main
-  baseline_commit: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
-  version: 5.8.0-alpha1
-  integration_status: stable_phase2_to_phase8_baseline
-
-development:
+historical_release:
   version: 5.9.0
-  status: final_release_frozen
-  mode: final_integrated_skill
-  canonical_base_branch: main
-  active_branch: main
-  integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-  integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
-  integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
-  integrated_stage_4_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
-  integrated_stage_5_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
-  integrated_stage_6_r1_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
-  accepted_runtime_head_commit: 62565a2b28cb14f65912f39b605ab10084364a07
-  completed_development_stages:
-    - Phase 9.0
-    - Phase 9.1
-    - Phase 9.2
-    - Phase 9.3
-    - Phase 9.4
-    - Phase 9.5
-    - Phase 9.6
-    - Phase 9.7
-    - Phase 9.8
-    - Phase 9.9
-    - Phase 9.10
-    - Phase 9.11
-    - Phase 9.12
-    - Phase 9.13
-    - Phase 9.14
-    - Phase 9.15
-  completed_large_stages:
-    - Stage 1
-    - Stage 2
-    - Stage 3
-    - Stage 4
-    - Stage 5
-    - Stage 6
-  next_large_stage: none
-  next_action: none_repository_frozen
+  branch: main
+  archive_branch: archive/v5.9.0-final
+  final_commit: 7b382ded233e5b3177f859c2f239b9d08308bf22
+  status: frozen_historical_release
+  original_engineering_acceptance:
+    status: passed
+    capability_domains: 18
+    passed_domains: 18
+    overall_weighted_average: 9.63
+    minimum_domain_score: 9.34
+    blocker_count: 0
+  user_goal_reassessment:
+    performed: true
+    result: insufficient_for_complete_literary_knowledge_engine
+    reported_overall_reliability: 8.8
+    reported_knowledge_regression: 8.6
+    below_target_areas:
+      - chapter_level_traceability
+      - exact_evidence_traceability
+      - cold_detail_and_minor_entity_recall
+      - complete_entity_coverage
+      - temporal_relationship_state
+      - fact_synthesis_interpretation_separation
+    historical_release_mutated: false
 
-stages:
-  stage_1:
-    scope: development-line convergence and corpus safety
-    pull_request: 11
-    merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-    status: complete_integrated
-    focused_tests: 15
-    python_versions: ["3.10", "3.11", "3.12"]
+v6_development:
+  version: 6.0.0-alpha1
+  status: active_development
+  mode: complete_literary_knowledge_engine
+  integration_base_branch: develop/v6-literary-engine
+  active_branch: feature/v6-stage7-literary-knowledge-engine
+  pull_request: 26
+  current_stage: Stage 7.1
+  current_stage_scope:
+    - chapter_and_volume_address_records
+    - exact_evidence_anchors
+    - A_B_C_epistemic_tiers
+    - typed_literary_entities
+    - temporal_relationship_records
+    - causal_event_components
+    - revision_records
+    - evidence_first_query_and_refusal
+    - fact_separated_notion_projection
+  current_stage_status: implementation_complete_pending_integration
+  exact_head_commit: 69c22318dbb6a5012e8c99e17d4d35cdc1b56f18
+  exact_head_workflow_run_id: 29922025196
+  focused_tests: 9
+  full_repository_regression: passed
+  python_versions: ["3.10", "3.11", "3.12"]
+  synthetic_fixtures_only: true
+  private_corpus_used: false
+  real_corpus_acceptance_deferred: true
+  project_acceptance_performed: false
+  final_score_assigned: false
+  release_candidate: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
 
-  stage_2:
-    scope: deterministic headings, Unit Index, and continuity
-    pull_request: 12
-    merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
-    status: complete_integrated
-    focused_tests: 21
-    python_versions: ["3.10", "3.11", "3.12"]
-
-  stage_3:
-    scope: evidence-grounded Claims and factual-status semantics
-    pull_request: 13
-    merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
-    status: complete_integrated
-    focused_tests: 31
-    python_versions: ["3.10", "3.11", "3.12"]
-
-  stage_4:
-    scope: end-to-end project, retrieval, strict QA, citations, and refusal
-    pull_request: 15
-    merge_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
-    status: complete_integrated
-    focused_tests: 27
-    python_versions: ["3.10", "3.11", "3.12"]
-
-  stage_5:
-    scope: engineering hardening and complete Skill productization
-    pull_request: 16
-    merge_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
-    status: complete_integrated
-    focused_tests: 38
-    wheel_clean_install: passed
-    source_and_installed_audit: passed
-    python_versions: ["3.10", "3.11", "3.12"]
-
-  stage_6:
-    scope: all-capability analysis and final project acceptance
-    initial_result: failed
-    initial_failed_domains: [3, 4, 5, 12]
-    remediation_pull_request: 21
-    remediation_merge_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
-    status: complete_integrated_accepted
-    exact_head_workflow_run_id: 29908222371
-    base_remediation_workflow_run_id: 29908222413
-    python_versions: ["3.10", "3.11", "3.12"]
-    additional_drift_python: "3.13.5"
-    exact_head_wheel_artifact_id: 8524738517
-    final_acceptance_document: docs/stage-6-r1-final-acceptance.md
-    machine_summary: acceptance/stage6-r1-acceptance-summary.json
-
-final_measurements:
-  anomaly_and_pollution:
-    gold_blocks: 34
-    candidates: 34
-    candidate_precision: 1.0
-    block_recall: 1.0
-    character_precision: 0.970189304207459
-    character_recall: 0.9823395809895779
-    boundary_mae_characters: 45.705882352941174
-
-  structure:
-    decoded_characters: 3192465
-    heading_candidates: 877
-    combined_headings: 546
-    combined_correct: 546
-    combined_accuracy: 1.0
-    source_coverage_ratio: 1.0
-
-  semantic_heldout:
-    expected_total: 204
-    exact_type_status_polarity: 204
-    direct_count: 144
-    direct_may_index: 144
-    nonassertive_count: 60
-    nonassertive_blocked: 60
-    extra_candidates: 0
-
-  long_corpus_performance:
-    files: 5
-    decoded_characters: 3192465
-    total_elapsed_seconds: 73.13
-    throughput_decoded_characters_per_second: 43654.65609189116
-    peak_rss_kb: 68888
-    semantic_candidates: 2546
-    accepted_claims: 551
-    verified_projects: 5
-    execution_mode: isolated_process_per_source
-    transient_batch_timeout_disclosed: true
-
-  secure_query_latency:
-    query_count: 75
-    p50_ms: 346.2580609993893
-    p95_ms: 721.1261051008478
-    p99_ms: 785.2306675600277
-    max_ms: 926.2205780032673
-    includes_full_project_verification: true
-
-  release_gold:
-    cases: 108
-    passed: 108
-    decision_accuracy: 1.0
-    answer_claim_accuracy: 1.0
-    refusal_precision: 1.0
-    refusal_recall: 1.0
-    citation_entailment_rate: 1.0
-    wrong_answers: 0
-    overanswers: 0
-    citation_mismatches: 0
-    measured_hallucinations: 0
-
-  reproducibility:
-    anomaly_artifact_hash_match: true
-    structure_artifact_hash_match: true
-
-  package_audit:
-    checked_files: 36
-    schemas: 21
-    profiles: 3
-    findings: 0
-
-capability_scorecard:
-  domain_count: 18
-  passed_domains: 18
-  failed_domains: 0
-  overall_weighted_average: 9.63
-  minimum_domain_score: 9.34
-  minimum_score_per_capability: 9.0
-  minimum_correctness_per_capability: 9.0
-  minimum_safety_per_capability: 9.0
+stage_7_target_domains:
+  minimum_score_per_domain: 9.0
   average_compensation_allowed: false
+  domains:
+    - id: 1
+      name: chapter_and_volume_reconstruction
+      status: pending_integrated_measurement
+    - id: 2
+      name: exact_evidence_traceability
+      status: pending_integrated_measurement
+    - id: 3
+      name: entity_coverage_and_identity_resolution
+      status: pending_integrated_measurement
+    - id: 4
+      name: temporal_relationship_retrieval
+      status: pending_integrated_measurement
+    - id: 5
+      name: event_causality_and_consequence_chains
+      status: pending_integrated_measurement
+    - id: 6
+      name: cold_detail_and_minor_character_retrieval
+      status: pending_integrated_measurement
+    - id: 7
+      name: exact_dialogue_and_source_text_retrieval
+      status: pending_integrated_measurement
+    - id: 8
+      name: fact_synthesis_interpretation_separation
+      status: pending_integrated_measurement
+    - id: 9
+      name: unsupported_and_polluted_source_refusal
+      status: pending_integrated_measurement
+    - id: 10
+      name: notion_projection_correctness
+      status: pending_integrated_measurement
+    - id: 11
+      name: incremental_revision_and_supersession
+      status: pending_integrated_measurement
+    - id: 12
+      name: deterministic_rebuild_and_security_verification
+      status: pending_integrated_measurement
 
-project_acceptance:
-  status: passed
-  performed: true
-  all_capability_domains_passed: true
-  blocker_count: 0
-  release_candidate_eligible: true
+stage_7_remaining_slices:
+  - Stage 7.2: full_chapter_text_dialogue_and_minor_entity_index
+  - Stage 7.3: canonical_cross_file_chapter_map_and_missing_duplicate_registry
+  - Stage 7.4: relationship_change_and_event_chain_extraction
+  - Stage 7.5: incremental_revision_and_notion_update_application
+  - Stage 7.6: cold_detail_regression_and_private_corpus_final_acceptance
 
-release:
-  release_candidate: true
-  release_candidate_created: true
-  final_release: true
-  freeze_approved: true
-  may_freeze: true
-  explicit_release_approval_required: false
-  explicit_freeze_approval_required: false
+acceptance_rule:
+  all_target_domains_must_score_at_least_9_0: true
+  correctness_and_safety_must_each_score_at_least_9_0: true
+  citation_mismatches_allowed: 0
+  measured_hallucinations_allowed: 0
+  silent_source_corruption_allowed: 0
+  unsupported_fact_promotion_allowed: 0
+  interpretation_presented_as_source_fact_allowed: 0
+  final_acceptance_requires_private_blind_evaluation: true
+  final_release_requires_explicit_user_approval: true
 
-branch_governance:
-  accepted_lineage:
-    - feature/phase9-0-baseline-cleanup
-    - feature/phase9-stage1-safety-hardening
-    - feature/phase9-stage2-deterministic-structure
-    - feature/phase9-stage3-evidence-semantics
-    - feature/phase9-stage4-end-to-end-knowledge-v3
-    - feature/phase9-stage5-engineering-productization
-    - feature/phase9-stage6-r1-remediation-v2
-  superseded_or_invalid_sources:
-    - branch: feature/full-ingestion-v5.9-alpha1
-      reason: encoded-payload draft; not accepted
-    - branch: feature/anomaly-pollution-v5.9-phase9.4
-      reason: missing Phase 9.2 and 9.3 ancestry
-    - branch: feature/phase9-4-anomaly-contamination
-      reason: superseded by Stage 1
-    - branch: feature/phase9-stage4-end-to-end-knowledge-v2
-      reason: valid code but divergent history; replayed through PR 15
-    - branch: feature/phase9-stage6-r1-remediation
-      reason: valid remediation work but divergent history; replayed through PR 21
-
-final_rule: All 18 capability domains passed without score compensation. Final release and repository freeze were explicitly approved on 2026-07-22.
+next_action: integrate_stage_7_1_into_develop_then_start_stage_7_2
