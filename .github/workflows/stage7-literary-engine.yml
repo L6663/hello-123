@@ -6,6 +6,7 @@ on:
       - develop/v6-literary-engine
     paths:
       - "tkr/literary_*.py"
+      - "scripts/tkr.py"
       - "tests/test_literary_engine.py"
       - "schemas/literary-*.schema.json"
       - "docs/STAGE7_LITERARY_ENGINE.md"
@@ -18,6 +19,9 @@ on:
 
 permissions:
   contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
   stage7-literary:
@@ -38,9 +42,10 @@ jobs:
       - name: Install development candidate
         run: python -m pip install .
 
-      - name: Compile literary runtime
+      - name: Compile literary runtime and bundled entrypoint
         run: |
           python -m py_compile \
+            scripts/tkr.py \
             tkr/literary_models.py \
             tkr/literary_engine.py \
             tkr/literary_query.py \
@@ -87,18 +92,29 @@ jobs:
       - name: Run repository regression
         run: python -m unittest discover -s tests -p 'test_*.py' -v
 
-      - name: Exercise CLI surface
+      - name: Exercise installed and bundled CLI surfaces
         run: |
           tkr-literary --help
           tkr-literary build --help
           tkr-literary verify --help
           tkr-literary query --help
           tkr-literary export-notion --help
+          python scripts/tkr.py --help
+          python scripts/tkr.py literary --help
+          python scripts/tkr.py literary-build --help
+          python scripts/tkr.py literary-verify --help
+          python scripts/tkr.py literary-query --help
+          python scripts/tkr.py literary-export-notion --help
 
       - name: Assert development-only governance
         run: |
           python - <<'PY'
+          from pathlib import Path
           from tkr import __version__
+
           assert __version__ == "6.0.0-alpha1"
           assert "alpha" in __version__
+          skill = Path("SKILL.md").read_text(encoding="utf-8")
+          assert "no v6 final acceptance or freeze" in skill
+          assert "Do not silently promote C to B or B to A" in skill
           PY
