@@ -73,20 +73,69 @@ class Stage6R1RemediationTests(unittest.TestCase):
                 ),
             )
         finding = next(
-            item for item in report.findings
+            item
+            for item in report.findings
             if item.rule_id == "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE"
         )
         entity_signals = [x for x in finding.signals if x.startswith("entity_")]
         self.assertEqual(len(entity_signals), 1)
         self.assertTrue(any(x.startswith("lexical_cosine=") for x in finding.signals))
 
+    def test_structured_collage_emits_one_precise_candidate_per_block(self):
+        clean = "卷一 第一章 正文\n\n" + (
+            "主角守在山门，长老与弟子继续商议同一件事。\n\n" * 20
+        )
+        polluted = (
+            "卷一 第二章 拼接\n\n"
+            "主角守在山门。\n\n"
+            "长老继续说明旧事。\n\n"
+            "弟子点头回应。\n\n"
+            + "公司经理发送邮件。\n\n皇帝下旨调动骑兵。\n\n机器人读取数据库。\n\n记者在医院直播。\n\n"
+            * 4
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            report = inspect_source_anomalies(
+                self._source(Path(directory), clean + polluted)
+            )
+        matches = [
+            item
+            for item in report.findings
+            if item.rule_id == "INTRA_UNIT_CROSS_WORK_SPLICE_CANDIDATE"
+        ]
+        self.assertEqual(len(matches), 1)
+        self.assertTrue(
+            any(item.startswith("paragraph_count=") for item in matches[0].signals)
+        )
+
+    def test_coherent_structured_chapters_do_not_emit_collage_candidate(self):
+        first = "卷一 第一章 起\n\n" + (
+            "青云宗弟子守在剑阁，长老继续讲述剑阵。\n\n" * 20
+        )
+        second = "卷一 第二章 承\n\n" + (
+            "青云宗长老带弟子进入剑阁，众人继续修炼。\n\n" * 20
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            report = inspect_source_anomalies(
+                self._source(Path(directory), first + second)
+            )
+        self.assertNotIn(
+            "INTRA_UNIT_CROSS_WORK_SPLICE_CANDIDATE", report.rule_counts
+        )
+
     def test_combined_volume_chapter_prefix_is_a_chapter_boundary(self):
-        text = "卷五 第二十六章 风雪夜归人\n正文甲。\n卷五 第二十七章 山河故人\n正文乙。\n"
+        text = (
+            "卷五 第二十六章 风雪夜归人\n正文甲。\n"
+            "卷五 第二十七章 山河故人\n正文乙。\n"
+        )
         with tempfile.TemporaryDirectory() as directory:
             report = inspect_source_structure(self._source(Path(directory), text))
-        self.assertEqual([unit.unit_type for unit in report.units], ["chapter", "chapter"])
+        self.assertEqual(
+            [unit.unit_type for unit in report.units], ["chapter", "chapter"]
+        )
         self.assertEqual([unit.ordinal for unit in report.units], [26, 27])
-        self.assertFalse(any(item.rule_id.startswith("ORDINAL_") for item in report.findings))
+        self.assertFalse(
+            any(item.rule_id.startswith("ORDINAL_") for item in report.findings)
+        )
         self.assertIn("container_ordinal=5", report.headings[0].signals)
 
     def test_combined_prefixed_volume_and_chapter_is_supported(self):
