@@ -16,7 +16,7 @@ from .encoding_inspection import EncodingInspectionError, inspect_source_encodin
 from .hashing import DEFAULT_BLOCK_SIZE, HashingError, sha256_file
 
 ANOMALY_INSPECTION_SCHEMA_VERSION: Final = "tkr-anomaly-inspection-v2"
-ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-stage6-r1"
+ANOMALY_DETECTOR_VERSION: Final = "5.9.0-phase9.4-final"
 OFFSET_BASIS: Final = "decoded_text_without_external_bom"
 _BOMS: Final = {"utf-8": b"\xef\xbb\xbf", "utf-16-le": b"\xff\xfe", "utf-16-be": b"\xfe\xff"}
 _WEB: Final = (
@@ -84,6 +84,7 @@ class AnomalyPolicy:
     mosaic_min_suffix_paragraphs: int = 6
     mosaic_max_block_characters: int = 100_000
     mosaic_min_candidate_suffix_characters: int = 700
+    mosaic_min_template_suffix_characters: int = 300
     mosaic_max_candidate_suffix_characters: int = 3_000
 
     def __post_init__(self) -> None:
@@ -97,7 +98,8 @@ class AnomalyPolicy:
             self.same_language_min_entity_union, self.same_language_min_signals,
             self.mosaic_min_body_paragraphs, self.mosaic_max_boundary_paragraphs,
             self.mosaic_min_suffix_paragraphs, self.mosaic_max_block_characters,
-            self.mosaic_min_candidate_suffix_characters, self.mosaic_max_candidate_suffix_characters,
+            self.mosaic_min_candidate_suffix_characters, self.mosaic_min_template_suffix_characters,
+            self.mosaic_max_candidate_suffix_characters,
         )
         if any(not isinstance(x, int) or isinstance(x, bool) or x <= 0 for x in positive):
             raise AnomalyInspectionError("integer policy values must be positive")
@@ -272,6 +274,22 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
             gram for gram in gram_union
             if sum(gram in item for item in grams) >= 2
         }
+        document_frequency = Counter(gram for item in grams for gram in item)
+        common_threshold = max(2, len(grams) // 2)
+        common_grams = {
+            gram for gram, count in document_frequency.items()
+            if count >= common_threshold
+        }
+        residual = [
+            Counter({gram: count for gram, count in item.items() if gram not in common_grams})
+            for item in grams
+        ]
+        residual_pairwise = [
+            _mosaic_cosine(residual[i], residual[j])
+            for i in range(len(residual))
+            for j in range(i + 1, len(residual))
+        ]
+        total_grams = sum(sum(item.values()) for item in grams)
         prefix = "".join(item.text for item in before[-4:])
         suffix_sample = "".join(item.text for item in first)
         candidates.append(
@@ -283,6 +301,8 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
                 "prepost": _mosaic_cosine(_grams(prefix), _grams(suffix_sample)),
                 "adjacent": _mean(adjacent),
                 "pairwise": _mean(pairwise),
+                "residual_pairwise": _mean(residual_pairwise),
+                "type_token_ratio": len(gram_union) / total_grams if total_grams else 0.0,
                 "repetition": len(repeated) / len(gram_union) if gram_union else 1.0,
             }
         )
@@ -317,22 +337,46 @@ def _mosaic_features(block_text: str, policy: AnomalyPolicy) -> dict[str, object
         and float(classification_best["prepost"]) <= 0.02134677767753601
         and int(classification_best["post_chars"]) <= policy.mosaic_max_candidate_suffix_characters
     )
-    if not (branch_a or branch_b):
-        return None
-    if (
-        int(boundary_best["post_paragraphs"]) < 14
-        or int(boundary_best["post_chars"]) < policy.mosaic_min_candidate_suffix_characters
-    ):
+    template_rows = [
+        row for row in candidates
+        if 0.40 <= float(row["type_token_ratio"]) <= 0.75
+        and float(row["residual_pairwise"]) <= 0.01
+        and int(row["post_paragraphs"]) >= 14
+        and policy.mosaic_min_template_suffix_characters <= int(row["post_chars"])
+        <= policy.mosaic_max_candidate_suffix_characters
+    ]
+    template_best = min(
+        template_rows,
+        key=lambda row: (
+            float(row["residual_pairwise"]),
+            float(row["prepost"]),
+            int(row["boundary"]),
+        ),
+    ) if template_rows else None
+    if template_best is not None:
+        boundary_best = template_best
+        classification_best = template_best
+        classifier_branch = "template_resistant_mosaic"
+    elif branch_a or branch_b:
+        if (
+            int(boundary_best["post_paragraphs"]) < 14
+            or int(boundary_best["post_chars"]) < policy.mosaic_min_candidate_suffix_characters
+        ):
+            return None
+        classifier_branch = "dense_mosaic" if branch_a else "abrupt_mosaic"
+    else:
         return None
     return {
         **boundary_best,
         "classification_prepost": classification_best["prepost"],
         "classification_adjacent": classification_best["adjacent"],
         "classification_pairwise": classification_best["pairwise"],
+        "classification_residual_pairwise": classification_best["residual_pairwise"],
+        "classification_type_token_ratio": classification_best["type_token_ratio"],
         "classification_repetition": classification_best["repetition"],
         "min_pairwise": min_pairwise,
         "block_length": block_length,
-        "classifier_branch": "dense_mosaic" if branch_a else "abrupt_mosaic",
+        "classifier_branch": classifier_branch,
     }
 
 
@@ -357,6 +401,8 @@ def _mosaic_finding(source_hash: str, block_text: str, block_start: int, block_l
         f"min_pairwise_cosine={float(features['min_pairwise']):.6f}",
         f"prefix_suffix_cosine={float(features['classification_prepost']):.6f}",
         f"adjacent_cosine={float(features['classification_adjacent']):.6f}",
+        f"residual_pairwise_cosine={float(features['classification_residual_pairwise']):.6f}",
+        f"type_token_ratio={float(features['classification_type_token_ratio']):.6f}",
         f"repeated_gram_ratio={float(features['classification_repetition']):.6f}",
         f"suffix_paragraphs={features['post_paragraphs']}",
         f"suffix_characters={features['post_chars']}",

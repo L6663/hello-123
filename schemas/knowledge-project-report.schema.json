@@ -17,7 +17,7 @@
   ],
   "properties": {
     "schema_version": {"const": "tkr-knowledge-project-v1"},
-    "system_version": {"const": "5.9.0-stage6-r1"},
+    "system_version": {"const": "5.9.0-final"},
     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
     "status": {"const": "completed"},
     "index_mode": {"enum": ["review", "canonical"]},

@@ -5,8 +5,8 @@ Text Knowledge Reader is an auditable Skill for turning long text corpora into s
 ## Current status
 
 ```yaml
-version: 5.9.0-alpha2
-canonical_branch: feature/phase9-0-baseline-cleanup
+version: 5.9.0
+canonical_branch: main
 integrated_stage_6_r1_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
 accepted_runtime_head_commit: 62565a2b28cb14f65912f39b605ab10084364a07
 completed_large_stages:
@@ -20,9 +20,10 @@ project_acceptance: passed
 capability_domains_passed: 18_of_18
 overall_weighted_score: 9.63
 minimum_domain_score: 9.34
+release_status: final
 release_candidate_eligible: true
-release_candidate_created: false
-freeze_approved: false
+release_candidate_created: true
+freeze_approved: true
 ```
 
 Final acceptance details:
@@ -30,7 +31,7 @@ Final acceptance details:
 - `docs/stage-6-r1-final-acceptance.md`
 - `acceptance/stage6-r1-acceptance-summary.json`
 
-Project acceptance is complete. Creating a Release Candidate and approving Freeze remain separate explicit actions.
+Project acceptance, final release approval, and repository freeze are complete. The repository is sealed at version 5.9.0.
 
 ## Processing chain
 
@@ -63,7 +64,7 @@ Belief, suspicion, rumor, accusation, hypothetical statements, questions, future
 ## Install
 
 ```bash
-python -m pip install text_knowledge_reader_core-5.9.0a2-py3-none-any.whl
+python -m pip install text_knowledge_reader_core-5.9.0-py3-none-any.whl
 ```
 
 Check the installed Skill:
@@ -257,9 +258,10 @@ all console entry points
 
 ```yaml
 project_acceptance: passed
+release_status: final
 release_candidate_eligible: true
-release_candidate_created: false
-freeze_approved: false
+release_candidate_created: true
+freeze_approved: true
 ```
 
-Do not claim an RC or frozen release until those actions receive explicit approval.
+This release is final and frozen. Any future modification requires an explicit unfreeze decision and a new version line.

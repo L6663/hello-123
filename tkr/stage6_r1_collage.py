@@ -174,7 +174,7 @@ def build_structured_anomaly_inspector(original_inspector: Callable):
         )
         return replace(
             report,
-            detector_version="5.9.0-phase9.14-stage6-r1",
+            detector_version="5.9.0-phase9.4-final",
             finding_count=len(findings),
             category_counts=dict(sorted(categories.items())),
             rule_counts=dict(sorted(rules.items())),

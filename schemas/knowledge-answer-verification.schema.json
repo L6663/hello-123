@@ -12,7 +12,7 @@
   ],
   "properties": {
     "schema_version": {"const": "tkr-knowledge-answer-verification-v1"},
-    "system_version": {"const": "5.9.0-stage6-r1"},
+    "system_version": {"const": "5.9.0-final"},
     "status": {"enum": ["accepted", "rejected"]},
     "accepted": {"type": "boolean"},
     "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string"}},

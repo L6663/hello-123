@@ -14,7 +14,7 @@ from . import anomaly_detection as _anomaly
 from . import claim_validation as _claim
 from . import heading_detection as _heading
 
-REMEDIATION_VERSION: Final = "tkr-stage6-r1-remediation-v1"
+REMEDIATION_VERSION: Final = "tkr-final-remediation-v1"
 
 _APPLIED = False
 _ORIGINAL_HEADING_DETECTOR = _heading.detect_heading
@@ -262,10 +262,10 @@ def apply_stage6_r1_remediation() -> None:
     if _APPLIED:
         return
     _anomaly._shift_signals = _shift_signals
-    _anomaly.ANOMALY_DETECTOR_VERSION = "5.9.0-phase9.14-stage6-r1"
+    _anomaly.ANOMALY_DETECTOR_VERSION = "5.9.0-phase9.4-final"
     _heading.detect_heading = _detect_heading
     _claim._validate_count = _validate_count
-    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v1-stage6-r1"
+    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v1-final"
     _APPLIED = True
 
 

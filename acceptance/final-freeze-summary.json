@@ -1,0 +1,25 @@
+{
+  "audit": "passed",
+  "capability_domains_failed": 0,
+  "capability_domains_passed": 18,
+  "doctor": "passed",
+  "freeze_approved": true,
+  "full_regression_tests": 418,
+  "generated_at_utc": "2026-07-22T11:00:00Z",
+  "minimum_domain_score": 9.34,
+  "overall_weighted_score": 9.63,
+  "project_acceptance": "passed",
+  "r2_review": {
+    "compact_headings_exact": 540,
+    "compact_headings_total": 540,
+    "generated_clean_false_positives": 0,
+    "generated_clean_total": 80,
+    "generated_polluted_detected": 80,
+    "generated_polluted_total": 80
+  },
+  "release_status": "final",
+  "repository_sealed": true,
+  "schema_version": "tkr-final-freeze-summary-v1",
+  "version": "5.9.0",
+  "wheel_build": "passed"
+}

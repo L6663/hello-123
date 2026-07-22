@@ -11,7 +11,7 @@
   ],
   "properties": {
     "schema_version": {"const": "tkr-knowledge-manifest-v1"},
-    "system_version": {"const": "5.9.0-stage6-r1"},
+    "system_version": {"const": "5.9.0-final"},
     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
     "source_id": {"type": "string", "minLength": 1},
     "raw_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
