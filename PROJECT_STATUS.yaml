@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T03:34:24Z
+updated_at_utc: 2026-07-22T04:03:00Z
 
 main:
   branch: main
@@ -51,12 +51,14 @@ stage_2:
     status: passed
     test_count: 21
   github_focused_checks:
-    status: pending
+    status: passed
     python_versions:
       - "3.10"
       - "3.11"
       - "3.12"
-  integration_status: pending_pull_request
+    workflow_run_id: 29890012483
+  integration_status: ready_to_merge
+  pull_request: 12
   capabilities:
     multilingual_numbered_heading_candidates: implemented
     special_unit_classification: implemented
@@ -125,7 +127,7 @@ large_stage_plan:
   - stage: Stage 2
     scope: deterministic heading detection, Unit Index, and continuity validation
     estimate: 12_to_18_hours
-    status: implementation_complete_checks_pending
+    status: complete_ready_to_merge
     project_acceptance: false
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
