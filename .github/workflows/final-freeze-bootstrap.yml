@@ -56,9 +56,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .final-freeze .github/workflows/final-freeze-bootstrap.yml
+          # Workflow files and one-time transfer files are finalized separately
+          # through the connected GitHub authority after this source commit.
+          rm -f .github/workflows/final-freeze.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add \
+            FREEZE_MANIFEST.json \
+            MANIFEST.in \
+            PROJECT_STATUS.yaml \
+            README.md \
+            SKILL.md \
+            acceptance/final-freeze-summary.json \
+            docs/final-freeze-v5.9.0.md \
+            pyproject.toml \
+            schemas \
+            scripts \
+            tests \
+            tkr
           git commit -m "release: assemble Text Knowledge Reader v5.9.0 final freeze"
           git push origin "HEAD:${{ github.head_ref }}"
