@@ -11,10 +11,11 @@ diff --git a/tkr/literary_engine.py b/tkr/literary_engine.py
      *,
      fts5: bool,
  ) -> None:
-@@ -1023,6 +1026,74 @@ def _insert_records(
+@@ -1021,6 +1024,77 @@ def _insert_records(
+         )
          for anchor_id in item.evidence_anchor_ids:
              connection.execute("INSERT INTO revision_evidence VALUES(?,?)", (item.revision_id, anchor_id))
-+
+ 
 +    for item in dialogues:
 +        connection.execute(
 +            "INSERT INTO dialogues VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -99,3 +100,6 @@ diff --git a/tkr/literary_engine.py b/tkr/literary_engine.py
 +            connection.execute("INSERT INTO entity_task_chapters VALUES(?,?)", (item.task_id, chapter_id_value))
 +        for anchor_id in item.evidence_anchor_ids:
 +            connection.execute("INSERT INTO entity_task_evidence VALUES(?,?)", (item.task_id, anchor_id))
++
+ 
+ def _logical_hash(payloads: Mapping[str, bytes], project_id: str, annotation_sha: str | None) -> str:
