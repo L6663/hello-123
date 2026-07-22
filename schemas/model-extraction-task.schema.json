@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/model-extraction-task.schema.json",
+  "title": "Text Knowledge Reader Constrained Model Extraction Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","task_id","source_id","source_sha256","unit_id","evidence_start","evidence_end","evidence_sha256","evidence_text","allowed_claim_types","instruction_version","output_schema_version","may_accept_directly","requires_deterministic_validation"],
+  "properties": {
+    "schema_version": {"const": "tkr-model-extraction-task-v1"},
+    "task_id": {"type": "string", "pattern": "^smt_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_id": {"type": "string", "minLength": 1},
+    "evidence_start": {"type": "integer", "minimum": 0},
+    "evidence_end": {"type": "integer", "minimum": 1},
+    "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_text": {"type": "string"},
+    "allowed_claim_types": {"type": "array", "uniqueItems": true, "items": {"enum": ["alias","defeats","located_in","permission","count","date"]}},
+    "instruction_version": {"const": "tkr-model-candidate-instruction-v1"},
+    "output_schema_version": {"const": "tkr-semantic-candidate-v1"},
+    "may_accept_directly": {"const": false},
+    "requires_deterministic_validation": {"const": true}
+  }
+}
