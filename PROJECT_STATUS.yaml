@@ -1,0 +1,128 @@
+schema_version: tkr-project-status-v1
+repository: L6663/hello-123
+updated_at_utc: 2026-07-22T02:08:46Z
+
+main:
+  branch: main
+  baseline_commit: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
+  version: 5.8.0-alpha1
+  integration_status: stable_baseline_for_phase9_development
+
+development:
+  version: 5.9.0-alpha1
+  canonical_base_branch: feature/phase9-0-baseline-cleanup
+  active_implementation_branch: feature/phase9-4-anomaly-contamination
+  status: alpha
+  mode: skill_optimization_only
+  completed_stages:
+    - Phase 9.0
+    - Phase 9.1
+    - Phase 9.2
+    - Phase 9.3
+  current_stage: Phase 9.4
+  current_scope: anomaly_and_corpus_contamination_candidate_detection
+
+stage_policy:
+  intermediate_project_acceptance: disabled
+  intermediate_release_certification: disabled
+  intermediate_freeze_authorization: disabled
+  real_corpus_acceptance_runs: deferred
+  focused_developer_checks:
+    allowed: true
+    certification_effect: none
+    description: Narrow unit tests and deterministic checks may prevent implementation regressions but are not project acceptance.
+
+project_acceptance:
+  status: deferred
+  trigger: final_integrated_product_complete
+  scope:
+    - complete_regression_matrix
+    - long_corpus_execution
+    - performance_measurement
+    - drift_comparison
+    - final_package_audit
+    - end_to_end_project_acceptance
+  intermediate_results_may_pass_project: false
+
+release:
+  release_candidate: false
+  freeze_approved: false
+  may_freeze: false
+
+branch_governance:
+  accepted_phase9_lineage:
+    - feature/phase9-0-baseline-cleanup
+    - feature/phase9-4-anomaly-contamination
+  superseded_or_invalid_sources:
+    - branch: feature/full-ingestion-v5.9-alpha1
+      reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
+    - branch: feature/anomaly-pollution-v5.9-phase9.4
+      reason: Created from main before the completed Phase 9.2 and Phase 9.3 lineage was re-confirmed; do not merge.
+
+phase9_plan:
+  - stage: Phase 9.0
+    scope: clean baseline, version identity, and phase boundaries
+    status: completed_development
+    project_acceptance: false
+  - stage: Phase 9.1
+    scope: shared streaming SHA-256 module
+    status: completed_development
+    project_acceptance: false
+  - stage: Phase 9.2
+    scope: source identity admission
+    status: completed_development
+    project_acceptance: false
+  - stage: Phase 9.3
+    scope: encoding and Unicode inspection
+    status: completed_development
+    project_acceptance: false
+  - stage: Phase 9.4
+    scope: anomaly and corpus-contamination candidates
+    status: active_development
+    project_acceptance: false
+  - stage: Phase 9.5
+    scope: heading candidate detection
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.6
+    scope: deterministic Unit Index generation
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.7
+    scope: Unit continuity and structure validation
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.8
+    scope: Claim candidate schema
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.9
+    scope: six-predicate deterministic extraction
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.10
+    scope: fact, belief, suspicion, rumor, and accusation separation
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.11
+    scope: constrained model-extraction task interface
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.12
+    scope: raw text to Claim-candidate orchestration
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.13
+    scope: private long-corpus evaluation contracts
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.14
+    scope: Skill documentation and Alpha package layout
+    status: planned
+    project_acceptance: false
+  - stage: Phase 9.15
+    scope: final integration assembly and acceptance handoff
+    status: planned
+    project_acceptance: false
+
+final_rule: Project acceptance is performed once, against the final integrated product, after all Skill optimization and integration stages are complete.
