@@ -6,8 +6,14 @@
 stage: Stage 2
 implementation: complete
 local_focused_tests: 21_passed
-github_focused_checks: pending
-integration: pending_pull_request
+github_focused_checks: passed
+python_versions:
+  - "3.10"
+  - "3.11"
+  - "3.12"
+workflow_run_id: 29890012483
+integration: ready_to_merge
+pull_request: 12
 project_acceptance_performed: false
 release_candidate: false
 freeze_approved: false
@@ -87,7 +93,7 @@ schemas/structure-report.schema.json
 
 ## Focused test coverage
 
-The 21 local focused tests cover:
+The 21 focused tests passed on Python 3.10, 3.11, and 3.12. They cover:
 
 - Arabic, full-width, and Chinese ordinal parsing;
 - numbered chapters and exact source coverage;
@@ -110,6 +116,8 @@ The 21 local focused tests cover:
 - CLI output;
 - detached-title recovery candidates;
 - Unit-limit behavior without source truncation.
+
+The GitHub workflow compiled the Stage 2 modules, validated the Schema files, ran the focused suite, and verified `tkr-structure-index` on all three supported Python versions.
 
 ## Remaining limitations
 
