@@ -22,6 +22,17 @@ import tempfile
 from typing import Iterable, Mapping, Sequence
 
 from .hashing import sha256_file
+from .literary_fulltext import (
+    FULLTEXT_SYSTEM_VERSION,
+    DialogueSpan,
+    EntityReviewTask,
+    LiteraryFullTextError,
+    MentionCandidate,
+    build_fulltext_augmentation,
+    candidate_from_dict,
+    dialogue_from_dict,
+    entity_task_from_dict,
+)
 from .literary_models import (
     ASSERTION_SCHEMA_VERSION,
     CHAPTER_SCHEMA_VERSION,
@@ -58,6 +69,9 @@ _DATASETS = (
     "relationships.jsonl",
     "events.jsonl",
     "revisions.jsonl",
+    "dialogues.jsonl",
+    "mention-candidates.jsonl",
+    "entity-review-tasks.jsonl",
 )
 _ALLOWED_FILES = set(_DATASETS) | {
     "literary.sqlite",
@@ -90,6 +104,15 @@ class LiteraryBuildResult:
     relationship_count: int
     event_count: int
     revision_count: int
+    passage_anchor_count: int
+    dialogue_count: int
+    mention_candidate_count: int
+    entity_review_task_count: int
+    trusted_fulltext_chapter_count: int
+    skipped_fulltext_chapter_count: int
+    indexed_fulltext_character_count: int
+    known_alias_occurrence_count: int
+    ambiguous_alias_occurrence_count: int
     evidence_traceability_rate: float
     chapter_address_coverage: float
     logical_sha256: str
@@ -119,6 +142,15 @@ class LiteraryBuildResult:
             "relationship_count": self.relationship_count,
             "event_count": self.event_count,
             "revision_count": self.revision_count,
+            "passage_anchor_count": self.passage_anchor_count,
+            "dialogue_count": self.dialogue_count,
+            "mention_candidate_count": self.mention_candidate_count,
+            "entity_review_task_count": self.entity_review_task_count,
+            "trusted_fulltext_chapter_count": self.trusted_fulltext_chapter_count,
+            "skipped_fulltext_chapter_count": self.skipped_fulltext_chapter_count,
+            "indexed_fulltext_character_count": self.indexed_fulltext_character_count,
+            "known_alias_occurrence_count": self.known_alias_occurrence_count,
+            "ambiguous_alias_occurrence_count": self.ambiguous_alias_occurrence_count,
             "evidence_traceability_rate": self.evidence_traceability_rate,
             "chapter_address_coverage": self.chapter_address_coverage,
             "logical_sha256": self.logical_sha256,
@@ -851,6 +883,71 @@ def _create_schema(connection: sqlite3.Connection) -> dict[str, bool]:
             anchor_id TEXT NOT NULL REFERENCES evidence_anchors(anchor_id),
             PRIMARY KEY(revision_id, anchor_id)
         );
+        CREATE TABLE dialogues(
+            dialogue_id TEXT PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            source_sha256 TEXT NOT NULL,
+            unit_id TEXT NOT NULL,
+            chapter_id TEXT NOT NULL REFERENCES chapters(chapter_id),
+            volume_ordinal INTEGER,
+            chapter_ordinal INTEGER,
+            start_char INTEGER NOT NULL,
+            end_char INTEGER NOT NULL,
+            dialogue_text TEXT NOT NULL,
+            dialogue_sha256 TEXT NOT NULL,
+            speaker_surface TEXT NOT NULL,
+            speaker_entity_id TEXT REFERENCES entities(entity_id),
+            speaker_resolution TEXT NOT NULL,
+            review_status TEXT NOT NULL
+        );
+        CREATE INDEX dialogue_chapter_span ON dialogues(chapter_id,start_char,end_char);
+        CREATE INDEX dialogue_speaker ON dialogues(speaker_entity_id,chapter_id,start_char);
+        CREATE TABLE mention_candidates(
+            candidate_id TEXT PRIMARY KEY,
+            candidate_type TEXT NOT NULL,
+            surface TEXT NOT NULL,
+            normalized_surface TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            source_sha256 TEXT NOT NULL,
+            unit_id TEXT NOT NULL,
+            chapter_id TEXT NOT NULL REFERENCES chapters(chapter_id),
+            volume_ordinal INTEGER,
+            chapter_ordinal INTEGER,
+            start_char INTEGER NOT NULL,
+            end_char INTEGER NOT NULL,
+            evidence_text TEXT NOT NULL,
+            evidence_sha256 TEXT NOT NULL,
+            evidence_anchor_id TEXT NOT NULL REFERENCES evidence_anchors(anchor_id),
+            rule_id TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            known_entity_ids_json TEXT NOT NULL,
+            review_status TEXT NOT NULL
+        );
+        CREATE INDEX mention_candidate_surface ON mention_candidates(normalized_surface,candidate_type,chapter_id);
+        CREATE TABLE entity_review_tasks(
+            task_id TEXT PRIMARY KEY,
+            candidate_type TEXT NOT NULL,
+            surface TEXT NOT NULL,
+            normalized_surface TEXT NOT NULL,
+            allowed_decisions_json TEXT NOT NULL,
+            forbidden_authority_json TEXT NOT NULL,
+            task_status TEXT NOT NULL
+        );
+        CREATE TABLE entity_task_candidates(
+            task_id TEXT NOT NULL REFERENCES entity_review_tasks(task_id),
+            candidate_id TEXT NOT NULL REFERENCES mention_candidates(candidate_id),
+            PRIMARY KEY(task_id,candidate_id)
+        );
+        CREATE TABLE entity_task_chapters(
+            task_id TEXT NOT NULL REFERENCES entity_review_tasks(task_id),
+            chapter_id TEXT NOT NULL REFERENCES chapters(chapter_id),
+            PRIMARY KEY(task_id,chapter_id)
+        );
+        CREATE TABLE entity_task_evidence(
+            task_id TEXT NOT NULL REFERENCES entity_review_tasks(task_id),
+            anchor_id TEXT NOT NULL REFERENCES evidence_anchors(anchor_id),
+            PRIMARY KEY(task_id,anchor_id)
+        );
         """
     )
     capabilities = {"fts5": False, "trigram": False}
@@ -883,6 +980,9 @@ def _insert_records(
     relationships: Sequence[RelationshipInterval],
     events: Sequence[LiteraryEvent],
     revisions: Sequence[RevisionRecord],
+    dialogues: Sequence[DialogueSpan],
+    candidates: Sequence[MentionCandidate],
+    review_tasks: Sequence[EntityReviewTask],
     *,
     fts5: bool,
 ) -> None:
@@ -1027,6 +1127,91 @@ def _insert_records(
         for anchor_id in item.evidence_anchor_ids:
             connection.execute("INSERT INTO revision_evidence VALUES(?,?)", (item.revision_id, anchor_id))
 
+    for item in dialogues:
+        connection.execute(
+            "INSERT INTO dialogues VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                item.dialogue_id,
+                item.source_id,
+                item.source_sha256,
+                item.unit_id,
+                item.chapter_id,
+                item.volume_ordinal,
+                item.chapter_ordinal,
+                item.start_char,
+                item.end_char,
+                item.dialogue_text,
+                item.dialogue_sha256,
+                item.speaker_surface,
+                item.speaker_entity_id,
+                item.speaker_resolution,
+                item.review_status,
+            ),
+        )
+        if fts5:
+            connection.execute(
+                "INSERT INTO literary_fts VALUES(?,?,?)",
+                ("dialogue", item.dialogue_id, " ".join(filter(None, (item.speaker_surface, item.dialogue_text)))),
+            )
+
+    for item in candidates:
+        anchor_id = evidence_anchor_id(
+            item.source_sha256,
+            item.unit_id,
+            item.start_char,
+            item.end_char,
+            item.evidence_sha256,
+        )
+        connection.execute(
+            "INSERT INTO mention_candidates VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                item.candidate_id,
+                item.candidate_type,
+                item.surface,
+                item.normalized_surface,
+                item.source_id,
+                item.source_sha256,
+                item.unit_id,
+                item.chapter_id,
+                item.volume_ordinal,
+                item.chapter_ordinal,
+                item.start_char,
+                item.end_char,
+                item.evidence_text,
+                item.evidence_sha256,
+                anchor_id,
+                item.rule_id,
+                float(item.confidence),
+                _canonical_json(list(item.known_entity_ids)),
+                item.review_status,
+            ),
+        )
+        if fts5:
+            connection.execute(
+                "INSERT INTO literary_fts VALUES(?,?,?)",
+                ("candidate", item.candidate_id, item.surface),
+            )
+
+    for item in review_tasks:
+        connection.execute(
+            "INSERT INTO entity_review_tasks VALUES(?,?,?,?,?,?,?)",
+            (
+                item.task_id,
+                item.candidate_type,
+                item.surface,
+                item.normalized_surface,
+                _canonical_json(list(item.allowed_decisions)),
+                _canonical_json(list(item.forbidden_authority)),
+                item.task_status,
+            ),
+        )
+        for candidate_id in item.candidate_ids:
+            connection.execute("INSERT INTO entity_task_candidates VALUES(?,?)", (item.task_id, candidate_id))
+        for chapter_id_value in item.chapter_ids:
+            connection.execute("INSERT INTO entity_task_chapters VALUES(?,?)", (item.task_id, chapter_id_value))
+        for anchor_id in item.evidence_anchor_ids:
+            connection.execute("INSERT INTO entity_task_evidence VALUES(?,?)", (item.task_id, anchor_id))
+
 
 def _logical_hash(payloads: Mapping[str, bytes], project_id: str, annotation_sha: str | None) -> str:
     logical = {
@@ -1083,6 +1268,15 @@ def build_literary_engine(
     anchors, entities, assertions, _ = _import_base_records(
         source_text, chapter_lookup, mention_rows, entity_rows, fact_rows
     )
+    fulltext = build_fulltext_augmentation(source_text, chapters, anchors, entities)
+    anchor_by_id = {item.anchor_id: item for item in anchors}
+    for item in (*fulltext.passage_anchors, *fulltext.mention_anchors):
+        anchor_by_id.setdefault(item.anchor_id, item)
+    anchors = sorted(
+        anchor_by_id.values(),
+        key=lambda item: (item.evidence_start, item.evidence_end, item.anchor_id),
+    )
+    entities = list(fulltext.updated_entities)
     annotations, annotation_sha = _load_annotations(Path(annotations_path) if annotations_path is not None else None)
     chapters, anchors, entities, assertions, relationships, events, revisions = _merge_annotations(
         source_text, chapters, anchors, entities, assertions, annotations
@@ -1096,6 +1290,9 @@ def build_literary_engine(
         "relationships.jsonl": _jsonl_bytes(relationships),
         "events.jsonl": _jsonl_bytes(events),
         "revisions.jsonl": _jsonl_bytes(revisions),
+        "dialogues.jsonl": _jsonl_bytes(fulltext.dialogues),
+        "mention-candidates.jsonl": _jsonl_bytes(fulltext.candidates),
+        "entity-review-tasks.jsonl": _jsonl_bytes(fulltext.review_tasks),
     }
     logical_hash = _logical_hash(payloads, project_id, annotation_sha)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -1122,6 +1319,9 @@ def build_literary_engine(
                 relationships,
                 events,
                 revisions,
+                fulltext.dialogues,
+                fulltext.candidates,
+                fulltext.review_tasks,
                 fts5=capabilities["fts5"],
             )
             metadata = {
@@ -1132,6 +1332,7 @@ def build_literary_engine(
                 "source_sha256": source_sha,
                 "logical_sha256": logical_hash,
                 "annotation_sha256": annotation_sha or "",
+                "fulltext_system_version": FULLTEXT_SYSTEM_VERSION,
                 "fts5": str(int(capabilities["fts5"])),
                 "trigram": str(int(capabilities["trigram"])),
             }
@@ -1167,6 +1368,15 @@ def build_literary_engine(
             len(relationships),
             len(events),
             len(revisions),
+            len(fulltext.passage_anchors),
+            len(fulltext.dialogues),
+            len(fulltext.candidates),
+            len(fulltext.review_tasks),
+            fulltext.trusted_chapter_count,
+            fulltext.skipped_chapter_count,
+            fulltext.indexed_character_count,
+            fulltext.known_alias_occurrence_count,
+            fulltext.ambiguous_alias_occurrence_count,
             traceability,
             address_coverage,
             logical_hash,
@@ -1176,6 +1386,7 @@ def build_literary_engine(
         report_payload = {
             "schema_version": LITERARY_REPORT_SCHEMA_VERSION,
             **result.to_dict(),
+            "fulltext_system_version": FULLTEXT_SYSTEM_VERSION,
             "fts5_available": capabilities["fts5"],
             "trigram_available": capabilities["trigram"],
             "tier_contract": {
@@ -1202,6 +1413,7 @@ def build_literary_engine(
             "schema_version": LITERARY_MANIFEST_SCHEMA_VERSION,
             "literary_system_version": LITERARY_SYSTEM_VERSION,
             "literary_index_schema_version": LITERARY_INDEX_SCHEMA_VERSION,
+            "fulltext_system_version": FULLTEXT_SYSTEM_VERSION,
             "project_id": project_id,
             "source_id": source_id,
             "source_sha256": source_sha,
@@ -1280,6 +1492,8 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification
             reasons.append("LITERARY_SYSTEM_VERSION_MISMATCH")
         if manifest.get("literary_index_schema_version") != LITERARY_INDEX_SCHEMA_VERSION or report.get("literary_index_schema_version") != LITERARY_INDEX_SCHEMA_VERSION:
             reasons.append("LITERARY_INDEX_SCHEMA_MISMATCH")
+        if manifest.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION or report.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION:
+            reasons.append("LITERARY_FULLTEXT_VERSION_MISMATCH")
         if manifest.get("project_id") != report.get("project_id") or manifest.get("source_id") != report.get("source_id"):
             reasons.append("LITERARY_REPORT_BINDING_MISMATCH")
         for payload in (manifest, report):
@@ -1327,22 +1541,25 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification
         # compare the two stores, not merely prove that each store is internally
         # self-consistent in isolation.
         type_map = {
-            "chapters.jsonl": ("chapter", "chapter_id", "chapters", "chapter_id"),
-            "evidence-anchors.jsonl": ("evidence", "anchor_id", "evidence_anchors", "anchor_id"),
-            "entities.jsonl": ("entity", "entity_id", "entities", "entity_id"),
-            "assertions.jsonl": ("assertion", "assertion_id", "assertions", "assertion_id"),
-            "relationships.jsonl": ("relationship", "relationship_id", "relationships", "relationship_id"),
-            "events.jsonl": ("event", "event_id", "events", "event_id"),
-            "revisions.jsonl": ("revision", "revision_id", "revisions", "revision_id"),
+            "chapters.jsonl": (lambda row: record_from_dict("chapter", row), "chapter_id", "chapters", "chapter_id"),
+            "evidence-anchors.jsonl": (lambda row: record_from_dict("evidence", row), "anchor_id", "evidence_anchors", "anchor_id"),
+            "entities.jsonl": (lambda row: record_from_dict("entity", row), "entity_id", "entities", "entity_id"),
+            "assertions.jsonl": (lambda row: record_from_dict("assertion", row), "assertion_id", "assertions", "assertion_id"),
+            "relationships.jsonl": (lambda row: record_from_dict("relationship", row), "relationship_id", "relationships", "relationship_id"),
+            "events.jsonl": (lambda row: record_from_dict("event", row), "event_id", "events", "event_id"),
+            "revisions.jsonl": (lambda row: record_from_dict("revision", row), "revision_id", "revisions", "revision_id"),
+            "dialogues.jsonl": (dialogue_from_dict, "dialogue_id", "dialogues", "dialogue_id"),
+            "mention-candidates.jsonl": (candidate_from_dict, "candidate_id", "mention_candidates", "candidate_id"),
+            "entity-review-tasks.jsonl": (entity_task_from_dict, "task_id", "entity_review_tasks", "task_id"),
         }
         typed_rows: dict[str, list[dict[str, object]]] = {}
-        for name, (record_type, _, _, _) in type_map.items():
+        for name, (parser, _, _, _) in type_map.items():
             rows = _load_jsonl(root / name, name)
             typed_rows[name] = rows
             for row in rows:
                 try:
-                    record_from_dict(record_type, row)
-                except LiteraryModelError as exc:
+                    parser(row)
+                except (LiteraryModelError, LiteraryFullTextError) as exc:
                     reasons.append(f"LITERARY_TYPED_RECORD_INVALID:{name}:{type(exc).__name__}")
                     break
 
@@ -1355,6 +1572,8 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification
                 reasons.append("LITERARY_DATABASE_SCHEMA_MISMATCH")
             if metadata.get("project_id") != project_id or metadata.get("source_id") != source_id:
                 reasons.append("LITERARY_DATABASE_PROJECT_BINDING_MISMATCH")
+            if metadata.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION:
+                reasons.append("LITERARY_DATABASE_FULLTEXT_VERSION_MISMATCH")
             if metadata.get("logical_sha256") != expected_logical:
                 reasons.append("LITERARY_DATABASE_LOGICAL_HASH_MISMATCH")
             integrity = connection.execute("PRAGMA integrity_check").fetchone()
@@ -1388,6 +1607,9 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification
                 "relationship_count": len(typed_rows["relationships.jsonl"]),
                 "event_count": len(typed_rows["events.jsonl"]),
                 "revision_count": len(typed_rows["revisions.jsonl"]),
+                "dialogue_count": len(typed_rows["dialogues.jsonl"]),
+                "mention_candidate_count": len(typed_rows["mention-candidates.jsonl"]),
+                "entity_review_task_count": len(typed_rows["entity-review-tasks.jsonl"]),
                 "tier_a_count": sum(row.get("tier") == "A" for row in typed_rows["assertions.jsonl"]),
                 "tier_b_count": sum(row.get("tier") == "B" for row in typed_rows["assertions.jsonl"]),
                 "tier_c_count": sum(row.get("tier") == "C" for row in typed_rows["assertions.jsonl"]),
