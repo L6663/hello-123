@@ -1,0 +1,59 @@
+diff --git a/tkr/literary_engine.py b/tkr/literary_engine.py
+--- a/tkr/literary_engine.py
++++ b/tkr/literary_engine.py
+@@ -1300,6 +1300,8 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification:
+             reasons.append("LITERARY_SYSTEM_VERSION_MISMATCH")
+         if manifest.get("literary_index_schema_version") != LITERARY_INDEX_SCHEMA_VERSION or report.get("literary_index_schema_version") != LITERARY_INDEX_SCHEMA_VERSION:
+             reasons.append("LITERARY_INDEX_SCHEMA_MISMATCH")
++        if manifest.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION or report.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION:
++            reasons.append("LITERARY_FULLTEXT_VERSION_MISMATCH")
+         if manifest.get("project_id") != report.get("project_id") or manifest.get("source_id") != report.get("source_id"):
+@@ -1349,21 +1351,24 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification:
+         # compare the two stores, not merely prove that each store is internally
+         # self-consistent in isolation.
+         type_map = {
+-            "chapters.jsonl": ("chapter", "chapter_id", "chapters", "chapter_id"),
+-            "evidence-anchors.jsonl": ("evidence", "anchor_id", "evidence_anchors", "anchor_id"),
+-            "entities.jsonl": ("entity", "entity_id", "entities", "entity_id"),
+-            "assertions.jsonl": ("assertion", "assertion_id", "assertions", "assertion_id"),
+-            "relationships.jsonl": ("relationship", "relationship_id", "relationships", "relationship_id"),
+-            "events.jsonl": ("event", "event_id", "events", "event_id"),
+-            "revisions.jsonl": ("revision", "revision_id", "revisions", "revision_id"),
++            "chapters.jsonl": (lambda row: record_from_dict("chapter", row), "chapter_id", "chapters", "chapter_id"),
++            "evidence-anchors.jsonl": (lambda row: record_from_dict("evidence", row), "anchor_id", "evidence_anchors", "anchor_id"),
++            "entities.jsonl": (lambda row: record_from_dict("entity", row), "entity_id", "entities", "entity_id"),
++            "assertions.jsonl": (lambda row: record_from_dict("assertion", row), "assertion_id", "assertions", "assertion_id"),
++            "relationships.jsonl": (lambda row: record_from_dict("relationship", row), "relationship_id", "relationships", "relationship_id"),
++            "events.jsonl": (lambda row: record_from_dict("event", row), "event_id", "events", "event_id"),
++            "revisions.jsonl": (lambda row: record_from_dict("revision", row), "revision_id", "revisions", "revision_id"),
++            "dialogues.jsonl": (dialogue_from_dict, "dialogue_id", "dialogues", "dialogue_id"),
++            "mention-candidates.jsonl": (candidate_from_dict, "candidate_id", "mention_candidates", "candidate_id"),
++            "entity-review-tasks.jsonl": (entity_task_from_dict, "task_id", "entity_review_tasks", "task_id"),
+         }
+         typed_rows: dict[str, list[dict[str, object]]] = {}
+-        for name, (record_type, _, _, _) in type_map.items():
++        for name, (parser, _, _, _) in type_map.items():
+             rows = _load_jsonl(root / name, name)
+             typed_rows[name] = rows
+             for row in rows:
+                 try:
+-                    record_from_dict(record_type, row)
+-                except LiteraryModelError as exc:
++                    parser(row)
++                except (LiteraryModelError, LiteraryFullTextError) as exc:
+                     reasons.append(f"LITERARY_TYPED_RECORD_INVALID:{name}:{type(exc).__name__}")
+@@ -1382,6 +1387,8 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification:
+                 reasons.append("LITERARY_DATABASE_SCHEMA_MISMATCH")
+             if metadata.get("project_id") != project_id or metadata.get("source_id") != source_id:
+                 reasons.append("LITERARY_DATABASE_PROJECT_BINDING_MISMATCH")
++            if metadata.get("fulltext_system_version") != FULLTEXT_SYSTEM_VERSION:
++                reasons.append("LITERARY_DATABASE_FULLTEXT_VERSION_MISMATCH")
+             if metadata.get("logical_sha256") != expected_logical:
+@@ -1425,6 +1432,9 @@ def verify_literary_engine(output_directory: str | Path) -> LiteraryVerification:
+                 "relationship_count": len(typed_rows["relationships.jsonl"]),
+                 "event_count": len(typed_rows["events.jsonl"]),
+                 "revision_count": len(typed_rows["revisions.jsonl"]),
++                "dialogue_count": len(typed_rows["dialogues.jsonl"]),
++                "mention_candidate_count": len(typed_rows["mention-candidates.jsonl"]),
++                "entity_review_task_count": len(typed_rows["entity-review-tasks.jsonl"]),
+                 "tier_a_count": sum(row.get("tier") == "A" for row in typed_rows["assertions.jsonl"]),
