@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-knowledge-reader-core"
-version = "5.9.0"
-description = "Auditable staged text ingestion, typed evidence validation, strict QA, recoverable builds, and approval-gated release freezing"
+version = "6.0.0-alpha1"
+description = "Auditable long-text ingestion, chapter-addressable literary knowledge, epistemic-tier separation, strict evidence QA, and recoverable builds"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -24,6 +24,7 @@ tkr-structure-index = "tkr.structure_cli:main"
 tkr-semantic-extract = "tkr.semantic_cli:main"
 tkr-project = "tkr.project_cli:main"
 tkr-skill = "tkr.skill_cli:main"
+tkr-literary = "tkr.literary_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -60,6 +61,14 @@ include = ["tkr*"]
   "schemas/engineering-build-state.schema.json",
   "schemas/skill-audit-report.schema.json",
   "schemas/skill-doctor-report.schema.json",
+  "schemas/literary-annotation.schema.json",
+  "schemas/literary-report.schema.json",
+  "schemas/literary-query-packet.schema.json",
+  "schemas/literary-evidence-anchor.schema.json",
+  "schemas/literary-assertion.schema.json",
+  "schemas/literary-entity.schema.json",
+  "schemas/literary-relationship.schema.json",
+  "schemas/literary-event.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -74,4 +83,5 @@ include = ["tkr*"]
   "docs/INSTALL.md",
   "docs/SECURITY.md",
   "docs/MIGRATION_STAGE5.md",
+  "docs/STAGE7_LITERARY_ENGINE.md",
 ]
