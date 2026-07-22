@@ -1,0 +1,7 @@
+{"question":"玄霄叫什么？","expected_predicate":"alias","expected_decision":"answered"}
+{"question":"陆川击败了谁？","expected_predicate":"defeats","expected_decision":"answered"}
+{"question":"听雪楼位于哪里？","expected_predicate":"located_in","expected_decision":"answered"}
+{"question":"守门人允许陆川进入内殿吗？","expected_predicate":"permission","expected_decision":"answered"}
+{"question":"剑阵共有多少柄飞剑？","expected_predicate":"count","expected_decision":"answered"}
+{"question":"大战发生于何时？","expected_predicate":"date","expected_decision":"answered"}
+{"question":"陆川为什么要击败韩岳？","expected_predicate":"unsupported","expected_decision":"refused_unsupported"}
