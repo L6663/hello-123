@@ -9,22 +9,23 @@ main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
 canonical_phase9_base: feature/phase9-0-baseline-cleanup
-active_stage_branch: feature/phase9-stage1-safety-hardening
+integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
 completed_development_stages:
   - Phase 9.0
   - Phase 9.1
   - Phase 9.2
   - Phase 9.3
   - Phase 9.4
-current_large_stage: Stage 1 — development-line convergence and corpus safety
-stage_1_implementation: complete
-stage_1_focused_checks: passed_on_python_3_10_3_11_3_12
+completed_large_stages:
+  - Stage 1
+next_large_stage: Stage 2 — deterministic corpus structure
+next_stage_status: not_started
 project_acceptance: deferred_until_final_integrated_product
 release_candidate: false
 freeze_approved: false
 ```
 
-The canonical Phase 9 base contains the completed Phase 9.0–9.3 implementation. Stage 1 is developed on `feature/phase9-stage1-safety-hardening`. The earlier encoded-payload PR #9 and stale Phase 9.4 branches are superseded and must not be merged.
+Stage 1 was merged through PR #11 into the canonical Phase 9 base. The earlier encoded-payload PR #9 and stale Phase 9.4 branches are superseded and must not be merged.
 
 ## Stable stack on `main`
 
@@ -48,7 +49,7 @@ Development-complete means the intended Skill code is present on the Phase 9 lin
 
 ## Stage 1 result
 
-Stage 1 converges the development line and strengthens the corpus safety layer. It includes:
+Stage 1 converged the development line and strengthened the corpus safety layer. It includes:
 
 - legacy Phase 2–8 PR workflows restricted to `main`-targeting PRs;
 - exact source SHA-256 binding and post-scan mutation detection;
