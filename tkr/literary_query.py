@@ -878,15 +878,44 @@ def query_literary_engine(
             )
 
         component = intent.event_component
-        entity_ids = [str(row["entity_id"]) for row in subject_entities]
-        assertion_rows = _assertion_rows(
-            connection,
-            entity_ids,
-            intent.subject,
-            component=component,
-            requested_tier=intent.requested_tier,
-            limit=max_items,
-        )
+        assertion_rows: list[sqlite3.Row]
+        event_matches: list[sqlite3.Row] = []
+        if component and intent.subject:
+            event_matches = list(
+                connection.execute(
+                    "SELECT event_id FROM events WHERE canonical_name=? ORDER BY event_id",
+                    (intent.subject,),
+                ).fetchall()
+            )
+        if len(event_matches) == 1:
+            tier_clause = " AND a.tier=?" if intent.requested_tier else ""
+            params: list[object] = [event_matches[0]["event_id"], component]
+            if intent.requested_tier:
+                params.append(intent.requested_tier)
+            params.append(max_items)
+            assertion_rows = list(
+                connection.execute(
+                    """
+                    SELECT a.*
+                    FROM event_assertions ea
+                    JOIN assertions a ON a.assertion_id=ea.assertion_id
+                    WHERE ea.event_id=? AND ea.component=?
+                    """
+                    + tier_clause
+                    + " ORDER BY CASE a.tier WHEN 'A' THEN 0 WHEN 'B' THEN 1 ELSE 2 END, a.assertion_id LIMIT ?",
+                    params,
+                ).fetchall()
+            )
+        else:
+            entity_ids = [str(row["entity_id"]) for row in subject_entities]
+            assertion_rows = _assertion_rows(
+                connection,
+                entity_ids,
+                intent.subject,
+                component=component,
+                requested_tier=intent.requested_tier,
+                limit=max_items,
+            )
         evidence_rows = _assertion_evidence(
             connection,
             [str(row["assertion_id"]) for row in assertion_rows],

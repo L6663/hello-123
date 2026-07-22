@@ -126,7 +126,9 @@ def _unit_rows() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
 
 
 def _mention(mention_id: str, entity: str, unit_id: str, surface: str) -> dict[str, object]:
-    start, end = _span(surface)
+    search_start = 0 if unit_id == "unit_1" else SOURCE.index("卷1 2章")
+    start = SOURCE.index(surface, search_start)
+    end = start + len(surface)
     return {
         "mention_id": mention_id,
         "claim_result_id": f"claim_{mention_id}",
