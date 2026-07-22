@@ -9,21 +9,23 @@ main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
 canonical_phase9_base: feature/phase9-0-baseline-cleanup
-active_stage_branch: feature/phase9-stage3-evidence-semantics
+active_stage_branch: feature/phase9-0-baseline-cleanup
+integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
+integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
 completed_large_stages:
   - Stage 1
   - Stage 2
-current_large_stage: Stage 3 — evidence-grounded semantics
-stage_3_implementation: complete
-stage_3_local_focused_checks: 31_passed
-stage_3_github_focused_checks: pending
+  - Stage 3
+next_large_stage: Stage 4 — end-to-end knowledge system
+next_stage_status: not_started
 project_acceptance: deferred_until_final_integrated_product
 minimum_score_per_capability: 9.0
 release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11. Stage 2 was merged through PR #12. Stage 3 is implemented on `feature/phase9-stage3-evidence-semantics` and is awaiting focused GitHub checks and integration review.
+Stage 1 was merged through PR #11, Stage 2 through PR #12, and Stage 3 through PR #13 into the canonical Phase 9 development base.
 
 ## Stable stack on `main`
 
@@ -49,8 +51,6 @@ Development-complete means the intended Skill code exists on the Phase 9 develop
 
 ## Stage 1 — corpus safety
 
-Run:
-
 ```bash
 tkr-anomaly-scan corpus.txt --outdir project/anomaly
 ```
@@ -58,8 +58,6 @@ tkr-anomaly-scan corpus.txt --outdir project/anomaly
 Stage 1 emits source-bound anomaly, contamination, paratext, Unicode, repetition, and same-language transition candidates. Findings never delete source text or declare a corpus clean or contaminated.
 
 ## Stage 2 — deterministic corpus structure
-
-Run:
 
 ```bash
 tkr-structure-index corpus.txt --outdir project/structure
@@ -69,7 +67,7 @@ Stage 2 produces deterministic heading candidates, contiguous non-overlapping Un
 
 ## Stage 3 — evidence-grounded semantics
 
-Stage 3 extracts typed Claim candidates only from exact Stage 2 Unit body spans. It supports the six predicates already enforced by the deterministic Claim validator:
+Stage 3 extracts typed Claim candidates only from exact Stage 2 Unit body spans. It supports:
 
 ```text
 alias
@@ -147,25 +145,9 @@ tkr-semantic-extract
 
 - Stage 1: 15 focused tests passed on Python 3.10, 3.11, and 3.12.
 - Stage 2: 21 focused tests passed on Python 3.10, 3.11, and 3.12.
-- Stage 3: 31 local focused tests passed; the GitHub Python 3.10/3.11/3.12 matrix is pending.
+- Stage 3: 31 focused tests passed on Python 3.10, 3.11, and 3.12.
 
-Stage 3 focused coverage includes:
-
-- all six deterministic predicates;
-- positive and negative permission;
-- Chinese integer and decimal counts;
-- exact dates;
-- rumor, belief, suspicion, accusation, hypothetical, question, and future-intent indexing blocks;
-- negated relation handling;
-- exact Evidence span and hash binding;
-- heading exclusion through Unit body boundaries;
-- deterministic IDs and artifact manifests;
-- constrained model-task envelopes;
-- entity-normalization bridge;
-- UTF-8 BOM and UTF-16 offsets;
-- candidate limits;
-- upstream contamination overlap blocking;
-- CLI publication.
+Stage 3 checks cover all six predicates, positive and negative permission, integer and decimal count values, exact dates, discourse-state isolation, negated relations, Evidence spans and hashes, Unit-body exclusion, deterministic IDs, constrained model tasks, entity normalization, UTF-8 BOM and UTF-16 offsets, limits, upstream anomaly blocking, deterministic artifacts, and CLI output.
 
 Focused checks are development evidence only. They are not private blind evaluation, real-corpus accuracy measurement, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
 
