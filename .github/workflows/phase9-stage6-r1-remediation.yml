@@ -44,7 +44,18 @@ jobs:
         run: python -m unittest -v tests.test_stage6_r1_remediation
 
       - name: Run complete repository regression
-        run: python -m unittest discover -v
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -v 2>&1 | tee "$RUNNER_TEMP/stage6-r1-full-regression-${{ matrix.python-version }}.log"
+
+      - name: Upload full-regression log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r1-full-regression-python-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/stage6-r1-full-regression-${{ matrix.python-version }}.log
+          retention-days: 3
 
       - name: Audit source product
         run: |
