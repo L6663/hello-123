@@ -1,0 +1,59 @@
+name: Stage 7.2 one-time engine bootstrap
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+    paths:
+      - ".stage72/engine-*.patch"
+      - ".github/workflows/stage72-engine-bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-engine-integration:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Apply Stage 7.2 engine patches
+        id: apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          for patch in \
+            .stage72/engine-top.patch \
+            .stage72/engine-schema.patch \
+            .stage72/engine-insert.patch \
+            .stage72/engine-build.patch \
+            .stage72/engine-verify.patch
+          do
+            git apply --check --recount --verbose "$patch"
+            git apply --recount --verbose "$patch"
+          done
+          python -m py_compile tkr/literary_fulltext.py tkr/literary_engine.py
+
+      - name: Commit Stage 7.2 engine integration
+        if: steps.apply.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/literary_engine.py
+          git rm \
+            .stage72/engine-top.patch \
+            .stage72/engine-schema.patch \
+            .stage72/engine-insert.patch \
+            .stage72/engine-build.patch \
+            .stage72/engine-verify.patch \
+            .github/workflows/stage72-engine-bootstrap.yml
+          rmdir .stage72 2>/dev/null || true
+          git commit -m "feat(stage7.2): integrate fulltext dialogues and minor-entity candidates"
+          git push origin "HEAD:${{ github.head_ref }}"
