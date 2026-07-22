@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v2
+schema_version: tkr-project-status-v3
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T06:47:00Z
+updated_at_utc: 2026-07-22T09:46:00Z
 
 main:
   branch: main
@@ -9,9 +9,9 @@ main:
   integration_status: stable_phase2_to_phase8_baseline
 
 development:
-  version: 5.9.0-alpha1
-  status: alpha
-  mode: skill_optimization_only
+  version: 5.9.0-alpha2
+  status: final_acceptance_passed_alpha_candidate
+  mode: final_integrated_skill
   canonical_base_branch: feature/phase9-0-baseline-cleanup
   active_branch: feature/phase9-0-baseline-cleanup
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
@@ -19,6 +19,8 @@ development:
   integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
   integrated_stage_4_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
   integrated_stage_5_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
+  integrated_stage_6_r1_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
+  accepted_runtime_head_commit: 62565a2b28cb14f65912f39b605ab10084364a07
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
@@ -34,190 +36,171 @@ development:
     - Phase 9.11
     - Phase 9.12
     - Phase 9.13
+    - Phase 9.14
+    - Phase 9.15
   completed_large_stages:
     - Stage 1
     - Stage 2
     - Stage 3
     - Stage 4
     - Stage 5
-  next_large_stage: Stage 6
-  next_stage_status: not_started
+    - Stage 6
+  next_large_stage: none
+  next_action: explicit_release_approval_optional
 
-stage_1:
-  estimated_engineering_time: 4_to_6_hours
-  implementation_status: complete
-  integration_status: merged_into_canonical_phase9_base
-  pull_request: 11
-  merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-  focused_checks:
-    status: passed
-    test_count: 15
+stages:
+  stage_1:
+    scope: development-line convergence and corpus safety
+    pull_request: 11
+    merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+    status: complete_integrated
+    focused_tests: 15
     python_versions: ["3.10", "3.11", "3.12"]
-    workflow_run_id: 29888109850
-  project_acceptance: false
 
-stage_2:
-  estimated_engineering_time: 12_to_18_hours
-  implementation_status: complete
-  integration_status: merged_into_canonical_phase9_base
-  pull_request: 12
-  merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
-  focused_checks:
-    status: passed
-    test_count: 21
+  stage_2:
+    scope: deterministic headings, Unit Index, and continuity
+    pull_request: 12
+    merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
+    status: complete_integrated
+    focused_tests: 21
     python_versions: ["3.10", "3.11", "3.12"]
-    workflow_run_id: 29890012483
-  project_acceptance: false
 
-stage_3:
-  estimated_engineering_time: 24_to_36_hours
-  implementation_status: complete
-  integration_status: merged_into_canonical_phase9_base
-  pull_request: 13
-  merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
-  focused_checks:
-    status: passed
-    test_count: 31
+  stage_3:
+    scope: evidence-grounded Claims and factual-status semantics
+    pull_request: 13
+    merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
+    status: complete_integrated
+    focused_tests: 31
     python_versions: ["3.10", "3.11", "3.12"]
-    workflow_run_id: 29892803967
-  capabilities:
-    claim_candidate_contract: implemented
-    six_predicate_deterministic_extraction: implemented
-    exact_evidence_spans_and_hashes: implemented
-    factual_status_and_polarity_separation: implemented
-    belief_suspicion_rumor_accusation_separation: implemented
-    hypothetical_question_future_intent_separation: implemented
-    nonassertive_indexing_block: implemented
-    structure_review_unit_indexing_block: implemented
-    upstream_anomaly_overlap_indexing_block: implemented
-    deterministic_claim_validation_bridge: implemented
-    entity_fact_timeline_conflict_bridge: implemented
-    constrained_model_task_interface: implemented
-    deterministic_artifact_set: implemented
-    json_schema_contracts: implemented
-  project_acceptance: false
 
-stage_4:
-  estimated_engineering_time: 18_to_28_hours
-  implementation_status: complete
-  integration_status: merged_into_canonical_phase9_base
-  pull_request: 15
-  merge_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
-  focused_checks:
-    status: passed
-    test_count: 27
+  stage_4:
+    scope: end-to-end project, retrieval, strict QA, citations, and refusal
+    pull_request: 15
+    merge_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
+    status: complete_integrated
+    focused_tests: 27
     python_versions: ["3.10", "3.11", "3.12"]
-    workflow_run_id: 29895687071
-  regression_checks:
-    stage_2_workflow_run_id: 29895687036
-    stage_2_status: passed
-    stage_3_workflow_run_id: 29895687057
-    stage_3_status: passed
-  capabilities:
-    unified_project_cli: implemented
-    raw_to_index_orchestration: implemented
-    original_and_normalized_source_binding: implemented
-    stage_1_to_3_artifact_publication: implemented
-    stage_3_to_phase_5_compatibility_bridge: implemented
-    fresh_entity_normalization_revalidation: implemented
-    sqlite_index_build: implemented
-    immutable_project_manifest: implemented
-    source_and_database_integrity_verification: implemented
-    typed_query_and_strict_refusal: implemented
-    exact_citation_chain: implemented
-    project_bound_answer_packets: implemented
-    answer_recomputation_verification: implemented
-    canonical_index_gate: implemented
-    verified_project_reuse: implemented
-    atomic_project_replacement: implemented
-    deterministic_project_identity: implemented
-    json_schema_contracts: implemented
-  project_acceptance: false
 
-stage_5:
-  estimated_engineering_time: 16_to_24_hours
-  implementation_status: complete
-  integration_status: merged_into_canonical_phase9_base
-  pull_request: 16
-  merge_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
-  focused_checks:
-    status: passed
-    test_count: 38
+  stage_5:
+    scope: engineering hardening and complete Skill productization
+    pull_request: 16
+    merge_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
+    status: complete_integrated
+    focused_tests: 38
+    wheel_clean_install: passed
+    source_and_installed_audit: passed
     python_versions: ["3.10", "3.11", "3.12"]
-    workflow_run_id: 29897596131
-  clean_install_checks:
-    wheel_build: passed
-    fresh_virtual_environment_install: passed
-    installed_skill_doctor: passed
-    installed_skill_audit: passed
-    installed_example_build_verify_query: passed
-    python_versions: ["3.10", "3.11", "3.12"]
-  regression_checks:
-    stage_2_workflow_run_id: 29897596139
-    stage_2_status: passed
-    stage_3_workflow_run_id: 29897596149
-    stage_3_status: passed
-    stage_4_workflow_run_id: 29897596112
-    stage_4_status: passed
-  capabilities:
-    content_addressed_build_key: implemented
-    strict_engineering_profiles: implemented
-    external_exclusive_build_lock: implemented
-    external_build_journal: implemented
-    verified_project_cache: implemented
-    cache_invalidation_by_source_profile_and_version: implemented
-    orphan_backup_recovery: implemented
-    stale_workspace_cleanup: implemented
-    explicit_stale_lock_recovery: implemented
-    verified_existing_project_reuse: implemented
-    atomic_project_replacement_and_rollback: implemented
-    source_output_state_path_separation: implemented
-    symlink_authority_rejection: implemented
-    exact_manifest_filesystem_membership: implemented
-    undeclared_and_missing_file_rejection: implemented
-    traversal_and_duplicate_manifest_path_rejection: implemented
-    secure_build_verify_query_and_answer_wrapper: implemented
-    complete_skill_md_contract: implemented
-    builtin_profiles: implemented
-    executable_examples: implemented
-    installation_security_and_migration_docs: implemented
-    skill_doctor_and_audit_cli: implemented
-    wheel_product_data: implemented
-    source_and_installed_layout_audit: implemented
-    json_schema_contracts: implemented
-  project_acceptance: false
 
-stage_policy:
-  intermediate_project_acceptance: disabled
-  intermediate_release_certification: disabled
-  intermediate_freeze_authorization: disabled
-  real_corpus_acceptance_runs: deferred
-  focused_developer_checks:
-    allowed: true
-    certification_effect: none
+  stage_6:
+    scope: all-capability analysis and final project acceptance
+    initial_result: failed
+    initial_failed_domains: [3, 4, 5, 12]
+    remediation_pull_request: 21
+    remediation_merge_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
+    status: complete_integrated_accepted
+    exact_head_workflow_run_id: 29908222371
+    base_remediation_workflow_run_id: 29908222413
+    python_versions: ["3.10", "3.11", "3.12"]
+    additional_drift_python: "3.13.5"
+    exact_head_wheel_artifact_id: 8524738517
+    final_acceptance_document: docs/stage-6-r1-final-acceptance.md
+    machine_summary: acceptance/stage6-r1-acceptance-summary.json
+
+final_measurements:
+  anomaly_and_pollution:
+    gold_blocks: 34
+    candidates: 34
+    candidate_precision: 1.0
+    block_recall: 1.0
+    character_precision: 0.970189304207459
+    character_recall: 0.9823395809895779
+    boundary_mae_characters: 45.705882352941174
+
+  structure:
+    decoded_characters: 3192465
+    heading_candidates: 877
+    combined_headings: 546
+    combined_correct: 546
+    combined_accuracy: 1.0
+    source_coverage_ratio: 1.0
+
+  semantic_heldout:
+    expected_total: 204
+    exact_type_status_polarity: 204
+    direct_count: 144
+    direct_may_index: 144
+    nonassertive_count: 60
+    nonassertive_blocked: 60
+    extra_candidates: 0
+
+  long_corpus_performance:
+    files: 5
+    decoded_characters: 3192465
+    total_elapsed_seconds: 73.13
+    throughput_decoded_characters_per_second: 43654.65609189116
+    peak_rss_kb: 68888
+    semantic_candidates: 2546
+    accepted_claims: 551
+    verified_projects: 5
+    execution_mode: isolated_process_per_source
+    transient_batch_timeout_disclosed: true
+
+  secure_query_latency:
+    query_count: 75
+    p50_ms: 346.2580609993893
+    p95_ms: 721.1261051008478
+    p99_ms: 785.2306675600277
+    max_ms: 926.2205780032673
+    includes_full_project_verification: true
+
+  release_gold:
+    cases: 108
+    passed: 108
+    decision_accuracy: 1.0
+    answer_claim_accuracy: 1.0
+    refusal_precision: 1.0
+    refusal_recall: 1.0
+    citation_entailment_rate: 1.0
+    wrong_answers: 0
+    overanswers: 0
+    citation_mismatches: 0
+    measured_hallucinations: 0
+
+  reproducibility:
+    anomaly_artifact_hash_match: true
+    structure_artifact_hash_match: true
+
+  package_audit:
+    checked_files: 36
+    schemas: 21
+    profiles: 3
+    findings: 0
+
+capability_scorecard:
+  domain_count: 18
+  passed_domains: 18
+  failed_domains: 0
+  overall_weighted_average: 9.63
+  minimum_domain_score: 9.34
+  minimum_score_per_capability: 9.0
+  minimum_correctness_per_capability: 9.0
+  minimum_safety_per_capability: 9.0
+  average_compensation_allowed: false
 
 project_acceptance:
-  status: deferred
-  trigger: final_integrated_product_complete
-  minimum_score_per_capability: 9.0
-  average_compensation_allowed: false
-  intermediate_results_may_pass_project: false
-  final_scope:
-    - complete_regression_matrix
-    - private_blind_evaluation
-    - long_corpus_execution
-    - performance_measurement
-    - hostile_input_campaign
-    - recovery_and_cache_validation
-    - drift_comparison
-    - final_package_audit
-    - all_capability_scoring
-    - end_to_end_project_acceptance
+  status: passed
+  performed: true
+  all_capability_domains_passed: true
+  blocker_count: 0
+  release_candidate_eligible: true
 
 release:
   release_candidate: false
+  release_candidate_created: false
   freeze_approved: false
   may_freeze: false
+  explicit_release_approval_required: true
+  explicit_freeze_approval_required: true
 
 branch_governance:
   accepted_lineage:
@@ -227,48 +210,17 @@ branch_governance:
     - feature/phase9-stage3-evidence-semantics
     - feature/phase9-stage4-end-to-end-knowledge-v3
     - feature/phase9-stage5-engineering-productization
+    - feature/phase9-stage6-r1-remediation-v2
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
-      reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
+      reason: encoded-payload draft; not accepted
     - branch: feature/anomaly-pollution-v5.9-phase9.4
-      reason: Created from main without Phase 9.2 and Phase 9.3; do not merge.
+      reason: missing Phase 9.2 and 9.3 ancestry
     - branch: feature/phase9-4-anomaly-contamination
-      reason: Superseded by the converged Stage 1 implementation.
-    - branch: feature/phase9-stage4-end-to-end-knowledge
-      reason: Created before final Stage 3 status synchronization; superseded.
+      reason: superseded by Stage 1
     - branch: feature/phase9-stage4-end-to-end-knowledge-v2
-      reason: Valid Stage 4 implementation but divergent history; PR 14 closed and implementation replayed from the latest base.
+      reason: valid code but divergent history; replayed through PR 15
+    - branch: feature/phase9-stage6-r1-remediation
+      reason: valid remediation work but divergent history; replayed through PR 21
 
-large_stage_plan:
-  - stage: Stage 1
-    scope: development-line convergence and corpus safety
-    estimate: 4_to_6_hours
-    status: complete_integrated
-    project_acceptance: false
-  - stage: Stage 2
-    scope: deterministic heading detection, Unit Index, and continuity validation
-    estimate: 12_to_18_hours
-    status: complete_integrated
-    project_acceptance: false
-  - stage: Stage 3
-    scope: evidence-grounded Claim extraction and factual-status semantics
-    estimate: 24_to_36_hours
-    status: complete_integrated
-    project_acceptance: false
-  - stage: Stage 4
-    scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
-    estimate: 18_to_28_hours
-    status: complete_integrated
-    project_acceptance: false
-  - stage: Stage 5
-    scope: engineering hardening and complete Skill productization
-    estimate: 16_to_24_hours
-    status: complete_integrated
-    project_acceptance: false
-  - stage: Stage 6
-    scope: all-capability analysis and final project acceptance
-    estimate: 20_to_30_hours_plus_corpus_runtime
-    status: planned_not_started
-    project_acceptance: final_only
-
-final_rule: Every capability domain must score at least 9.0. Project acceptance is performed once against the final integrated Skill.
+final_rule: All 18 capability domains passed without score compensation. Release Candidate creation and Freeze remain separately approval-gated.
