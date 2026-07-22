@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-event.schema.json",
+  "title": "Literary event with causal components",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_id", "canonical_name", "event_type",
+    "start_chapter_id", "end_chapter_id", "start_source_order", "end_source_order",
+    "place_entity_ids", "participant_entity_ids", "cause_assertion_ids",
+    "process_assertion_ids", "outcome_assertion_ids", "consequence_assertion_ids",
+    "foreshadowing_assertion_ids", "evidence_anchor_ids", "review_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-event-v1"},
+    "event_id": {"type": "string", "pattern": "^lev_[0-9a-f]{32}$"},
+    "canonical_name": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "minLength": 1},
+    "start_chapter_id": {"type": "string", "minLength": 1},
+    "end_chapter_id": {"type": "string", "minLength": 1},
+    "start_source_order": {"type": "integer", "minimum": 0},
+    "end_source_order": {"type": "integer", "minimum": 0},
+    "place_entity_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "participant_entity_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "cause_assertion_ids": {"type": "array", "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "process_assertion_ids": {"type": "array", "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "outcome_assertion_ids": {"type": "array", "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "consequence_assertion_ids": {"type": "array", "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "foreshadowing_assertion_ids": {"type": "array", "items": {"type": "string", "pattern": "^las_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "evidence_anchor_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^lea_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "review_status": {"type": "string", "minLength": 1}
+  }
+}

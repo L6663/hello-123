@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-query-packet.schema.json",
+  "title": "Evidence-first literary query packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "query_parser_version", "literary_system_version",
+    "literary_index_schema_version", "literary_logical_sha256", "database_sha256",
+    "question", "intent", "decision", "refusal_kind", "reason_codes",
+    "answer_text", "answer_items", "citations", "fact_count", "synthesis_count",
+    "interpretation_count", "may_present", "may_accept_project", "may_freeze", "packet_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-query-v1"},
+    "query_parser_version": {"const": "tkr-literary-query-parser-v1"},
+    "literary_system_version": {"const": "tkr-literary-v1"},
+    "literary_index_schema_version": {"const": "tkr-literary-index-v1"},
+    "literary_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "question": {"type": "string", "minLength": 1},
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent_type", "raw_question", "normalized_question", "subject", "object", "volume_ordinal", "chapter_ordinal", "event_component", "requested_tier"],
+      "properties": {
+        "intent_type": {"type": "string", "minLength": 1},
+        "raw_question": {"type": "string", "minLength": 1},
+        "normalized_question": {"type": "string", "minLength": 1},
+        "subject": {"type": "string"},
+        "object": {"type": "string"},
+        "volume_ordinal": {"type": ["integer", "null"], "minimum": 1},
+        "chapter_ordinal": {"type": ["integer", "null"], "minimum": 1},
+        "event_component": {"type": "string"},
+        "requested_tier": {"type": ["string", "null"], "enum": ["A", "B", "C", null]}
+      }
+    },
+    "decision": {"enum": ["answered", "refused"]},
+    "refusal_kind": {"type": ["string", "null"]},
+    "reason_codes": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "answer_text": {"type": "string", "minLength": 1},
+    "answer_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_type", "record_id", "tier", "classification", "subject", "predicate", "object", "value", "confidence", "attribution", "status", "chapter_id", "volume_ordinal", "chapter_ordinal", "support_ids", "citation_ids"],
+        "properties": {
+          "record_type": {"type": "string", "minLength": 1},
+          "record_id": {"type": "string", "minLength": 1},
+          "tier": {"type": ["string", "null"], "enum": ["A", "B", "C", null]},
+          "classification": {"type": "string", "minLength": 1},
+          "subject": {"type": "string"},
+          "predicate": {"type": "string"},
+          "object": {"type": "string"},
+          "value": {},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "attribution": {"type": "string"},
+          "status": {"type": "string"},
+          "chapter_id": {"type": ["string", "null"]},
+          "volume_ordinal": {"type": ["integer", "null"], "minimum": 1},
+          "chapter_ordinal": {"type": ["integer", "null"], "minimum": 1},
+          "support_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "citation_ids": {"type": "array", "items": {"type": "string", "pattern": "^E[1-9][0-9]*$"}, "uniqueItems": true}
+        }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["citation_id", "citation_schema_version", "anchor_id", "source_id", "chapter_id", "unit_id", "volume_ordinal", "chapter_ordinal", "original_heading", "normalized_heading", "evidence_start", "evidence_end", "evidence_text", "evidence_sha256", "evidence_role", "source_status"],
+        "properties": {
+          "citation_id": {"type": "string", "pattern": "^E[1-9][0-9]*$"},
+          "citation_schema_version": {"const": "tkr-literary-citation-v1"},
+          "anchor_id": {"type": "string", "pattern": "^lea_[0-9a-f]{32}$"},
+          "source_id": {"type": "string", "minLength": 1},
+          "chapter_id": {"type": "string", "minLength": 1},
+          "unit_id": {"type": "string", "minLength": 1},
+          "volume_ordinal": {"type": ["integer", "null"], "minimum": 1},
+          "chapter_ordinal": {"type": ["integer", "null"], "minimum": 1},
+          "original_heading": {"type": "string"},
+          "normalized_heading": {"type": "string"},
+          "evidence_start": {"type": "integer", "minimum": 0},
+          "evidence_end": {"type": "integer", "minimum": 1},
+          "evidence_text": {"type": "string", "minLength": 1},
+          "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "evidence_role": {"type": "string", "minLength": 1},
+          "source_status": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "fact_count": {"type": "integer", "minimum": 0},
+    "synthesis_count": {"type": "integer", "minimum": 0},
+    "interpretation_count": {"type": "integer", "minimum": 0},
+    "may_present": {"const": true},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false},
+    "packet_id": {"type": "string", "pattern": "^lqp_[0-9a-f]{32}$"}
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-evidence-anchor.schema.json",
+  "title": "Literary evidence anchor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "anchor_id", "source_id", "source_sha256", "unit_id",
+    "chapter_id", "volume_ordinal", "chapter_ordinal", "original_heading",
+    "normalized_heading", "evidence_start", "evidence_end", "evidence_text",
+    "evidence_sha256", "unit_content_sha256", "evidence_role", "source_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-evidence-anchor-v1"},
+    "anchor_id": {"type": "string", "pattern": "^lea_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_id": {"type": "string", "minLength": 1},
+    "chapter_id": {"type": "string", "pattern": "^lch_[0-9a-f]{32}$"},
+    "volume_ordinal": {"type": ["integer", "null"], "minimum": 1},
+    "chapter_ordinal": {"type": ["integer", "null"], "minimum": 1},
+    "original_heading": {"type": "string"},
+    "normalized_heading": {"type": "string"},
+    "evidence_start": {"type": "integer", "minimum": 0},
+    "evidence_end": {"type": "integer", "minimum": 1},
+    "evidence_text": {"type": "string", "minLength": 1},
+    "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_role": {"type": "string", "minLength": 1},
+    "source_status": {"enum": ["clean", "contaminated", "non_body", "needs_review"]}
+  }
+}

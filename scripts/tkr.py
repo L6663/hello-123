@@ -9,11 +9,18 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
+from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
 from tkr.skill_cli import main as skill_main  # noqa: E402
 
 SKILL_COMMANDS = {"doctor", "audit", "profiles", "show-profile"}
 PROJECT_COMMANDS = {"build", "verify", "query", "verify-answer"}
+LITERARY_ALIASES = {
+    "literary-build": "build",
+    "literary-verify": "verify",
+    "literary-query": "query",
+    "literary-export-notion": "export-notion",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,12 +29,17 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "Text Knowledge Reader commands:\n"
             "  doctor | audit | profiles | show-profile\n"
-            "  build | verify | query | verify-answer\n\n"
+            "  build | verify | query | verify-answer\n"
+            "  literary build | literary verify | literary query | literary export-notion\n"
+            "  literary-build | literary-verify | literary-query | literary-export-notion\n\n"
             "Examples:\n"
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
             "  python scripts/tkr.py verify project\n"
-            "  python scripts/tkr.py query project '陆川击败了谁？'"
+            "  python scripts/tkr.py query project '陆川击败了谁？'\n"
+            "  python scripts/tkr.py literary build project --outdir literary\n"
+            "  python scripts/tkr.py literary query literary '陆川首次出场在哪一章？'\n"
+            "  python scripts/tkr.py literary export-notion literary --outdir notion-package"
         )
         return 0
 
@@ -38,6 +50,12 @@ def main(argv: list[str] | None = None) -> int:
         return skill_main(args)
     if command in PROJECT_COMMANDS:
         return project_main(args)
+    if command == "literary":
+        if len(args) == 1:
+            return literary_main(["--help"])
+        return literary_main(args[1:])
+    if command in LITERARY_ALIASES:
+        return literary_main([LITERARY_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-annotation.schema.json",
+  "title": "Text Knowledge Reader literary annotation record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_type", "record"],
+  "properties": {
+    "record_type": {
+      "enum": ["entity", "assertion", "relationship", "event", "revision"]
+    },
+    "record": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_type": {"const": "assertion"}}},
+      "then": {
+        "properties": {
+          "record": {
+            "type": "object",
+            "required": [
+              "schema_version", "assertion_id", "tier", "assertion_kind",
+              "subject_text", "predicate", "object_text", "polarity",
+              "confidence", "evidence_anchor_ids", "supporting_assertion_ids",
+              "limitations", "attribution", "status", "revision"
+            ],
+            "properties": {
+              "schema_version": {"const": "tkr-literary-assertion-v1"},
+              "tier": {"enum": ["A", "B", "C"]},
+              "evidence_anchor_ids": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              },
+              "supporting_assertion_ids": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              },
+              "limitations": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              },
+              "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+              "polarity": {"type": "boolean"},
+              "revision": {"type": "integer", "minimum": 1}
+            },
+            "allOf": [
+              {
+                "if": {"properties": {"tier": {"const": "A"}}},
+                "then": {
+                  "properties": {
+                    "attribution": {
+                      "enum": ["source_explicit", "source_direct_event", "source_direct_dialogue"]
+                    }
+                  },
+                  "minProperties": 1
+                }
+              },
+              {
+                "if": {"properties": {"tier": {"const": "B"}}},
+                "then": {
+                  "properties": {
+                    "attribution": {"const": "cross_evidence_synthesis"}
+                  }
+                }
+              },
+              {
+                "if": {"properties": {"tier": {"const": "C"}}},
+                "then": {
+                  "properties": {
+                    "assertion_kind": {"const": "interpretation"},
+                    "attribution": {"const": "model_interpretation"}
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
