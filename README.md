@@ -15,14 +15,15 @@ completed_large_stages:
 current_large_stage: Stage 2 — deterministic corpus structure
 stage_2_implementation: complete
 stage_2_local_focused_checks: 21_passed
-stage_2_github_focused_checks: pending
+stage_2_github_focused_checks: passed_on_python_3_10_3_11_3_12
+stage_2_integration: ready_to_merge
 project_acceptance: deferred_until_final_integrated_product
 minimum_score_per_capability: 9.0
 release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11 into the canonical Phase 9 development base. Stage 2 is implemented on `feature/phase9-stage2-deterministic-structure` and is awaiting focused GitHub checks and integration review.
+Stage 1 was merged through PR #11 into the canonical Phase 9 development base. Stage 2 is implemented on `feature/phase9-stage2-deterministic-structure`; PR #12 has passed focused checks and is ready for integration.
 
 ## Stable stack on `main`
 
@@ -68,7 +69,7 @@ stage-result.json
 artifact-manifest.json
 ```
 
-## Stage 2 implementation — deterministic corpus structure
+## Stage 2 result — deterministic corpus structure
 
 Stage 2 converts a strictly decoded source into deterministic heading candidates, contiguous Unit records, and structure-review findings.
 
@@ -86,7 +87,7 @@ Implemented capabilities include:
 - exact decoded-character coverage with no gaps or overlaps;
 - source-bound Unit IDs and per-Unit content SHA-256 values;
 - duplicate ordinal, numbering gap, inversion, duplicate title, empty body, and placement findings;
-- unit limits that stop promotion of new boundaries without truncating source scanning;
+- Unit limits that stop promotion of new boundaries without truncating source scanning;
 - post-scan source rehashing to detect concurrent modification;
 - explicit validation that Stage 2 cannot authorize project acceptance or freezing.
 
@@ -128,7 +129,9 @@ tkr-structure-index
 
 Stage 1 passed focused checks on Python 3.10, 3.11, and 3.12.
 
-Stage 2 currently has 21 passing local focused tests covering:
+Stage 2 has 21 focused tests passing on Python 3.10, 3.11, and 3.12. The workflow installs the development package, compiles all Stage 2 modules, validates four JSON Schema contracts, runs the focused suite, and verifies the `tkr-structure-index` entry point.
+
+The Stage 2 tests cover:
 
 - ordinal parsing;
 - numbered, special, English, and Markdown headings;
@@ -144,7 +147,7 @@ Stage 2 currently has 21 passing local focused tests covering:
 - Unit-limit behavior;
 - CLI output.
 
-The Stage 2 GitHub workflow runs the same focused implementation checks on Python 3.10, 3.11, and 3.12. These checks are development evidence only. They are not real-corpus acceptance, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
+These checks are development evidence only. They are not real-corpus acceptance, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
 
 ## Remaining large stages
 
