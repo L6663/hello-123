@@ -1,0 +1,55 @@
+diff --git a/tkr/literary_engine.py b/tkr/literary_engine.py
+--- a/tkr/literary_engine.py
++++ b/tkr/literary_engine.py
+@@ -23,6 +23,16 @@ import tempfile
+ from typing import Iterable, Mapping, Sequence
+ 
+ from .hashing import sha256_file
++from .literary_fulltext import (
++    FULLTEXT_SYSTEM_VERSION,
++    DialogueSpan,
++    EntityReviewTask,
++    LiteraryFullTextError,
++    MentionCandidate,
++    build_fulltext_augmentation,
++    candidate_from_dict,
++    dialogue_from_dict,
++    entity_task_from_dict,
++)
+ from .literary_models import (
+@@ -60,6 +70,9 @@ _DATASETS = (
+     "relationships.jsonl",
+     "events.jsonl",
+     "revisions.jsonl",
++    "dialogues.jsonl",
++    "mention-candidates.jsonl",
++    "entity-review-tasks.jsonl",
+ )
+@@ -92,6 +105,15 @@ class LiteraryBuildResult:
+     relationship_count: int
+     event_count: int
+     revision_count: int
++    passage_anchor_count: int
++    dialogue_count: int
++    mention_candidate_count: int
++    entity_review_task_count: int
++    trusted_fulltext_chapter_count: int
++    skipped_fulltext_chapter_count: int
++    indexed_fulltext_character_count: int
++    known_alias_occurrence_count: int
++    ambiguous_alias_occurrence_count: int
+     evidence_traceability_rate: float
+@@ -121,6 +143,15 @@ class LiteraryBuildResult:
+             "relationship_count": self.relationship_count,
+             "event_count": self.event_count,
+             "revision_count": self.revision_count,
++            "passage_anchor_count": self.passage_anchor_count,
++            "dialogue_count": self.dialogue_count,
++            "mention_candidate_count": self.mention_candidate_count,
++            "entity_review_task_count": self.entity_review_task_count,
++            "trusted_fulltext_chapter_count": self.trusted_fulltext_chapter_count,
++            "skipped_fulltext_chapter_count": self.skipped_fulltext_chapter_count,
++            "indexed_fulltext_character_count": self.indexed_fulltext_character_count,
++            "known_alias_occurrence_count": self.known_alias_occurrence_count,
++            "ambiguous_alias_occurrence_count": self.ambiguous_alias_occurrence_count,
+             "evidence_traceability_rate": self.evidence_traceability_rate,
