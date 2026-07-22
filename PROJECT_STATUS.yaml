@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T03:26:00Z
+updated_at_utc: 2026-07-22T03:34:24Z
 
 main:
   branch: main
@@ -13,8 +13,8 @@ development:
   status: alpha
   mode: skill_optimization_only
   canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-0-baseline-cleanup
-  integrated_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+  active_branch: feature/phase9-stage2-deterministic-structure
+  integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
@@ -23,8 +23,8 @@ development:
     - Phase 9.4
   completed_large_stages:
     - Stage 1
-  next_large_stage: Stage 2
-  next_stage_status: not_started
+  current_large_stage: Stage 2
+  current_scope: deterministic_heading_detection_unit_index_and_continuity
 
 stage_1:
   estimated_engineering_time: 4_to_6_hours
@@ -42,12 +42,34 @@ stage_1:
       - "3.11"
       - "3.12"
     workflow_run_id: 29888109850
+  project_acceptance: false
+
+stage_2:
+  estimated_engineering_time: 12_to_18_hours
+  implementation_status: complete
+  local_focused_checks:
+    status: passed
+    test_count: 21
+  github_focused_checks:
+    status: pending
+    python_versions:
+      - "3.10"
+      - "3.11"
+      - "3.12"
+  integration_status: pending_pull_request
   capabilities:
-    workflow_governance: implemented
-    unicode_and_web_anomaly_candidates: implemented
-    line_level_structural_candidates: implemented
-    fixed_character_window_scanning: implemented
-    same_language_cross_work_candidates: implemented
+    multilingual_numbered_heading_candidates: implemented
+    special_unit_classification: implemented
+    markdown_heading_support: implemented
+    fenced_code_suppression: implemented
+    inline_heading_body_boundaries: implemented
+    split_numbered_heading_recovery: implemented
+    detached_title_review_candidates: implemented
+    deterministic_parent_child_units: implemented
+    exact_source_character_coverage: implemented
+    gap_and_overlap_validation: implemented
+    deterministic_unit_ids_and_hashes: implemented
+    numbering_continuity_findings: implemented
     deterministic_artifact_set: implemented
     json_schema_contracts: implemented
   project_acceptance: false
@@ -85,6 +107,7 @@ branch_governance:
   accepted_lineage:
     - feature/phase9-0-baseline-cleanup
     - feature/phase9-stage1-safety-hardening
+    - feature/phase9-stage2-deterministic-structure
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
       reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
@@ -102,7 +125,7 @@ large_stage_plan:
   - stage: Stage 2
     scope: deterministic heading detection, Unit Index, and continuity validation
     estimate: 12_to_18_hours
-    status: planned_not_started
+    status: implementation_complete_checks_pending
     project_acceptance: false
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
