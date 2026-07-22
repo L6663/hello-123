@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v4
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T13:00:00Z
+updated_at_utc: 2026-07-22T13:12:00Z
 
 historical_release:
   version: 5.9.0
@@ -47,12 +47,17 @@ v6_development:
     - revision_records
     - evidence_first_query_and_refusal
     - fact_separated_notion_projection
+    - JSONL_SQLite_cross_store_verification
+    - bundled_skill_literary_entrypoint
   current_stage_status: implementation_complete_pending_integration
-  exact_head_commit: 69c22318dbb6a5012e8c99e17d4d35cdc1b56f18
-  exact_head_workflow_run_id: 29922025196
-  focused_tests: 9
-  full_repository_regression: passed
-  python_versions: ["3.10", "3.11", "3.12"]
+  latest_successful_development_workflow:
+    verified_head: 69c22318dbb6a5012e8c99e17d4d35cdc1b56f18
+    run_id: 29922025196
+    python_versions: ["3.10", "3.11", "3.12"]
+    focused_and_repository_regression: passed
+  final_exact_head_check: pending
+  focused_tests: 10
+  full_repository_regression: passed_on_latest_successful_development_workflow
   synthetic_fixtures_only: true
   private_corpus_used: false
   real_corpus_acceptance_deferred: true
