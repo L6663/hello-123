@@ -9,21 +9,25 @@ main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
 canonical_phase9_base: feature/phase9-0-baseline-cleanup
-active_stage_branch: feature/phase9-stage3-evidence-semantics
+active_stage_branch: feature/phase9-stage4-end-to-end-knowledge-v2
+integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
+integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
 completed_large_stages:
   - Stage 1
   - Stage 2
-current_large_stage: Stage 3 — evidence-grounded semantics
-stage_3_implementation: complete
-stage_3_local_focused_checks: 31_passed
-stage_3_github_focused_checks: pending
+  - Stage 3
+current_large_stage: Stage 4 — end-to-end knowledge system
+stage_4_implementation: complete
+stage_4_focused_checks: passed_on_python_3_10_3_11_3_12
+stage_4_integration: pending_pull_request_14
 project_acceptance: deferred_until_final_integrated_product
 minimum_score_per_capability: 9.0
 release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11. Stage 2 was merged through PR #12. Stage 3 is implemented on `feature/phase9-stage3-evidence-semantics` and is awaiting focused GitHub checks and integration review.
+Stage 1 was merged through PR #11, Stage 2 through PR #12, and Stage 3 through PR #13. Stage 4 is implemented in PR #14 and has passed focused checks; it is not a final project acceptance result.
 
 ## Stable stack on `main`
 
@@ -43,13 +47,12 @@ Stage 1 was merged through PR #11. Stage 2 was merged through PR #12. Stage 3 is
 - **Phase 9.3:** strict encoding selection and Unicode-quality inspection;
 - **Phase 9.4 / Stage 1:** conservative anomaly and corpus-contamination candidates;
 - **Phase 9.5–9.7 / Stage 2:** deterministic headings, source-covering Unit Index, and continuity findings;
-- **Phase 9.8–9.11 / Stage 3:** Claim candidates, six-predicate extraction, factual-status separation, and constrained model proposal tasks.
+- **Phase 9.8–9.11 / Stage 3:** Claim candidates, six-predicate extraction, factual-status separation, and constrained model proposal tasks;
+- **Phase 9.12 / Stage 4:** raw-source-to-index orchestration, project verification, strict QA, citations, refusal, and answer recomputation.
 
 Development-complete means the intended Skill code exists on the Phase 9 development line. It does not mean the final project has passed acceptance.
 
 ## Stage 1 — corpus safety
-
-Run:
 
 ```bash
 tkr-anomaly-scan corpus.txt --outdir project/anomaly
@@ -59,8 +62,6 @@ Stage 1 emits source-bound anomaly, contamination, paratext, Unicode, repetition
 
 ## Stage 2 — deterministic corpus structure
 
-Run:
-
 ```bash
 tkr-structure-index corpus.txt --outdir project/structure
 ```
@@ -69,7 +70,11 @@ Stage 2 produces deterministic heading candidates, contiguous non-overlapping Un
 
 ## Stage 3 — evidence-grounded semantics
 
-Stage 3 extracts typed Claim candidates only from exact Stage 2 Unit body spans. It supports the six predicates already enforced by the deterministic Claim validator:
+```bash
+tkr-semantic-extract corpus.txt --outdir project/semantics
+```
+
+Stage 3 extracts exact Evidence-bound candidates for:
 
 ```text
 alias
@@ -80,53 +85,70 @@ count
 date
 ```
 
-Implemented safeguards include:
+It separates assertions from belief, suspicion, rumor, accusation, hypothetical, question, and future-intent propositions. Only accepted direct assertions outside unsafe Stage 1 spans and accepted Stage 2 Units may enter indexing.
 
-- exact source, Unit, character, line, trigger, and Evidence SHA-256 binding;
-- deterministic candidate, finding, model-task, validation, entity, fact, and timeline identities;
-- assertion, belief, suspicion, rumor, accusation, hypothetical, question, and future-intent separation;
-- asserted and negated facts represented separately through factual status and polarity;
-- nonassertive propositions retained for review but never sent directly into canonical indexing;
-- every assertive candidate revalidated through the existing Phase 3 deterministic validator;
-- Units marked for structural review cannot contribute accepted Claims;
-- Evidence overlapping Stage 1 contamination, paratext, or high-severity text anomalies cannot be indexed;
-- accepted assertions bridged into the existing entity, fact, timeline, conflict, and ambiguity normalizer;
-- model assistance restricted to source-bound proposal tasks with no authority to accept, index, certify, or freeze;
-- source SHA-256 recalculated after extraction to detect concurrent modification.
+## Stage 4 — end-to-end knowledge system
 
-Run:
-
-```bash
-tkr-semantic-extract corpus.txt --outdir project/semantics
-```
-
-Standard Stage 3 artifacts:
+Stage 4 creates one self-contained immutable project from a raw source:
 
 ```text
-semantic-report.json
-claim-candidates.jsonl
-accepted-claims.jsonl
-nonassertive-claims.jsonl
-semantic-findings.jsonl
-model-extraction-tasks.jsonl
-entities.jsonl
-facts.jsonl
-timeline.jsonl
-conflicts.jsonl
-ambiguity-groups.jsonl
-normalization-report.json
-semantic-ledger.csv
-stage-result.json
-artifact-manifest.json
+raw source
+→ strict source identity and decoding
+→ Stage 1 anomaly candidates
+→ Stage 2 Unit Index
+→ Stage 3 Claim and entity artifacts
+→ fresh compatibility revalidation
+→ SQLite typed knowledge index
+→ strict QA, citations, and refusal
 ```
 
-Every Stage 3 result keeps:
+Build a review project:
 
-```yaml
-project_acceptance_performed: false
-may_accept_project: false
-may_freeze: false
+```bash
+tkr-project build corpus.txt --outdir project
 ```
+
+Build a canonical project only when all canonical gates permit it:
+
+```bash
+tkr-project build corpus.txt --outdir project --index-mode canonical
+```
+
+Verify the full immutable project hash chain:
+
+```bash
+tkr-project verify project
+```
+
+Ask a supported typed question:
+
+```bash
+tkr-project query project "陆川击败了谁？"
+```
+
+Save and later recompute an answer packet:
+
+```bash
+tkr-project query project "陆川击败了谁？" --output answer.json
+tkr-project verify-answer project answer.json
+```
+
+The project contains:
+
+```text
+source/
+stage1-anomaly/
+stage2-structure/
+stage3-semantics/
+bridge/
+index/
+project-report.json
+project-manifest.json
+```
+
+The original source bytes and canonical UTF-8 decoded text are both preserved. Every immutable file is bound by relative path, size, and SHA-256. Querying requires successful project verification. Answer packets bind the project manifest, raw source, normalized source, SQLite index, strict QA packet, exact citations, and refusal decision.
+
+Unsupported questions and questions without sufficient typed evidence are refused. Stage 4 does not answer open literary interpretation questions and cannot authorize acceptance or freezing.
 
 ## Console commands
 
@@ -141,39 +163,24 @@ tkr-release-freeze
 tkr-anomaly-scan
 tkr-structure-index
 tkr-semantic-extract
+tkr-project
 ```
 
 ## Focused developer checks
 
 - Stage 1: 15 focused tests passed on Python 3.10, 3.11, and 3.12.
 - Stage 2: 21 focused tests passed on Python 3.10, 3.11, and 3.12.
-- Stage 3: 31 local focused tests passed; the GitHub Python 3.10/3.11/3.12 matrix is pending.
+- Stage 3: 31 focused tests passed on Python 3.10, 3.11, and 3.12.
+- Stage 4: 27 focused tests passed on Python 3.10, 3.11, and 3.12.
 
-Stage 3 focused coverage includes:
-
-- all six deterministic predicates;
-- positive and negative permission;
-- Chinese integer and decimal counts;
-- exact dates;
-- rumor, belief, suspicion, accusation, hypothetical, question, and future-intent indexing blocks;
-- negated relation handling;
-- exact Evidence span and hash binding;
-- heading exclusion through Unit body boundaries;
-- deterministic IDs and artifact manifests;
-- constrained model-task envelopes;
-- entity-normalization bridge;
-- UTF-8 BOM and UTF-16 offsets;
-- candidate limits;
-- upstream contamination overlap blocking;
-- CLI publication.
+Stage 4 checks cover end-to-end construction, six-predicate indexing, strict typed answers, unsupported and insufficient-evidence refusal, source and database tampering, answer tampering, project reuse, atomic replacement, canonical gating, UTF-16 input, deterministic project identities, CLI output, and policy validation. Stage 2 and Stage 3 regression workflows also passed on PR #14 after shared package configuration changed.
 
 Focused checks are development evidence only. They are not private blind evaluation, real-corpus accuracy measurement, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
 
 ## Remaining large stages
 
-1. **Stage 4 — end-to-end knowledge system:** orchestration, indexing, retrieval, strict QA, citations, and refusal. Estimated engineering time: 18–28 hours.
-2. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
-3. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
+1. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
+2. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
 
 Every final capability domain must score at least 9.0. Scores cannot compensate for another domain below 9.0.
 
