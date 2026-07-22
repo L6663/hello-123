@@ -1,0 +1,92 @@
+name: Stage 7 literary knowledge engine checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tkr/literary_*.py"
+      - "tests/test_literary_engine.py"
+      - "schemas/literary-*.schema.json"
+      - "docs/STAGE7_LITERARY_ENGINE.md"
+      - "pyproject.toml"
+      - "MANIFEST.in"
+      - "PROJECT_STATUS.yaml"
+      - "SKILL.md"
+      - ".github/workflows/stage7-literary-engine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage7-literary:
+    name: Stage 7 literary / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install development candidate
+        run: python -m pip install .
+
+      - name: Compile literary runtime
+        run: |
+          python -m py_compile \
+            tkr/literary_models.py \
+            tkr/literary_engine.py \
+            tkr/literary_query.py \
+            tkr/literary_export.py \
+            tkr/literary_cli.py
+
+      - name: Validate literary schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          names = [
+              "literary-annotation.schema.json",
+              "literary-report.schema.json",
+              "literary-query-packet.schema.json",
+              "literary-evidence-anchor.schema.json",
+              "literary-assertion.schema.json",
+              "literary-entity.schema.json",
+              "literary-relationship.schema.json",
+              "literary-event.schema.json",
+          ]
+          for name in names:
+              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
+              assert payload["$schema"].endswith("2020-12/schema")
+              assert payload["type"] == "object"
+          PY
+
+      - name: Run Stage 7 focused regression
+        run: python -m unittest tests.test_literary_engine -v
+
+      - name: Run repository regression
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Exercise CLI surface
+        run: |
+          tkr-literary --help
+          tkr-literary build --help
+          tkr-literary verify --help
+          tkr-literary query --help
+          tkr-literary export-notion --help
+
+      - name: Assert development-only governance
+        run: |
+          python - <<'PY'
+          from tkr import __version__
+          assert __version__ == "6.0.0-alpha1"
+          assert "alpha" in __version__
+          PY
