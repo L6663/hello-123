@@ -1,0 +1,148 @@
+name: Stage 6-R1 accepted Skill distribution
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - ".github/workflows/package-stage6-r1-accepted.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build accepted distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout accepted canonical branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase9-0-baseline-cleanup
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install source candidate
+        run: python -m pip install .
+
+      - name: Audit accepted source
+        run: |
+          tkr-skill doctor --root .
+          tkr-skill audit --root .
+
+      - name: Build Wheel
+        run: |
+          mkdir -p distribution
+          python -m pip wheel . --no-deps --wheel-dir distribution
+
+      - name: Build canonical source ZIP
+        run: |
+          git archive \
+            --format=zip \
+            --prefix=Text_Knowledge_Reader_5.9.0a2_Accepted/ \
+            --output=distribution/Text_Knowledge_Reader_5.9.0a2_Accepted_Source.zip \
+            HEAD
+
+      - name: Add acceptance documents and instructions
+        shell: bash
+        run: |
+          cp docs/stage-6-r1-final-acceptance.md distribution/STAGE_6_R1_FINAL_ACCEPTANCE_REPORT.md
+          cp acceptance/stage6-r1-acceptance-summary.json distribution/stage6-r1-acceptance-summary.json
+          cat > distribution/TESTING.md <<'EOF'
+          # Text Knowledge Reader 5.9.0-alpha2 — Accepted Skill Candidate
+
+          This distribution was built from the canonical Phase 9 branch after Stage 6-R1 final project acceptance passed all 18 capability domains.
+
+          ## Install
+
+          ```bash
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install text_knowledge_reader_core-5.9.0a2-py3-none-any.whl
+          ```
+
+          Windows PowerShell:
+
+          ```powershell
+          python -m venv .venv
+          .venv\Scripts\Activate.ps1
+          python -m pip install text_knowledge_reader_core-5.9.0a2-py3-none-any.whl
+          ```
+
+          ## Product checks
+
+          ```bash
+          tkr-skill doctor
+          tkr-skill audit
+          tkr-skill profiles
+          ```
+
+          ## Build and query
+
+          Extract the source ZIP, then run:
+
+          ```bash
+          tkr-project build examples/minimal-corpus.txt --outdir test-project --profile balanced --no-cache
+          tkr-project verify test-project
+          tkr-project query test-project "陆川击败了谁？"
+          tkr-project query test-project "这部作品的主题是什么？"
+          ```
+
+          The factual question should be answered with citations. The open literary interpretation question should be refused.
+
+          ## Authority boundary
+
+          Final project acceptance has passed. This package is eligible for an explicitly approved Release Candidate, but this packaging job does not create an RC and does not authorize Freeze.
+          EOF
+          printf '%s\n' "canonical_branch=feature/phase9-0-baseline-cleanup" > distribution/BUILD_INFO.txt
+          printf '%s\n' "canonical_commit=$(git rev-parse HEAD)" >> distribution/BUILD_INFO.txt
+          printf '%s\n' "project_acceptance=passed" >> distribution/BUILD_INFO.txt
+          printf '%s\n' "release_candidate_created=false" >> distribution/BUILD_INFO.txt
+          printf '%s\n' "freeze_approved=false" >> distribution/BUILD_INFO.txt
+
+      - name: Verify clean Wheel installation
+        shell: bash
+        run: |
+          VENV="$RUNNER_TEMP/tkr-stage6-r1-accepted"
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install distribution/*.whl
+          cd "$RUNNER_TEMP"
+          "$VENV/bin/tkr-skill" doctor
+          "$VENV/bin/tkr-skill" audit
+          "$VENV/bin/tkr-project" build \
+            "$GITHUB_WORKSPACE/examples/minimal-corpus.txt" \
+            --outdir "$RUNNER_TEMP/accepted-project" \
+            --state-dir "$RUNNER_TEMP/accepted-state" \
+            --profile balanced \
+            --no-cache
+          "$VENV/bin/tkr-project" verify "$RUNNER_TEMP/accepted-project"
+          "$VENV/bin/tkr-project" query "$RUNNER_TEMP/accepted-project" "陆川击败了谁？"
+
+      - name: Generate SHA-256 checksums
+        shell: bash
+        run: |
+          cd distribution
+          sha256sum \
+            *.whl \
+            *.zip \
+            STAGE_6_R1_FINAL_ACCEPTANCE_REPORT.md \
+            stage6-r1-acceptance-summary.json \
+            TESTING.md \
+            BUILD_INFO.txt \
+            > SHA256SUMS.txt
+
+      - name: Upload accepted distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: text-knowledge-reader-5.9.0a2-stage6-r1-accepted
+          path: distribution/
+          retention-days: 7
+
+      - name: State authority boundary
+        run: |
+          echo "Project acceptance is passed."
+          echo "This packaging workflow does not create an RC or authorize Freeze."
