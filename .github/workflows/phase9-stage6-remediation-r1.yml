@@ -1,4 +1,5 @@
 name: Phase 9 Stage 6 remediation R1 checks
+# Owner-synchronized after the one-time bootstrap patch was applied.
 
 on:
   pull_request:
