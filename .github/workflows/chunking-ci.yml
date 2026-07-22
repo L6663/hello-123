@@ -6,6 +6,8 @@ on:
       - main
       - feature/chunking-v5.2-alpha1
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
