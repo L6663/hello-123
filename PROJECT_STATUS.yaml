@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T04:06:00Z
+updated_at_utc: 2026-07-22T04:33:00Z
 
 main:
   branch: main
@@ -13,7 +13,7 @@ development:
   status: alpha
   mode: skill_optimization_only
   canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-0-baseline-cleanup
+  active_branch: feature/phase9-stage3-evidence-semantics
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
   completed_development_stages:
@@ -28,8 +28,8 @@ development:
   completed_large_stages:
     - Stage 1
     - Stage 2
-  next_large_stage: Stage 3
-  next_stage_status: not_started
+  current_large_stage: Stage 3
+  current_scope: evidence_grounded_claim_extraction_and_factual_status_semantics
 
 stage_1:
   estimated_engineering_time: 4_to_6_hours
@@ -42,10 +42,7 @@ stage_1:
     test_count: 15
   github_focused_checks:
     status: passed
-    python_versions:
-      - "3.10"
-      - "3.11"
-      - "3.12"
+    python_versions: ["3.10", "3.11", "3.12"]
     workflow_run_id: 29888109850
   project_acceptance: false
 
@@ -60,24 +57,33 @@ stage_2:
     test_count: 21
   github_focused_checks:
     status: passed
-    python_versions:
-      - "3.10"
-      - "3.11"
-      - "3.12"
+    python_versions: ["3.10", "3.11", "3.12"]
     workflow_run_id: 29890012483
+  project_acceptance: false
+
+stage_3:
+  estimated_engineering_time: 24_to_36_hours
+  implementation_status: complete
+  local_focused_checks:
+    status: passed
+    test_count: 31
+  github_focused_checks:
+    status: pending
+    python_versions: ["3.10", "3.11", "3.12"]
+  integration_status: pending_pull_request
   capabilities:
-    multilingual_numbered_heading_candidates: implemented
-    special_unit_classification: implemented
-    markdown_heading_support: implemented
-    fenced_code_suppression: implemented
-    inline_heading_body_boundaries: implemented
-    split_numbered_heading_recovery: implemented
-    detached_title_review_candidates: implemented
-    deterministic_parent_child_units: implemented
-    exact_source_character_coverage: implemented
-    gap_and_overlap_validation: implemented
-    deterministic_unit_ids_and_hashes: implemented
-    numbering_continuity_findings: implemented
+    claim_candidate_contract: implemented
+    six_predicate_deterministic_extraction: implemented
+    exact_evidence_spans_and_hashes: implemented
+    factual_status_and_polarity_separation: implemented
+    belief_suspicion_rumor_accusation_separation: implemented
+    hypothetical_question_future_intent_separation: implemented
+    nonassertive_indexing_block: implemented
+    structure_review_unit_indexing_block: implemented
+    upstream_anomaly_overlap_indexing_block: implemented
+    deterministic_claim_validation_bridge: implemented
+    entity_fact_timeline_conflict_bridge: implemented
+    constrained_model_task_interface: implemented
     deterministic_artifact_set: implemented
     json_schema_contracts: implemented
   project_acceptance: false
@@ -116,6 +122,7 @@ branch_governance:
     - feature/phase9-0-baseline-cleanup
     - feature/phase9-stage1-safety-hardening
     - feature/phase9-stage2-deterministic-structure
+    - feature/phase9-stage3-evidence-semantics
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
       reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
@@ -138,7 +145,7 @@ large_stage_plan:
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
     estimate: 24_to_36_hours
-    status: planned_not_started
+    status: implementation_complete_checks_pending
     project_acceptance: false
   - stage: Stage 4
     scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
