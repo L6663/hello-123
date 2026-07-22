@@ -26,18 +26,30 @@ jobs:
         id: apply
         shell: bash
         run: |
-          set -euo pipefail
-          for patch in \
-            .stage72/engine-top.patch \
-            .stage72/engine-schema.patch \
-            .stage72/engine-insert.patch \
-            .stage72/engine-build.patch \
-            .stage72/engine-verify.patch
-          do
-            git apply --check --recount --verbose "$patch"
-            git apply --recount --verbose "$patch"
-          done
-          python -m py_compile tkr/literary_fulltext.py tkr/literary_engine.py
+          set -o pipefail
+          {
+            set -eux
+            for patch in \
+              .stage72/engine-top.patch \
+              .stage72/engine-schema.patch \
+              .stage72/engine-insert.patch \
+              .stage72/engine-build.patch \
+              .stage72/engine-verify.patch
+            do
+              echo "APPLYING=$patch"
+              git apply --check --recount --verbose "$patch"
+              git apply --recount --verbose "$patch"
+            done
+            python -m py_compile tkr/literary_fulltext.py tkr/literary_engine.py
+          } 2>&1 | tee /tmp/stage72-engine-bootstrap.log
+
+      - name: Upload engine patch diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage72-engine-bootstrap-diagnostics
+          path: /tmp/stage72-engine-bootstrap.log
+          retention-days: 3
 
       - name: Commit Stage 7.2 engine integration
         if: steps.apply.outcome == 'success'
