@@ -3,7 +3,7 @@ name: Stage 7 literary knowledge engine checks
 on:
   pull_request:
     branches:
-      - main
+      - develop/v6-literary-engine
     paths:
       - "tkr/literary_*.py"
       - "tests/test_literary_engine.py"
