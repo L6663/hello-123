@@ -5,6 +5,9 @@
 ```yaml
 stage: Stage 2
 implementation: complete
+integration: merged_into_feature/phase9-0-baseline-cleanup
+pull_request: 12
+merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
 local_focused_tests: 21_passed
 github_focused_checks: passed
 python_versions:
@@ -12,8 +15,6 @@ python_versions:
   - "3.11"
   - "3.12"
 workflow_run_id: 29890012483
-integration: ready_to_merge
-pull_request: 12
 project_acceptance_performed: false
 release_candidate: false
 freeze_approved: false
