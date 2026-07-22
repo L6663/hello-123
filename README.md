@@ -11,7 +11,8 @@ development_version: 5.9.0-alpha1
 completed_development_stages:
   - Phase 9.0
   - Phase 9.1
-current_development_stage: Phase 9.2
+  - Phase 9.2
+current_development_stage: Phase 9.3
 development_status: alpha
 release_candidate: false
 freeze_approved: false
@@ -76,6 +77,20 @@ The complete Python 3.10/3.11/3.12 regression matrix, long-corpus execution, per
 - the default block size is 4 MiB and invalid block sizes, text streams, missing paths, and directories are rejected.
 
 The focused Phase 9.1 suite contains 11 tests covering empty files, UTF-8 Chinese text, multi-block bounded reads, current stream position, metadata output, uppercase expected hashes, mismatch detection, malformed hashes, invalid block sizes, missing files, and directories. Existing Phase 2–8 call sites are intentionally not migrated in this stage.
+
+## Phase 9.2 result — source identity admission
+
+`tkr/admission.py` now performs raw-byte source identity admission without decoding or modifying the source:
+
+- only regular files are inspected and all byte hashing uses the Phase 9.1 streaming helper;
+- `.txt` and `.md` suffixes are supported case-insensitively;
+- the report binds the exact SHA-256, byte size, filename, suffix, stable content-derived source ID, empty-file state, NUL presence, raw newline family, newline counts, and byte-level line count;
+- CRLF sequences split across read-block boundaries are counted exactly once;
+- files with mixed newline families, empty content, or NUL bytes are routed to `review` rather than silently accepted;
+- unsupported suffixes are marked `unsupported` with an explicit blocker;
+- NUL-bearing input keeps `line_count=null` and `line_count_reliable=false` because encoding inspection has not yet distinguished UTF-16 from binary content.
+
+The focused Phase 9.2 suite contains 11 tests covering supported TXT and Markdown files, content-derived identity, LF, CRLF boundary handling, mixed newlines, trailing and non-trailing lines, empty input, UTF-16-like NUL bytes, unsupported suffixes, report serialization, missing files, and directories. No decoding, normalization, contamination analysis, heading recognition, or full regression is performed in this stage.
 
 ## Current console commands
 
