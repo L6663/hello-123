@@ -3,6 +3,8 @@ on:
   push:
     branches: [feature/gold-benchmark-v5.7-alpha1]
   pull_request:
+    branches:
+      - main
     paths:
       - "tkr/gold_benchmark.py"
       - "tkr/gold_benchmark_cli.py"
