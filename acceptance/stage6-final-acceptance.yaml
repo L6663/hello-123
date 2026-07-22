@@ -1,0 +1,59 @@
+schema_version: tkr-stage6-final-acceptance-v1
+evaluated_at_utc: 2026-07-22T07:25:00Z
+candidate:
+  version: 5.9.0-alpha1
+  canonical_commit: 6e25e67859485580761978c08f1691833d768fe2
+  stage5_integration_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
+policy:
+  minimum_score_per_capability: 9.0
+  minimum_correctness_per_capability: 9.0
+  minimum_safety_per_capability: 9.0
+  average_compensation_allowed: false
+  blocking_defects_allowed: 0
+evidence:
+  full_regression_tests: 398
+  full_regression_status: passed
+  extra_python_version: 3.13.5
+  release_gold_cases: 108
+  release_gold_status: passed
+  release_gold_decision_accuracy: 1.0
+  release_gold_answer_accuracy: 1.0
+  release_gold_refusal_precision: 1.0
+  release_gold_refusal_recall: 1.0
+  release_gold_citation_entailment: 1.0
+  release_gold_measured_hallucinations: 0
+  installed_doctor: passed
+  installed_audit: passed
+  deterministic_long_corpus_artifacts: passed
+score_summary:
+  capability_domains: 18
+  passed_domains: 14
+  failed_domains: 4
+  overall_weighted_average: 9.31
+  minimum_domain_score: 7.36
+failed_domains:
+  - id: 3
+    name: anomaly_and_corpus_contamination
+    weighted_score: 7.36
+    correctness: 4.0
+    blocker: same_language_candidate_precision_14_35_percent
+  - id: 4
+    name: deterministic_structure_and_unit_index
+    weighted_score: 7.83
+    correctness: 5.2
+    blocker: combined_volume_chapter_type_accuracy_zero_of_546
+  - id: 5
+    name: claim_candidate_extraction_and_validation
+    weighted_score: 8.94
+    correctness: 8.0
+    blocker: heldout_direct_index_recall_83_33_percent
+  - id: 12
+    name: performance_and_scalability
+    weighted_score: 8.88
+    correctness: 8.6
+    blocker: trusted_long_corpus_end_to_end_measurement_not_established
+decision:
+  project_acceptance: failed
+  release_candidate: false
+  freeze_approved: false
+  required_next_action: remediate_failed_domains_and_repeat_stage6
