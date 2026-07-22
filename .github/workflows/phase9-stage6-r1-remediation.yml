@@ -1,0 +1,108 @@
+name: Phase 9 Stage 6-R1 remediation checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/__init__.py"
+      - "tkr/stage6_r1_remediation.py"
+      - "tkr/stage6_r1_collage.py"
+      - "tkr/stage6_r1_heading_patch.py"
+      - "tests/test_stage6_r1_remediation.py"
+      - "tests/test_stage6_r1_heading_variants.py"
+      - ".github/workflows/phase9-stage6-r1-remediation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage6-r1:
+    name: Stage 6-R1 remediation / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install development package
+        run: python -m pip install .
+
+      - name: Compile remediation layer
+        run: |
+          python -m py_compile \
+            tkr/__init__.py \
+            tkr/stage6_r1_remediation.py \
+            tkr/stage6_r1_collage.py \
+            tkr/stage6_r1_heading_patch.py \
+            tests/test_stage6_r1_remediation.py \
+            tests/test_stage6_r1_heading_variants.py
+
+      - name: Run Stage 6-R1 targeted tests
+        run: |
+          python -m unittest -v \
+            tests.test_stage6_r1_remediation \
+            tests.test_stage6_r1_heading_variants
+
+      - name: Run complete repository regression
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee "$RUNNER_TEMP/stage6-r1-full-regression-${{ matrix.python-version }}.log"
+
+      - name: Upload full-regression log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r1-full-regression-python-${{ matrix.python-version }}
+          path: ${{ runner.temp }}/stage6-r1-full-regression-${{ matrix.python-version }}.log
+          retention-days: 3
+
+      - name: Audit source product
+        run: |
+          tkr-skill doctor --root .
+          tkr-skill audit --root .
+
+      - name: Build wheel
+        run: python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Upload exact-head wheel
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r1-exact-head-wheel
+          path: dist/*.whl
+          retention-days: 3
+
+      - name: Verify clean installed product
+        shell: bash
+        run: |
+          VENV="$RUNNER_TEMP/tkr-stage6-r1-${{ matrix.python-version }}"
+          python -m venv "$VENV"
+          "$VENV/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$VENV/bin/tkr-skill" doctor
+          "$VENV/bin/tkr-skill" audit
+          "$VENV/bin/tkr-project" build \
+            "$GITHUB_WORKSPACE/examples/minimal-corpus.txt" \
+            --outdir "$RUNNER_TEMP/r1-project-${{ matrix.python-version }}" \
+            --state-dir "$RUNNER_TEMP/r1-state-${{ matrix.python-version }}" \
+            --profile balanced \
+            --no-cache
+          "$VENV/bin/tkr-project" verify "$RUNNER_TEMP/r1-project-${{ matrix.python-version }}"
+          "$VENV/bin/tkr-project" query \
+            "$RUNNER_TEMP/r1-project-${{ matrix.python-version }}" \
+            "陆川击败了谁？"
+
+      - name: State acceptance boundary
+        run: |
+          echo "This workflow validates remediation and regression only."
+          echo "It does not pass Stage 6, create a release candidate, or authorize freeze."

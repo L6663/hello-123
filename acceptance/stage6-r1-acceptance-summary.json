@@ -1,0 +1,142 @@
+{
+  "schema_version": "tkr-stage6-r1-final-acceptance-summary-v1",
+  "candidate": {
+    "version": "5.9.0-alpha2",
+    "pull_request": 21,
+    "runtime_head_commit": "62565a2b28cb14f65912f39b605ab10084364a07",
+    "canonical_base_commit": "d9ce3ced1f1dbeb600e9d2f1584aad9f03e07d8e",
+    "exact_head_wheel_artifact_id": 8524738517,
+    "exact_head_wheel_artifact_sha256": "674e2cdba3f6ab1d061fce39c7cda1ccd3c5f9f7faeb7aba20703b4eaa0c8c52"
+  },
+  "policy": {
+    "minimum_score_per_capability": 9.0,
+    "minimum_correctness_per_capability": 9.0,
+    "minimum_safety_per_capability": 9.0,
+    "average_compensation_allowed": false,
+    "blocking_defects_allowed": 0
+  },
+  "ci": {
+    "exact_head_workflow_run_id": 29908222371,
+    "base_remediation_workflow_run_id": 29908222413,
+    "python_versions": ["3.10", "3.11", "3.12"],
+    "targeted_tests": "passed",
+    "complete_repository_regression": "passed",
+    "source_doctor_audit": "passed",
+    "wheel_build": "passed",
+    "clean_install": "passed",
+    "installed_end_to_end_example": "passed",
+    "additional_python_drift_version": "3.13.5",
+    "additional_python_drift_status": "passed"
+  },
+  "measurements": {
+    "anomaly": {
+      "gold_blocks": 34,
+      "candidates": 34,
+      "candidate_precision": 1.0,
+      "block_recall": 1.0,
+      "character_precision": 0.970189304207459,
+      "character_recall": 0.9823395809895779,
+      "boundary_mae_characters": 45.705882352941174,
+      "boundary_within_800_rate": 1.0
+    },
+    "structure": {
+      "decoded_characters": 3192465,
+      "lf_normalized_characters": 3096149,
+      "heading_candidates": 877,
+      "combined_headings": 546,
+      "combined_correct": 546,
+      "combined_accuracy": 1.0,
+      "coverage_ratio": 1.0
+    },
+    "semantic_heldout": {
+      "expected_total": 204,
+      "candidate_found": 204,
+      "exact_type_status_polarity": 204,
+      "direct_count": 144,
+      "direct_may_index": 144,
+      "nonassertive_count": 60,
+      "nonassertive_blocked": 60,
+      "extra_candidates": 0
+    },
+    "long_corpus_performance": {
+      "files": 5,
+      "decoded_characters": 3192465,
+      "total_elapsed_seconds": 73.13,
+      "throughput_decoded_characters_per_second": 43654.65609189116,
+      "peak_rss_kb": 68888,
+      "semantic_candidates": 2546,
+      "accepted_claims": 551,
+      "all_projects_verified": true
+    },
+    "secure_query_latency": {
+      "query_count": 75,
+      "p50_ms": 346.2580609993893,
+      "p95_ms": 721.1261051008478,
+      "p99_ms": 785.2306675600277,
+      "max_ms": 926.2205780032673,
+      "includes_full_secure_project_verification": true
+    },
+    "release_gold": {
+      "case_count": 108,
+      "passed": true,
+      "decision_accuracy": 1.0,
+      "answer_claim_accuracy": 1.0,
+      "refusal_precision": 1.0,
+      "refusal_recall": 1.0,
+      "citation_entailment_rate": 1.0,
+      "wrong_answer_count": 0,
+      "overanswer_count": 0,
+      "citation_mismatch_count": 0,
+      "hallucination_rate": 0.0
+    },
+    "determinism": {
+      "anomaly_artifacts_match": true,
+      "structure_artifacts_match": true
+    },
+    "installed_audit": {
+      "checked_file_count": 36,
+      "schema_count": 21,
+      "profile_count": 3,
+      "finding_count": 0
+    }
+  },
+  "scores": {
+    "overall_weighted_average": 9.63,
+    "minimum_domain_score": 9.34,
+    "passed_domain_count": 18,
+    "failed_domain_count": 0,
+    "domains": [
+      {"id": 1, "score": 9.68},
+      {"id": 2, "score": 9.61},
+      {"id": 3, "score": 9.67},
+      {"id": 4, "score": 9.70},
+      {"id": 5, "score": 9.74},
+      {"id": 6, "score": 9.70},
+      {"id": 7, "score": 9.34},
+      {"id": 8, "score": 9.71},
+      {"id": 9, "score": 9.85},
+      {"id": 10, "score": 9.59},
+      {"id": 11, "score": 9.68},
+      {"id": 12, "score": 9.39},
+      {"id": 13, "score": 9.70},
+      {"id": 14, "score": 9.62},
+      {"id": 15, "score": 9.38},
+      {"id": 16, "score": 9.72},
+      {"id": 17, "score": 9.61},
+      {"id": 18, "score": 9.70}
+    ]
+  },
+  "decision": {
+    "status": "passed",
+    "project_acceptance": true,
+    "release_candidate_eligible": true,
+    "release_candidate_created": false,
+    "freeze_approved": false,
+    "blocking_findings": []
+  },
+  "notes": [
+    "LF-normalized Gold offsets were mapped to the detector's CRLF-preserving decoded-text offset basis before anomaly scoring.",
+    "Two multi-source shell batches exceeded their outer timeout; identical per-source commands completed and verified in isolated processes, and the accepted performance metric uses those runs.",
+    "No corpus text is stored in this summary."
+  ]
+}
