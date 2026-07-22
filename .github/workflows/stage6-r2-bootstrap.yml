@@ -19,11 +19,29 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - shell: bash
+      - name: Diagnose and apply patch
+        id: apply
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "HEAD=$(git rev-parse HEAD)"
+            git status --short
+            git apply --check --verbose .stage6/r2-remediation.patch
+            git apply --verbose .stage6/r2-remediation.patch
+          } 2>&1 | tee /tmp/r2-apply.log
+      - name: Upload patch diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r2-patch-diagnostics
+          path: /tmp/r2-apply.log
+          retention-days: 3
+      - name: Commit applied remediation
+        if: steps.apply.outcome == 'success'
+        shell: bash
         run: |
           set -euo pipefail
-          git apply --check .stage6/r2-remediation.patch
-          git apply .stage6/r2-remediation.patch
           rm -f .stage6/r2-remediation.patch .github/workflows/stage6-r2-bootstrap.yml
           rmdir .stage6 2>/dev/null || true
           git config user.name "github-actions[bot]"
