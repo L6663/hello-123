@@ -4,6 +4,8 @@
 
 Development line: `6.0.0-alpha1`
 
+Integration base: `develop/v6-literary-engine`
+
 Historical archive: `archive/v5.9.0-final`
 
 Stage 7 was opened after real-use evaluation showed that the v5.9 typed-fact engine was strong on contamination isolation and major facts but remained below the requested threshold for chapter-level traceability, cold-detail recall, complete entity coverage, temporal relationships, and fact/interpretation separation.
