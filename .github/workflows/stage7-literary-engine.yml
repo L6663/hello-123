@@ -90,7 +90,19 @@ jobs:
           retention-days: 3
 
       - name: Run repository regression
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+        id: repository
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee /tmp/stage7-repository-${{ matrix.python-version }}.log
+
+      - name: Upload repository diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage7-repository-${{ matrix.python-version }}
+          path: /tmp/stage7-repository-${{ matrix.python-version }}.log
+          retention-days: 3
 
       - name: Exercise installed and bundled CLI surfaces
         run: |
