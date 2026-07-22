@@ -169,6 +169,21 @@ class AnomalyDetectionTests(unittest.TestCase):
         self.assertIn("detector=source_adaptive_paragraph_mosaic", matches[0].signals)
         self.assertTrue(matches[0].evidence_preview.startswith("黑衣刺客"))
 
+    def test_short_shared_template_mosaic_is_detected_without_clean_false_positive(self) -> None:
+        prefix = ["第一章 盲测", "主人公沿石桥寻找铜铃。", "同伴查看地图后向北。", "夜色中传来钟声。"]
+        topics = [
+            "法庭书记员核对证词。", "极地科考队测量冰层。", "剧院演员整理旧戏服。", "农场收割机驶过麦田。",
+            "空间站机器人更换阀门。", "古墓考古员描摹壁画。", "赛场裁判确认计时器。", "餐厅厨师加入香草。",
+            "校园教师分发器材。", "矿井安全员检查通风。", "机场地勤引导客机。", "森林护林员记录鸟群。",
+            "证券所发布风险报告。", "港口核对集装箱。", "博物馆修复青铜器。", "气象台更新风暴路径。",
+        ]
+        suffix = [f"{text}第{index:02d}号记录已归档。" for index, text in enumerate(topics)]
+        polluted = "\n\n".join(prefix + suffix) + "\n\n----------\n\n第二章 正常\n\n正文连贯。\n"
+        report = inspect_source_anomalies(self._write("short-template-mosaic.txt", polluted))
+        matches = [item for item in report.findings if item.rule_id == "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE"]
+        self.assertEqual(len(matches), 1)
+        self.assertIn("classifier_branch=template_resistant_mosaic", matches[0].signals)
+
     def test_separator_delimited_coherent_chapters_do_not_emit_mosaic_candidate(self) -> None:
         first = "\n\n".join(["青云宗弟子在剑阁修炼灵气与剑意。"] * 12)
         second = "\n\n".join(["青云宗长老带领弟子进入秘境寻找灵石。"] * 12)

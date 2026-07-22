@@ -58,6 +58,15 @@ class StructureTests(unittest.TestCase):
             self.assertIn("container_ordinal=5", report.headings[0].signals)
             self.assertNotIn("ORDINAL_GAP_CANDIDATE", {item.rule_id for item in report.findings})
 
+    def test_compact_arabic_volume_chapter_numbers_do_not_merge_digits(self):
+        with tempfile.TemporaryDirectory() as d:
+            text = "卷1 13章 风起\n正文。\n卷12 20章 云涌\n正文。\n"
+            p = self.make_file(Path(d), text)
+            report = inspect_source_structure(p)
+            self.assertEqual([unit.ordinal for unit in report.units], [13, 20])
+            containers = [next(signal for signal in heading.signals if signal.startswith("container_ordinal=")) for heading in report.headings]
+            self.assertEqual(containers, ["container_ordinal=1", "container_ordinal=12"])
+
     def test_combined_numbered_volume_and_chapter_variants(self):
         with tempfile.TemporaryDirectory() as d:
             text = "第5卷 第26章 风起\n正文。\n卷十一 尾声\n正文。\n"

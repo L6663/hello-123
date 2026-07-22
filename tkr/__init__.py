@@ -1,3 +1,3 @@
 """Text Knowledge Reader staged hardening package."""
 
-__version__ = "5.9.0-alpha2"
+__version__ = "5.9.0-alpha3"

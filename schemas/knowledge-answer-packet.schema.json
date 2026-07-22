@@ -12,7 +12,7 @@
   ],
   "properties": {
     "schema_version": {"const": "tkr-knowledge-answer-v1"},
-    "system_version": {"const": "5.9.0-stage6-r1"},
+    "system_version": {"const": "5.9.0-stage6-r2"},
     "answer_packet_id": {"type": "string", "pattern": "^kap_[0-9a-f]{32}$"},
     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
     "project_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
