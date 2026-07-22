@@ -1,26 +1,44 @@
-schema_version: tkr-project-status-v1
+schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T02:08:46Z
+updated_at_utc: 2026-07-22T03:00:00Z
 
 main:
   branch: main
   baseline_commit: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
   version: 5.8.0-alpha1
-  integration_status: stable_baseline_for_phase9_development
+  integration_status: stable_phase2_to_phase8_baseline
 
 development:
   version: 5.9.0-alpha1
-  canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_implementation_branch: feature/phase9-4-anomaly-contamination
   status: alpha
   mode: skill_optimization_only
-  completed_stages:
+  canonical_base_branch: feature/phase9-0-baseline-cleanup
+  active_branch: feature/phase9-stage1-safety-hardening
+  completed_development_stages:
     - Phase 9.0
     - Phase 9.1
     - Phase 9.2
     - Phase 9.3
-  current_stage: Phase 9.4
-  current_scope: anomaly_and_corpus_contamination_candidate_detection
+  current_large_stage: Stage 1
+  current_scope: development_line_convergence_and_corpus_safety
+
+stage_1:
+  estimated_engineering_time: 4_to_6_hours
+  implementation_status: complete
+  local_focused_checks:
+    status: passed
+    test_count: 15
+  github_focused_checks: pending
+  integration_status: pending_pull_request_review
+  capabilities:
+    workflow_governance: implemented
+    unicode_and_web_anomaly_candidates: implemented
+    line_level_structural_candidates: implemented
+    fixed_character_window_scanning: implemented
+    same_language_cross_work_candidates: implemented
+    deterministic_artifact_set: implemented
+    json_schema_contracts: implemented
+  project_acceptance: false
 
 stage_policy:
   intermediate_project_acceptance: disabled
@@ -30,19 +48,21 @@ stage_policy:
   focused_developer_checks:
     allowed: true
     certification_effect: none
-    description: Narrow unit tests and deterministic checks may prevent implementation regressions but are not project acceptance.
 
 project_acceptance:
   status: deferred
   trigger: final_integrated_product_complete
-  scope:
+  minimum_score_per_capability: 9.0
+  average_compensation_allowed: false
+  intermediate_results_may_pass_project: false
+  final_scope:
     - complete_regression_matrix
+    - private_blind_evaluation
     - long_corpus_execution
     - performance_measurement
     - drift_comparison
     - final_package_audit
     - end_to_end_project_acceptance
-  intermediate_results_may_pass_project: false
 
 release:
   release_candidate: false
@@ -50,79 +70,47 @@ release:
   may_freeze: false
 
 branch_governance:
-  accepted_phase9_lineage:
+  accepted_lineage:
     - feature/phase9-0-baseline-cleanup
-    - feature/phase9-4-anomaly-contamination
+    - feature/phase9-stage1-safety-hardening
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
       reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
     - branch: feature/anomaly-pollution-v5.9-phase9.4
-      reason: Created from main before the completed Phase 9.2 and Phase 9.3 lineage was re-confirmed; do not merge.
+      reason: Created from main without Phase 9.2 and Phase 9.3; do not merge.
+    - branch: feature/phase9-4-anomaly-contamination
+      reason: Superseded by the converged Stage 1 branch based on the latest Phase 9 base.
 
-phase9_plan:
-  - stage: Phase 9.0
-    scope: clean baseline, version identity, and phase boundaries
-    status: completed_development
+large_stage_plan:
+  - stage: Stage 1
+    scope: development-line convergence and corpus safety
+    estimate: 4_to_6_hours
+    status: implementation_complete_checks_pending
     project_acceptance: false
-  - stage: Phase 9.1
-    scope: shared streaming SHA-256 module
-    status: completed_development
-    project_acceptance: false
-  - stage: Phase 9.2
-    scope: source identity admission
-    status: completed_development
-    project_acceptance: false
-  - stage: Phase 9.3
-    scope: encoding and Unicode inspection
-    status: completed_development
-    project_acceptance: false
-  - stage: Phase 9.4
-    scope: anomaly and corpus-contamination candidates
-    status: active_development
-    project_acceptance: false
-  - stage: Phase 9.5
-    scope: heading candidate detection
+  - stage: Stage 2
+    scope: deterministic heading detection, Unit Index, and continuity validation
+    estimate: 12_to_18_hours
     status: planned
     project_acceptance: false
-  - stage: Phase 9.6
-    scope: deterministic Unit Index generation
+  - stage: Stage 3
+    scope: evidence-grounded Claim extraction and factual-status semantics
+    estimate: 24_to_36_hours
     status: planned
     project_acceptance: false
-  - stage: Phase 9.7
-    scope: Unit continuity and structure validation
+  - stage: Stage 4
+    scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
+    estimate: 18_to_28_hours
     status: planned
     project_acceptance: false
-  - stage: Phase 9.8
-    scope: Claim candidate schema
+  - stage: Stage 5
+    scope: engineering hardening and complete Skill productization
+    estimate: 16_to_24_hours
     status: planned
     project_acceptance: false
-  - stage: Phase 9.9
-    scope: six-predicate deterministic extraction
+  - stage: Stage 6
+    scope: all-capability analysis and final project acceptance
+    estimate: 20_to_30_hours_plus_corpus_runtime
     status: planned
-    project_acceptance: false
-  - stage: Phase 9.10
-    scope: fact, belief, suspicion, rumor, and accusation separation
-    status: planned
-    project_acceptance: false
-  - stage: Phase 9.11
-    scope: constrained model-extraction task interface
-    status: planned
-    project_acceptance: false
-  - stage: Phase 9.12
-    scope: raw text to Claim-candidate orchestration
-    status: planned
-    project_acceptance: false
-  - stage: Phase 9.13
-    scope: private long-corpus evaluation contracts
-    status: planned
-    project_acceptance: false
-  - stage: Phase 9.14
-    scope: Skill documentation and Alpha package layout
-    status: planned
-    project_acceptance: false
-  - stage: Phase 9.15
-    scope: final integration assembly and acceptance handoff
-    status: planned
-    project_acceptance: false
+    project_acceptance: final_only
 
-final_rule: Project acceptance is performed once, against the final integrated product, after all Skill optimization and integration stages are complete.
+final_rule: Every capability domain must score at least 9.0. Project acceptance is performed once against the final integrated Skill.
