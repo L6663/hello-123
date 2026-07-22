@@ -7,6 +7,7 @@ on:
     paths:
       - "tkr/__init__.py"
       - "tkr/stage6_r1_remediation.py"
+      - "tkr/stage6_r1_collage.py"
       - "tests/test_stage6_r1_remediation.py"
       - ".github/workflows/phase9-stage6-r1-remediation.yml"
   workflow_dispatch:
@@ -38,6 +39,7 @@ jobs:
           python -m py_compile \
             tkr/__init__.py \
             tkr/stage6_r1_remediation.py \
+            tkr/stage6_r1_collage.py \
             tests/test_stage6_r1_remediation.py
 
       - name: Run Stage 6-R1 targeted tests
