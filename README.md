@@ -1,6 +1,6 @@
 # Text Knowledge Reader — staged hardening workspace
 
-Text Knowledge Reader is developed as a sequence of independently reviewable implementation stages. Phase 9 substages optimize the Skill itself; they do not certify the project, declare acceptance, create a release candidate, or authorize a freeze. Project-level acceptance is deferred until the final integrated product is complete.
+Text Knowledge Reader is developed as a sequence of independently reviewable implementation stages. Intermediate stages optimize the Skill implementation; they do not certify the project, create a release candidate, or authorize a freeze. Project-level acceptance is performed once, after the final integrated Skill is complete.
 
 ## Current repository status
 
@@ -9,23 +9,21 @@ main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
 canonical_phase9_base: feature/phase9-0-baseline-cleanup
-integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-completed_development_stages:
-  - Phase 9.0
-  - Phase 9.1
-  - Phase 9.2
-  - Phase 9.3
-  - Phase 9.4
+active_stage_branch: feature/phase9-stage2-deterministic-structure
 completed_large_stages:
   - Stage 1
-next_large_stage: Stage 2 — deterministic corpus structure
-next_stage_status: not_started
+current_large_stage: Stage 2 — deterministic corpus structure
+stage_2_implementation: complete
+stage_2_local_focused_checks: 21_passed
+stage_2_github_focused_checks: passed_on_python_3_10_3_11_3_12
+stage_2_integration: ready_to_merge
 project_acceptance: deferred_until_final_integrated_product
+minimum_score_per_capability: 9.0
 release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11 into the canonical Phase 9 base. The earlier encoded-payload PR #9 and stale Phase 9.4 branches are superseded and must not be merged.
+Stage 1 was merged through PR #11 into the canonical Phase 9 development base. Stage 2 is implemented on `feature/phase9-stage2-deterministic-structure`; PR #12 has passed focused checks and is ready for integration.
 
 ## Stable stack on `main`
 
@@ -43,36 +41,22 @@ Stage 1 was merged through PR #11 into the canonical Phase 9 base. The earlier e
 - **Phase 9.1:** bounded-memory streaming SHA-256;
 - **Phase 9.2:** raw-byte source identity admission;
 - **Phase 9.3:** strict encoding selection and Unicode-quality inspection;
-- **Phase 9.4 / Stage 1:** conservative anomaly and corpus-contamination candidates.
+- **Phase 9.4 / Stage 1:** conservative anomaly and corpus-contamination candidates;
+- **Stage 2:** deterministic heading candidates, source-covering Unit Index, and continuity findings.
 
-Development-complete means the intended Skill code is present on the Phase 9 line. It does not mean the final project passed acceptance.
+Development-complete means the intended Skill code exists on the Phase 9 development line. It does not mean the final project has passed acceptance.
 
-## Stage 1 result
+## Stage 1 result — corpus safety
 
-Stage 1 converged the development line and strengthened the corpus safety layer. It includes:
+Stage 1 provides source-bound anomaly and contamination review candidates, including Unicode anomalies, web residue, author paratext, repetitions, fixed-character window scanning, and conservative same-language cross-work transitions. Findings never delete source text or declare a corpus clean or contaminated.
 
-- legacy Phase 2–8 PR workflows restricted to `main`-targeting PRs;
-- exact source SHA-256 binding and post-scan mutation detection;
-- Unicode anomaly, web residue, author paratext, long-line, repeated-line, and distant-duplicate candidates;
-- line-level CJK/ASCII script-shift candidates;
-- fixed-character window scanning that still works when an entire chapter is one physical line;
-- same-language cross-work candidates using multiple independent signals:
-  - character bigram distribution shift;
-  - entity-system discontinuity;
-  - narrative-register transition;
-  - sentence-length transition;
-- caller-supplied marker groups for known corpus-specific signals;
-- deterministic Finding IDs, evidence SHA-256, exact character spans, line ranges, severity, confidence, and review actions;
-- bounded finding and duplicate-fingerprint indexes;
-- JSON Schema contracts for findings and reports;
-- standard deterministic artifact publication;
-- 15 focused tests executed on Python 3.10, 3.11, and 3.12.
+Run:
 
-Every finding is a review candidate. The detector does not declare a source clean or contaminated and never deletes source text automatically.
+```bash
+tkr-anomaly-scan corpus.txt --outdir project/anomaly
+```
 
-## Standard Phase 9.4 artifacts
-
-Running `tkr-anomaly-scan SOURCE --outdir OUTPUT` writes:
+Standard Stage 1 artifacts:
 
 ```text
 anomaly-report.json
@@ -85,13 +69,47 @@ stage-result.json
 artifact-manifest.json
 ```
 
-The manifest binds file names, sizes, and SHA-256 values. Every stage result keeps:
+## Stage 2 result — deterministic corpus structure
 
-```yaml
-project_acceptance_performed: false
-may_accept_project: false
-may_freeze: false
+Stage 2 converts a strictly decoded source into deterministic heading candidates, contiguous Unit records, and structure-review findings.
+
+Implemented capabilities include:
+
+- Arabic, full-width, spaced, and conventional Chinese ordinal parsing;
+- `卷 / 部 / 篇 / 集 / 章 / 回 / 幕 / 节` hierarchy recognition;
+- English `Volume / Book / Part / Chapter / Section` headings;
+- Markdown headings while ignoring fenced code blocks;
+- prologue, preface, epilogue, afterword, appendix, extra-story, and related special units;
+- heading and body on the same physical line;
+- numbered headings split across two lines;
+- detached-title recovery candidates without silently rewriting the source;
+- deterministic parent-child Unit relationships;
+- exact decoded-character coverage with no gaps or overlaps;
+- source-bound Unit IDs and per-Unit content SHA-256 values;
+- duplicate ordinal, numbering gap, inversion, duplicate title, empty body, and placement findings;
+- Unit limits that stop promotion of new boundaries without truncating source scanning;
+- post-scan source rehashing to detect concurrent modification;
+- explicit validation that Stage 2 cannot authorize project acceptance or freezing.
+
+Run:
+
+```bash
+tkr-structure-index corpus.txt --outdir project/structure
 ```
+
+Standard Stage 2 artifacts:
+
+```text
+structure-report.json
+heading-candidates.jsonl
+unit-index.jsonl
+structure-anomalies.jsonl
+unit-ledger.csv
+stage-result.json
+artifact-manifest.json
+```
+
+The Unit Index covers every decoded source character exactly once. Ambiguous headings remain review candidates rather than being silently promoted to boundaries.
 
 ## Console commands
 
@@ -104,44 +122,41 @@ tkr-strict-qa
 tkr-gold-benchmark
 tkr-release-freeze
 tkr-anomaly-scan
-```
-
-Example:
-
-```bash
-tkr-anomaly-scan corpus.txt --outdir project/anomaly
-```
-
-Known lexical families may be supplied only as review signals:
-
-```bash
-tkr-anomaly-scan corpus.txt \
-  --marker-group 'modern=董事会|经理|邮件' \
-  --marker-group 'digital=直播|手机|网络' \
-  --outdir project/anomaly
+tkr-structure-index
 ```
 
 ## Focused developer checks
 
-Stage 1 uses a Python 3.10/3.11/3.12 focused workflow that:
+Stage 1 passed focused checks on Python 3.10, 3.11, and 3.12.
 
-- installs the development package;
-- compiles the Stage 1 modules;
-- validates JSON Schema syntax;
-- runs the Stage 1 anomaly tests;
-- verifies the `tkr-anomaly-scan` entry point.
+Stage 2 has 21 focused tests passing on Python 3.10, 3.11, and 3.12. The workflow installs the development package, compiles all Stage 2 modules, validates four JSON Schema contracts, runs the focused suite, and verifies the `tkr-structure-index` entry point.
 
-The focused workflow passed. This is development evidence only; it is not long-corpus acceptance, final regression, package certification, release approval, or freeze authorization.
+The Stage 2 tests cover:
+
+- ordinal parsing;
+- numbered, special, English, and Markdown headings;
+- hierarchy and parent IDs;
+- inline body boundaries;
+- split headings and detached-title recovery;
+- fenced-code false-positive protection;
+- full source coverage and fallback document Units;
+- duplicate, missing, inverted, empty-body, and placement findings;
+- UTF-8 BOM and UTF-16 LE/BE offsets;
+- unsupported-source blocking;
+- deterministic reports and artifacts;
+- Unit-limit behavior;
+- CLI output.
+
+These checks are development evidence only. They are not real-corpus acceptance, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
 
 ## Remaining large stages
 
-1. **Stage 2 — deterministic corpus structure:** heading candidates, Unit Index, and continuity validation. Estimated engineering time: 12–18 hours.
-2. **Stage 3 — evidence-grounded semantics:** Claim extraction, factual-status separation, entity and timeline integration. Estimated engineering time: 24–36 hours.
-3. **Stage 4 — end-to-end knowledge system:** orchestration, indexing, retrieval, strict QA, citations, and refusal. Estimated engineering time: 18–28 hours.
-4. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
-5. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
+1. **Stage 3 — evidence-grounded semantics:** Claim extraction, factual-status separation, entity and timeline integration. Estimated engineering time: 24–36 hours.
+2. **Stage 4 — end-to-end knowledge system:** orchestration, indexing, retrieval, strict QA, citations, and refusal. Estimated engineering time: 18–28 hours.
+3. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
+4. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
 
-Every capability domain must score at least 9.0 in the final acceptance. Scores cannot compensate for another domain below 9.0.
+Every final capability domain must score at least 9.0. Scores cannot compensate for another domain below 9.0.
 
 ## Evidence and interpretation boundary
 
@@ -158,7 +173,7 @@ A character's suspicion, rumor, accusation, or belief may itself be a directly s
 
 ## Development rule
 
-Each Phase 9 implementation stage must provide:
+Each implementation stage must provide:
 
 1. a narrow Skill implementation scope;
 2. explicit inputs, outputs, and safety boundaries;

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/unit-record.schema.json",
+  "title": "Text Knowledge Reader Unit Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "unit_id", "source_id", "source_sha256", "unit_type",
+    "hierarchy_level", "ordinal", "ordinal_text", "title", "parent_unit_id",
+    "heading_id", "start_char", "end_char", "start_line", "end_line",
+    "heading_start_char", "heading_end_char", "body_start_char", "body_end_char",
+    "character_count", "content_sha256", "structure_confidence", "review_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-unit-index-v1"},
+    "unit_id": {"type": "string", "pattern": "^unit_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_type": {"type": "string", "enum": ["document", "front_matter", "volume", "part", "chapter", "section", "prologue", "preface", "epilogue", "afterword", "extra_story", "appendix"]},
+    "hierarchy_level": {"type": "integer", "minimum": 0, "maximum": 4},
+    "ordinal": {"type": ["integer", "null"], "minimum": 0},
+    "ordinal_text": {"type": "string"},
+    "title": {"type": "string"},
+    "parent_unit_id": {"type": ["string", "null"], "pattern": "^unit_[0-9a-f]{32}$"},
+    "heading_id": {"type": ["string", "null"], "pattern": "^hdg_[0-9a-f]{32}$"},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 1},
+    "start_line": {"type": "integer", "minimum": 1},
+    "end_line": {"type": "integer", "minimum": 1},
+    "heading_start_char": {"type": ["integer", "null"], "minimum": 0},
+    "heading_end_char": {"type": ["integer", "null"], "minimum": 0},
+    "body_start_char": {"type": "integer", "minimum": 0},
+    "body_end_char": {"type": "integer", "minimum": 0},
+    "character_count": {"type": "integer", "minimum": 1},
+    "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "structure_confidence": {"type": "string", "enum": ["medium", "high"]},
+    "review_status": {"type": "string", "enum": ["accepted_candidate", "review"]}
+  }
+}
