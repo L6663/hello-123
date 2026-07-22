@@ -1,0 +1,107 @@
+name: Stage 5 test distribution package
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - ".github/workflows/stage5-test-distribution.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out canonical Stage 5 line
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase9-0-baseline-cleanup
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build wheel
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir distribution
+
+      - name: Build source package and test guide
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+
+          root = Path('.').resolve()
+          out = root / 'distribution'
+          out.mkdir(exist_ok=True)
+          target = out / 'text-knowledge-reader-5.9.0a1-stage5-testing-source.zip'
+          excluded_roots = {'.git', 'distribution', '.pytest_cache', '__pycache__'}
+          excluded_suffixes = {'.pyc', '.pyo'}
+          with ZipFile(target, 'w', compression=ZIP_DEFLATED) as archive:
+              for path in sorted(root.rglob('*')):
+                  rel = path.relative_to(root)
+                  if not path.is_file():
+                      continue
+                  if any(part in excluded_roots for part in rel.parts):
+                      continue
+                  if path.suffix in excluded_suffixes:
+                      continue
+                  archive.write(path, Path('text-knowledge-reader-5.9.0a1-stage5-testing') / rel)
+          PY
+          cat > distribution/TESTING.md <<'EOF'
+          # Text Knowledge Reader Stage 5 testing package
+
+          This is the integrated Stage 1–5 test candidate. It is not a Stage 6 accepted release.
+
+          ## Install the wheel
+
+          ```bash
+          python -m venv .venv
+          # Windows: .venv\Scripts\activate
+          # Linux/macOS: source .venv/bin/activate
+          python -m pip install text_knowledge_reader_core-5.9.0a1-py3-none-any.whl
+          ```
+
+          ## Verify the installed Skill
+
+          ```bash
+          tkr-skill doctor
+          tkr-skill audit
+          tkr-skill profiles
+          ```
+
+          ## Build and test a project
+
+          ```bash
+          tkr-project build examples/minimal-corpus.txt --outdir test-project --profile balanced --no-cache
+          tkr-project verify test-project
+          tkr-project query test-project "陆川击败了谁？"
+          ```
+
+          The full operational contract is in `SKILL.md` inside the source ZIP.
+          EOF
+
+      - name: Verify wheel in clean environment
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/tkr-distribution-check"
+          "$RUNNER_TEMP/tkr-distribution-check/bin/python" -m pip install distribution/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/tkr-distribution-check/bin/tkr-skill" doctor
+          "$RUNNER_TEMP/tkr-distribution-check/bin/tkr-skill" audit
+
+      - name: Generate SHA-256 checksums
+        working-directory: distribution
+        run: sha256sum * > SHA256SUMS.txt
+
+      - name: Upload test distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: text-knowledge-reader-5.9.0a1-stage5-testing
+          path: distribution/*
+          if-no-files-found: error
+          retention-days: 7
