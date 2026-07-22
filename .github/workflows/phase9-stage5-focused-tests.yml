@@ -65,7 +65,22 @@ jobs:
           PY
 
       - name: Run Stage 5 focused tests
-        run: python -m unittest -v tests.test_engineering_productization
+        shell: bash
+        run: |
+          set +e
+          python -m unittest tests.test_engineering_productization > stage5-tests.log 2>&1
+          status=$?
+          cat stage5-tests.log
+          exit $status
+
+      - name: Upload focused-test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage5-test-log-python-${{ matrix.python-version }}
+          path: stage5-tests.log
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Audit source checkout
         run: |
