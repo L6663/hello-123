@@ -13,12 +13,14 @@ integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
 integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
 integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
 integrated_stage_4_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
+integrated_stage_5_commit: 5db3dbc8a10954e4d5fd97f2aa45148c9bfd282e
 completed_large_stages:
   - Stage 1
   - Stage 2
   - Stage 3
   - Stage 4
-next_large_stage: Stage 5 — engineering and Skill productization
+  - Stage 5
+next_large_stage: Stage 6 — final capability analysis and project acceptance
 next_stage_status: not_started
 project_acceptance: deferred_until_final_integrated_product
 minimum_score_per_capability: 9.0
@@ -26,7 +28,7 @@ release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11, Stage 2 through PR #12, Stage 3 through PR #13, and Stage 4 through PR #15. The superseded PR #14 was closed without merge because its branch history diverged after Stage 3 documentation was finalized.
+Stage 1 was merged through PR #11, Stage 2 through PR #12, Stage 3 through PR #13, Stage 4 through PR #15, and Stage 5 through PR #16. The superseded PR #14 was closed without merge because its branch history diverged after Stage 3 documentation was finalized.
 
 ## Stable stack on `main`
 
@@ -47,7 +49,8 @@ Stage 1 was merged through PR #11, Stage 2 through PR #12, Stage 3 through PR #1
 - **Phase 9.4 / Stage 1:** anomaly and corpus-contamination candidates;
 - **Phase 9.5–9.7 / Stage 2:** headings, source-covering Unit Index, and continuity findings;
 - **Phase 9.8–9.11 / Stage 3:** Claim candidates, six-predicate extraction, factual-status separation, and constrained model tasks;
-- **Phase 9.12 / Stage 4:** raw-source orchestration, immutable project verification, typed SQLite index, strict QA, citations, refusal, and answer recomputation.
+- **Phase 9.12 / Stage 4:** raw-source orchestration, immutable project verification, typed SQLite index, strict QA, citations, refusal, and answer recomputation;
+- **Phase 9.13 / Stage 5:** recoverable content-addressed builds, external engineering state, exact project membership security, complete Skill contract, profiles, examples, package audit, and clean Wheel installation.
 
 Development-complete means the intended Skill code is present on the Phase 9 line. It does not mean that final project acceptance has passed.
 
@@ -101,53 +104,78 @@ raw source
 → strict QA, citations, and deterministic refusal
 ```
 
-Build a review project:
+A project preserves original source bytes and canonical UTF-8 text. Every immutable file is bound by relative path, byte size, and SHA-256. Queries first verify project provenance, the SQLite report, database hash, logical index identity, and exact citations.
+
+## Stage 5 — engineering and complete Skill productization
+
+The default build now uses a strict engineering profile, external state directory, exclusive lock, journal, verified content-addressed cache, recovery, and enhanced filesystem verification:
 
 ```bash
-tkr-project build corpus.txt --outdir project
+tkr-project build corpus.txt \
+  --outdir project \
+  --state-dir .tkr-state/project \
+  --profile balanced
 ```
 
-Build a canonical project only when all canonical gates permit it:
+Built-in profiles:
 
-```bash
-tkr-project build corpus.txt --outdir project --index-mode canonical
+```text
+balanced
+strict
+high-recall
 ```
 
-Verify the complete project hash chain:
+A build key binds:
+
+```text
+raw source SHA-256
++ profile SHA-256
++ engineering runtime version
++ knowledge system version
+```
+
+Cache restoration and project reuse require full verification and exact source/profile policy identity. Mutable lock, journal, and cache data remain outside the immutable project.
+
+Existing projects require an explicit action:
 
 ```bash
+tkr-project build corpus.txt --outdir project --reuse
+tkr-project build corpus.txt --outdir project --force
+```
+
+Recovery can restore a verified orphan backup, roll back an invalid replacement from a verified backup, remove sufficiently old temporary directories, and explicitly recover a stale lock only when its recorded process is no longer alive.
+
+Enhanced project verification requires:
+
+- no symbolic links in source, project, state, cache, or package authority paths;
+- actual regular files exactly equal the Manifest file set plus the Manifest itself;
+- no undeclared or missing project files;
+- no absolute, parent-traversal, duplicate, or non-normalized Manifest paths;
+- exact top-level immutable project layout;
+- valid source, report, database, logical-index, answer, and citation identities.
+
+The complete installed Skill now includes `SKILL.md`, Schemas, Profiles, Examples, operational Docs, package metadata, Python modules, and all console commands.
+
+Run product checks:
+
+```bash
+tkr-skill doctor
+tkr-skill audit
+tkr-skill profiles
+tkr-skill show-profile balanced
+```
+
+## Unified project commands
+
+```bash
+tkr-project build corpus.txt --outdir project --profile balanced
 tkr-project verify project
-```
-
-Ask a supported typed question:
-
-```bash
 tkr-project query project "陆川击败了谁？"
-```
-
-Save and later recompute an answer packet:
-
-```bash
 tkr-project query project "陆川击败了谁？" --output answer.json
 tkr-project verify-answer project answer.json
 ```
 
-A Stage 4 project contains:
-
-```text
-source/
-stage1-anomaly/
-stage2-structure/
-stage3-semantics/
-bridge/
-index/
-project-report.json
-project-manifest.json
-```
-
-The project preserves the original source bytes and canonical UTF-8 decoded text. Every immutable file is bound by relative path, byte size, and SHA-256. Querying first verifies the project, SQLite report, database hash, logical index identity, and source provenance. Answer packets bind the project manifest, raw source, normalized source, strict-QA packet, exact citations, and refusal decision.
-
-Unsupported literary interpretation questions and supported questions without sufficient typed evidence are refused. Stage 4 cannot authorize project acceptance, release, certification, or freezing.
+Unsupported literary interpretation questions and supported questions without sufficient typed evidence are refused. No Stage 1–5 command can authorize project acceptance, release certification, a Release Candidate, or Freeze.
 
 ## Console commands
 
@@ -163,6 +191,7 @@ tkr-anomaly-scan
 tkr-structure-index
 tkr-semantic-extract
 tkr-project
+tkr-skill
 ```
 
 ## Focused developer checks
@@ -171,15 +200,17 @@ tkr-project
 - Stage 2: 21 tests passed on Python 3.10, 3.11, and 3.12.
 - Stage 3: 31 tests passed on Python 3.10, 3.11, and 3.12.
 - Stage 4: 27 tests passed on Python 3.10, 3.11, and 3.12.
+- Stage 5: 38 tests passed on Python 3.10, 3.11, and 3.12.
 
-Stage 4 checks cover end-to-end construction, all six predicates reaching the index, strict typed answers, unsupported and insufficient-evidence refusal, project and answer tampering, verified reuse, atomic replacement, canonical gating, UTF-16 input, deterministic project identities, CLI output, and policy validation. Stage 2 and Stage 3 regression workflows also passed on PR #15.
+Stage 5 checks cover profiles, deterministic build keys, cache hit/miss/invalidation, exclusive locks, stale-lock recovery, journal state, orphan backup recovery, stale workspace cleanup, verified reuse, atomic replacement, path overlap, symbolic links, exact Manifest membership, traversal, strict queries and refusal, answer recomputation, source-layout audit, environment doctor, and the unified CLI.
 
-Focused checks are development evidence only. They are not private blind evaluation, real-corpus accuracy measurement, long-corpus performance validation, final regression, package certification, release approval, or freeze authorization.
+Each Stage 5 Python job also built a Wheel, installed it into a new virtual environment, ran the installed Doctor and Audit, and built, verified, and queried the executable example project. Stage 2, Stage 3, and Stage 4 regression workflows passed on PR #16.
 
-## Remaining large stages
+Focused checks are development evidence only. They are not private blind evaluation, real-corpus accuracy measurement, long-corpus performance acceptance, final hostile-input certification, release approval, or freeze authorization.
 
-1. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
-2. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
+## Remaining large stage
+
+**Stage 6 — final capability analysis and project acceptance:** complete regression matrix, private blind sets, real long-corpus execution, performance, drift, hostile inputs, final package audit, capability scoring, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
 
 Every final capability domain must score at least 9.0. A stronger score in one domain cannot compensate for another domain below 9.0.
 
