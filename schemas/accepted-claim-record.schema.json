@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/accepted-claim-record.schema.json",
+  "title": "Text Knowledge Reader Accepted Claim Bridge Record",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["candidate_line","candidate","validation","semantic_candidate_id","discourse_status"],
+  "properties": {
+    "candidate_line": {"type": "integer", "minimum": 1},
+    "candidate": {"type": "object"},
+    "validation": {
+      "type": "object",
+      "required": ["status","may_index","may_freeze"],
+      "properties": {
+        "status": {"const": "accepted"},
+        "may_index": {"const": true},
+        "may_freeze": {"const": false}
+      }
+    },
+    "semantic_candidate_id": {"type": "string", "pattern": "^sem_[0-9a-f]{32}$"},
+    "discourse_status": {"const": "assertion"}
+  }
+}
