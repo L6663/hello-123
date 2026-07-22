@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/knowledge-answer-verification.schema.json",
+  "title": "Text Knowledge Reader Stage 4 Answer Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "system_version", "status", "accepted", "reason_codes",
+    "supplied_answer_packet_id", "expected_answer_packet_id", "project_id",
+    "project_valid", "strict_packet_valid", "project_acceptance_performed",
+    "may_accept_project", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-knowledge-answer-verification-v1"},
+    "system_version": {"const": "5.9.0-stage4"},
+    "status": {"enum": ["accepted", "rejected"]},
+    "accepted": {"type": "boolean"},
+    "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "supplied_answer_packet_id": {"type": "string"},
+    "expected_answer_packet_id": {"type": "string"},
+    "project_id": {"type": "string"},
+    "project_valid": {"type": "boolean"},
+    "strict_packet_valid": {"type": "boolean"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
