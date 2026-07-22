@@ -15,14 +15,16 @@ completed_development_stages:
   - Phase 9.1
   - Phase 9.2
   - Phase 9.3
+  - Phase 9.4
 current_large_stage: Stage 1 — development-line convergence and corpus safety
-phase9_4_implementation: complete_pending_focused_ci
+stage_1_implementation: complete
+stage_1_focused_checks: passed_on_python_3_10_3_11_3_12
 project_acceptance: deferred_until_final_integrated_product
 release_candidate: false
 freeze_approved: false
 ```
 
-The canonical Phase 9 base contains the completed Phase 9.0–9.3 implementation. Stage 1 is developed on `feature/phase9-stage1-safety-hardening`. The earlier encoded-payload PR #9 and branches created directly from `main` are superseded and must not be merged.
+The canonical Phase 9 base contains the completed Phase 9.0–9.3 implementation. Stage 1 is developed on `feature/phase9-stage1-safety-hardening`. The earlier encoded-payload PR #9 and stale Phase 9.4 branches are superseded and must not be merged.
 
 ## Stable stack on `main`
 
@@ -44,7 +46,7 @@ The canonical Phase 9 base contains the completed Phase 9.0–9.3 implementation
 
 Development-complete means the intended Skill code is present on the Phase 9 line. It does not mean the final project passed acceptance.
 
-## Stage 1 scope
+## Stage 1 result
 
 Stage 1 converges the development line and strengthens the corpus safety layer. It includes:
 
@@ -62,7 +64,8 @@ Stage 1 converges the development line and strengthens the corpus safety layer. 
 - deterministic Finding IDs, evidence SHA-256, exact character spans, line ranges, severity, confidence, and review actions;
 - bounded finding and duplicate-fingerprint indexes;
 - JSON Schema contracts for findings and reports;
-- standard deterministic artifact publication.
+- standard deterministic artifact publication;
+- 15 focused tests executed on Python 3.10, 3.11, and 3.12.
 
 Every finding is a review candidate. The detector does not declare a source clean or contaminated and never deletes source text automatically.
 
@@ -127,15 +130,15 @@ Stage 1 uses a Python 3.10/3.11/3.12 focused workflow that:
 - runs the Stage 1 anomaly tests;
 - verifies the `tkr-anomaly-scan` entry point.
 
-These checks are development evidence only. They are not long-corpus acceptance, final regression, package certification, release approval, or freeze authorization.
+The focused workflow passed. This is development evidence only; it is not long-corpus acceptance, final regression, package certification, release approval, or freeze authorization.
 
 ## Remaining large stages
 
-1. **Stage 2 — deterministic corpus structure:** heading candidates, Unit Index, and continuity validation.
-2. **Stage 3 — evidence-grounded semantics:** Claim extraction, factual-status separation, entity and timeline integration.
-3. **Stage 4 — end-to-end knowledge system:** orchestration, indexing, retrieval, strict QA, citations, and refusal.
-4. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout.
-5. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision.
+1. **Stage 2 — deterministic corpus structure:** heading candidates, Unit Index, and continuity validation. Estimated engineering time: 12–18 hours.
+2. **Stage 3 — evidence-grounded semantics:** Claim extraction, factual-status separation, entity and timeline integration. Estimated engineering time: 24–36 hours.
+3. **Stage 4 — end-to-end knowledge system:** orchestration, indexing, retrieval, strict QA, citations, and refusal. Estimated engineering time: 18–28 hours.
+4. **Stage 5 — engineering and Skill productization:** incremental builds, recovery, security, `SKILL.md`, profiles, examples, and final package layout. Estimated engineering time: 16–24 hours.
+5. **Stage 6 — final capability analysis and project acceptance:** private blind sets, long-corpus execution, performance, drift, package audit, and one final project decision. Estimated engineering time: 20–30 hours plus corpus runtime.
 
 Every capability domain must score at least 9.0 in the final acceptance. Scores cannot compensate for another domain below 9.0.
 
