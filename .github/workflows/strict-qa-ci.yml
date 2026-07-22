@@ -5,6 +5,8 @@ on:
     branches:
       - feature/strict-qa-v5.6-alpha1
   pull_request:
+    branches:
+      - main
     paths:
       - "tkr/strict_qa.py"
       - "tkr/strict_qa_cli.py"
