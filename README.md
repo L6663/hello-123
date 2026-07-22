@@ -9,21 +9,21 @@ main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
 canonical_phase9_base: feature/phase9-0-baseline-cleanup
-active_stage_branch: feature/phase9-stage2-deterministic-structure
+active_stage_branch: feature/phase9-0-baseline-cleanup
+integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
+integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
 completed_large_stages:
   - Stage 1
-current_large_stage: Stage 2 — deterministic corpus structure
-stage_2_implementation: complete
-stage_2_local_focused_checks: 21_passed
-stage_2_github_focused_checks: passed_on_python_3_10_3_11_3_12
-stage_2_integration: ready_to_merge
+  - Stage 2
+next_large_stage: Stage 3 — evidence-grounded semantics
+next_stage_status: not_started
 project_acceptance: deferred_until_final_integrated_product
 minimum_score_per_capability: 9.0
 release_candidate: false
 freeze_approved: false
 ```
 
-Stage 1 was merged through PR #11 into the canonical Phase 9 development base. Stage 2 is implemented on `feature/phase9-stage2-deterministic-structure`; PR #12 has passed focused checks and is ready for integration.
+Stage 1 was merged through PR #11. Stage 2 was merged through PR #12 into the canonical Phase 9 development base. Stage 3 has not started.
 
 ## Stable stack on `main`
 
@@ -42,7 +42,7 @@ Stage 1 was merged through PR #11 into the canonical Phase 9 development base. S
 - **Phase 9.2:** raw-byte source identity admission;
 - **Phase 9.3:** strict encoding selection and Unicode-quality inspection;
 - **Phase 9.4 / Stage 1:** conservative anomaly and corpus-contamination candidates;
-- **Stage 2:** deterministic heading candidates, source-covering Unit Index, and continuity findings.
+- **Phase 9.5–9.7 / Stage 2:** deterministic heading candidates, source-covering Unit Index, and continuity findings.
 
 Development-complete means the intended Skill code exists on the Phase 9 development line. It does not mean the final project has passed acceptance.
 
