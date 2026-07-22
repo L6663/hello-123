@@ -5,6 +5,8 @@ on:
     branches:
       - feature/entity-normalization-v5.4-alpha1
   pull_request:
+    branches:
+      - main
     paths:
       - "tkr/entity_normalization.py"
       - "tkr/entity_cli.py"
