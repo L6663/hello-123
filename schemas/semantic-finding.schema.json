@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/semantic-finding.schema.json",
+  "title": "Text Knowledge Reader Semantic Finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version","finding_id","rule_id","severity","confidence","recommended_action","source_id","unit_id","candidate_id","start_char","end_char","start_line","end_line","signals"],
+  "properties": {
+    "schema_version": {"const": "tkr-semantic-finding-v1"},
+    "finding_id": {"type": "string", "pattern": "^smf_[0-9a-f]{32}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["low","medium","high","blocker"]},
+    "confidence": {"enum": ["low","medium","high"]},
+    "recommended_action": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "unit_id": {"type": ["string","null"]},
+    "candidate_id": {"type": ["string","null"]},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 0},
+    "start_line": {"type": "integer", "minimum": 1},
+    "end_line": {"type": "integer", "minimum": 1},
+    "signals": {"type": "array", "items": {"type": "string"}}
+  }
+}
