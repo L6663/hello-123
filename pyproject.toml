@@ -22,6 +22,7 @@ tkr-release-freeze = "tkr.release_freeze_cli:main"
 tkr-anomaly-scan = "tkr.anomaly_cli:main"
 tkr-structure-index = "tkr.structure_cli:main"
 tkr-semantic-extract = "tkr.semantic_cli:main"
+tkr-project = "tkr.project_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -39,4 +40,9 @@ include = ["tkr*"]
   "schemas/model-extraction-task.schema.json",
   "schemas/accepted-claim-record.schema.json",
   "schemas/semantic-report.schema.json",
+  "schemas/knowledge-project-report.schema.json",
+  "schemas/knowledge-project-manifest.schema.json",
+  "schemas/knowledge-project-verification.schema.json",
+  "schemas/knowledge-answer-packet.schema.json",
+  "schemas/knowledge-answer-verification.schema.json",
 ]
