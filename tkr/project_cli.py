@@ -7,9 +7,13 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from .engineering import build_engineered_project, load_engineering_profile
-from .knowledge_project import verify_knowledge_project
-from .knowledge_query import answer_knowledge_project, verify_knowledge_answer
+from .engineering import load_engineering_profile
+from .project_security import (
+    answer_secure_knowledge_project,
+    build_secure_engineered_project,
+    verify_secure_knowledge_answer,
+    verify_secure_knowledge_project,
+)
 
 
 def _write_json(path: Path | None, payload: dict[str, object]) -> None:
@@ -59,7 +63,7 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--reuse", action="store_true", help="reuse an exact verified existing project")
     mode.add_argument("--force", action="store_true", help="atomically replace an existing project")
 
-    verify = commands.add_parser("verify", help="verify the complete immutable project hash chain")
+    verify = commands.add_parser("verify", help="verify hashes and exact non-symlink project membership")
     verify.add_argument("project", type=Path)
     verify.add_argument("--output", type=Path)
 
@@ -78,7 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _selected_profile(args) -> object:
+def _selected_profile(args):
     profile = load_engineering_profile(args.profile)
     overrides: dict[str, object] = {}
     for argument, field in (
@@ -99,7 +103,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "build":
-            result = build_engineered_project(
+            result = build_secure_engineered_project(
                 args.source,
                 args.outdir,
                 profile=_selected_profile(args),
@@ -113,11 +117,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result.to_dict(), ensure_ascii=False, sort_keys=True))
             return 0
         if args.command == "verify":
-            result = verify_knowledge_project(args.project)
+            result = verify_secure_knowledge_project(args.project)
             _write_json(args.output, result.to_dict())
             return 0 if result.valid else 2
         if args.command == "query":
-            packet = answer_knowledge_project(
+            packet = answer_secure_knowledge_project(
                 args.project,
                 args.question,
                 source_id=args.source_id,
@@ -126,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             _write_json(args.output, packet.to_dict())
             return 0
-        result = verify_knowledge_answer(args.project, args.packet)
+        result = verify_secure_knowledge_answer(args.project, args.packet)
         _write_json(args.output, result.to_dict())
         return 0 if result.accepted else 2
     except (OSError, UnicodeError, TypeError, ValueError, KeyError) as exc:
