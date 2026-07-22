@@ -948,10 +948,6 @@ def _insert_records(
                 item.status, item.revision,
             ),
         )
-        for anchor_id in item.evidence_anchor_ids:
-            connection.execute("INSERT INTO assertion_evidence VALUES(?,?)", (item.assertion_id, anchor_id))
-        for support_id in item.supporting_assertion_ids:
-            connection.execute("INSERT INTO assertion_support VALUES(?,?)", (item.assertion_id, support_id))
         if fts5:
             text = " ".join(
                 filter(
@@ -966,6 +962,14 @@ def _insert_records(
                 )
             )
             connection.execute("INSERT INTO literary_fts VALUES(?,?,?)", ("assertion", item.assertion_id, text))
+    # Insert assertion relations only after every assertion row exists. Derived
+    # B/C identifiers are deterministic hashes and do not sort after their A/B
+    # supports, so a single-pass insert can violate foreign-key ordering.
+    for item in assertions:
+        for anchor_id in item.evidence_anchor_ids:
+            connection.execute("INSERT INTO assertion_evidence VALUES(?,?)", (item.assertion_id, anchor_id))
+        for support_id in item.supporting_assertion_ids:
+            connection.execute("INSERT INTO assertion_support VALUES(?,?)", (item.assertion_id, support_id))
     for item in relationships:
         connection.execute(
             "INSERT INTO relationships VALUES(?,?,?,?,?,?,?,?,?,?)",
