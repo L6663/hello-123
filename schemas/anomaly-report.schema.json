@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/anomaly-report.schema.json",
+  "title": "Text Knowledge Reader anomaly inspection report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "detector_version", "source_id", "source_sha256",
+    "size_bytes", "selected_encoding", "offset_basis", "scan_status",
+    "scanned_character_count", "scanned_line_count", "window_count",
+    "finding_count", "category_counts", "rule_counts", "recommended_action",
+    "blockers", "warnings", "policy", "marker_groups", "findings",
+    "project_acceptance_performed", "may_accept_project", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-anomaly-inspection-v2"},
+    "detector_version": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "pattern": "^source_sha256_[0-9a-f]{64}$"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "size_bytes": {"type": "integer", "minimum": 0},
+    "selected_encoding": {"type": ["string", "null"]},
+    "offset_basis": {"const": "decoded_text_without_external_bom"},
+    "scan_status": {"type": "string", "enum": ["completed", "blocked"]},
+    "scanned_character_count": {"type": "integer", "minimum": 0},
+    "scanned_line_count": {"type": "integer", "minimum": 0},
+    "window_count": {"type": "integer", "minimum": 0},
+    "finding_count": {"type": "integer", "minimum": 0},
+    "category_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "rule_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "recommended_action": {"type": "string", "minLength": 1},
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "policy": {"type": "object"},
+    "marker_groups": {"type": "array", "items": {"type": "object"}},
+    "findings": {"type": "array", "items": {"$ref": "anomaly-finding.schema.json"}},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
