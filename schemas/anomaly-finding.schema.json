@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/anomaly-finding.schema.json",
+  "title": "Text Knowledge Reader anomaly finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "finding_id", "rule_id", "category", "severity", "confidence",
+    "recommended_action", "start_char", "end_char", "start_line", "end_line",
+    "evidence_sha256", "evidence_preview", "signals"
+  ],
+  "properties": {
+    "finding_id": {"type": "string", "pattern": "^finding_sha256_[0-9a-f]{64}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "category": {
+      "type": "string",
+      "enum": ["text_anomaly", "structural_anomaly", "contamination_candidate", "paratext_candidate"]
+    },
+    "severity": {"type": "string", "enum": ["low", "medium", "high"]},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "recommended_action": {"type": "string", "minLength": 1},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 1},
+    "start_line": {"type": "integer", "minimum": 1},
+    "end_line": {"type": "integer", "minimum": 1},
+    "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidence_preview": {"type": "string"},
+    "signals": {"type": "array", "items": {"type": "string"}}
+  }
+}
