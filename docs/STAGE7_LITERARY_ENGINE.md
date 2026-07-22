@@ -10,6 +10,8 @@ Stage 7 was opened after real-use evaluation showed that the v5.9 typed-fact eng
 
 This document describes a development capability. It is not a project-acceptance, score, release, or freeze record.
 
+Current implementation slice: **Stage 7.1 evidence, epistemic tiers, temporal records, and Notion projection**. Synthetic regression is active; integrated scoring is not yet performed.
+
 ## Non-compensating target gates
 
 Every domain must independently reach at least 9.0 during final integrated evaluation:
