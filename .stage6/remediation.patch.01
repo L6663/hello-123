@@ -1,0 +1,122 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 15dbaa1..625b160 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "text-knowledge-reader-core"
+-version = "5.9.0a1"
++version = "5.9.0a2"
+ description = "Auditable staged text ingestion, typed evidence validation, strict QA, recoverable builds, and approval-gated release freezing"
+ requires-python = ">=3.10"
+ license = {text = "MIT"}
+diff --git a/schemas/knowledge-answer-packet.schema.json b/schemas/knowledge-answer-packet.schema.json
+index aae6e2c..6fffefe 100644
+--- a/schemas/knowledge-answer-packet.schema.json
++++ b/schemas/knowledge-answer-packet.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-answer-v1"},
+-    "system_version": {"const": "5.9.0-stage4"},
++    "system_version": {"const": "5.9.0-stage6-r1"},
+     "answer_packet_id": {"type": "string", "pattern": "^kap_[0-9a-f]{32}$"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "project_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+diff --git a/schemas/knowledge-answer-verification.schema.json b/schemas/knowledge-answer-verification.schema.json
+index 41d4519..8b013ec 100644
+--- a/schemas/knowledge-answer-verification.schema.json
++++ b/schemas/knowledge-answer-verification.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-answer-verification-v1"},
+-    "system_version": {"const": "5.9.0-stage4"},
++    "system_version": {"const": "5.9.0-stage6-r1"},
+     "status": {"enum": ["accepted", "rejected"]},
+     "accepted": {"type": "boolean"},
+     "reason_codes": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+diff --git a/schemas/knowledge-project-manifest.schema.json b/schemas/knowledge-project-manifest.schema.json
+index f0a2f7e..5ed7f98 100644
+--- a/schemas/knowledge-project-manifest.schema.json
++++ b/schemas/knowledge-project-manifest.schema.json
+@@ -11,7 +11,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-manifest-v1"},
+-    "system_version": {"const": "5.9.0-stage4"},
++    "system_version": {"const": "5.9.0-stage6-r1"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "source_id": {"type": "string", "minLength": 1},
+     "raw_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+diff --git a/schemas/knowledge-project-report.schema.json b/schemas/knowledge-project-report.schema.json
+index c7aba8a..56b3ad7 100644
+--- a/schemas/knowledge-project-report.schema.json
++++ b/schemas/knowledge-project-report.schema.json
+@@ -17,7 +17,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-project-v1"},
+-    "system_version": {"const": "5.9.0-stage4"},
++    "system_version": {"const": "5.9.0-stage6-r1"},
+     "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+     "status": {"const": "completed"},
+     "index_mode": {"enum": ["review", "canonical"]},
+diff --git a/schemas/knowledge-project-verification.schema.json b/schemas/knowledge-project-verification.schema.json
+index 90064f1..8272e98 100644
+--- a/schemas/knowledge-project-verification.schema.json
++++ b/schemas/knowledge-project-verification.schema.json
+@@ -12,7 +12,7 @@
+   ],
+   "properties": {
+     "schema_version": {"const": "tkr-knowledge-verification-v1"},
+-    "system_version": {"const": "5.9.0-stage4"},
++    "system_version": {"const": "5.9.0-stage6-r1"},
+     "project_id": {"type": "string"},
+     "status": {"enum": ["verified", "rejected"]},
+     "valid": {"type": "boolean"},
+diff --git a/tests/test_anomaly_detection.py b/tests/test_anomaly_detection.py
+index 9794457..8944628 100644
+--- a/tests/test_anomaly_detection.py
++++ b/tests/test_anomaly_detection.py
+@@ -144,6 +144,38 @@ class AnomalyDetectionTests(unittest.TestCase):
+         self.assertEqual(len(matches), 1)
+         self.assertIn("register=xianxia->modern", matches[0].signals)
+ 
++    def test_separator_delimited_paragraph_mosaic_emits_one_block_candidate(self) -> None:
++        pollution = [
++            item * 6
++            for item in (
++                "黑衣刺客潜入王府寻找密函。", "星际舰队启动量子跃迁引擎。",
++                "幼儿园老师分发彩色积木。", "证券交易大厅发布季度财报。",
++                "远古巨龙守护熔岩洞穴。", "侦探检查雨夜留下的轮胎印。",
++                "厨师把奶油加入巧克力蛋糕。", "机器人维修轨道空间站。",
++                "将军命骑兵包围北方城池。", "医生查看病人的影像报告。",
++                "海盗升起风帆驶向群岛。", "程序员修复数据库连接故障。",
++                "考古队记录沙漠遗址的壁画。", "气象站发布沿海风暴预警。",
++            )
++        ]
++        text = (
++            "第一章 测试\n\n青云宗弟子守在剑阁。\n\n"
++            + "\n\n".join(pollution)
++            + "\n\n----------\n\n第二章 正常\n\n"
++            + "青云宗弟子修炼剑意。\n\n青云宗长老传授功法。\n"
++        )
++        report = inspect_source_anomalies(self._write("mosaic.txt", text))
++        matches = [item for item in report.findings if item.rule_id == "SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE"]
++        self.assertEqual(len(matches), 1)
++        self.assertIn("detector=source_adaptive_paragraph_mosaic", matches[0].signals)
++        self.assertTrue(matches[0].evidence_preview.startswith("黑衣刺客"))
++
++    def test_separator_delimited_coherent_chapters_do_not_emit_mosaic_candidate(self) -> None:
++        first = "\n\n".join(["青云宗弟子在剑阁修炼灵气与剑意。"] * 12)
++        second = "\n\n".join(["青云宗长老带领弟子进入秘境寻找灵石。"] * 12)
++        text = f"第一章 起\n\n{first}\n\n----------\n\n第二章 承\n\n{second}\n"
++        report = inspect_source_anomalies(self._write("coherent-blocks.txt", text))
++        self.assertNotIn("SAME_LANGUAGE_CORPUS_SHIFT_CANDIDATE", report.rule_counts)
++
+     def test_single_physical_line_is_still_window_scanned(self) -> None:
+         first = "灵气真元丹田元婴宗门法器剑意功法灵石秘境金丹筑基神识" * 20
+         second = "公司董事会经理电话邮件网络直播办公室警察汽车手机电脑合同记者" * 20
+diff --git a/tests/test_claim_validation.py b/tests/test_claim_validation.py
