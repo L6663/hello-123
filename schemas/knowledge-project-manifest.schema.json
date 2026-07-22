@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/knowledge-project-manifest.schema.json",
+  "title": "Text Knowledge Reader Stage 4 Project Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "system_version", "project_id", "source_id",
+    "raw_source_sha256", "normalized_source_sha256", "files", "immutable_roots",
+    "project_acceptance_performed", "may_accept_project", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-knowledge-manifest-v1"},
+    "system_version": {"const": "5.9.0-stage4"},
+    "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "raw_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "normalized_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "not": {"pattern": "(^/|(^|/)\\.\\.(/|$))"}},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "immutable_roots": {
+      "type": "array",
+      "items": {"enum": ["source", "stage1-anomaly", "stage2-structure", "stage3-semantics", "bridge", "index"]},
+      "uniqueItems": true
+    },
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
