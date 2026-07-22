@@ -1,0 +1,54 @@
+name: Phase 9 Stage 4 focused developer checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/knowledge_*.py"
+      - "tkr/project_cli.py"
+      - "tests/test_knowledge_project.py"
+      - "schemas/knowledge-*.schema.json"
+      - "pyproject.toml"
+      - ".github/workflows/phase9-stage4-focused-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    name: Stage 4 implementation check / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install development package
+        run: python -m pip install --disable-pip-version-check -e .
+      - name: Compile Stage 4 modules
+        run: python -m py_compile tkr/knowledge_models.py tkr/knowledge_project.py tkr/knowledge_query.py tkr/project_cli.py
+      - name: Validate Stage 4 JSON Schema syntax
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          paths = sorted(Path("schemas").glob("knowledge-*.schema.json"))
+          assert len(paths) == 5, paths
+          for path in paths:
+              json.loads(path.read_text(encoding="utf-8"))
+          print(f"validated {len(paths)} Stage 4 schemas")
+          PY
+      - name: Run Stage 4 focused tests
+        run: python -m unittest -v tests.test_knowledge_project
+      - name: Verify Stage 4 command
+        run: tkr-project --help
+      - name: State non-acceptance boundary
+        run: |
+          echo "Stage 4 checks implementation only."
+          echo "No real-corpus acceptance, private blind evaluation, release certification, or freeze authorization is performed."

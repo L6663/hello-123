@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/knowledge-answer-packet.schema.json",
+  "title": "Text Knowledge Reader Stage 4 Answer Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "system_version", "answer_packet_id", "project_id",
+    "project_manifest_sha256", "source_id", "raw_source_sha256",
+    "normalized_source_sha256", "question", "qa_packet", "may_present",
+    "project_acceptance_performed", "may_accept_project", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-knowledge-answer-v1"},
+    "system_version": {"const": "5.9.0-stage4"},
+    "answer_packet_id": {"type": "string", "pattern": "^kap_[0-9a-f]{32}$"},
+    "project_id": {"type": "string", "pattern": "^kpr_[0-9a-f]{32}$"},
+    "project_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "raw_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "normalized_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "question": {"type": "string", "minLength": 1},
+    "qa_packet": {"type": "object"},
+    "may_present": {"type": "boolean"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
