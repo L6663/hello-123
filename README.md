@@ -8,7 +8,10 @@ Text Knowledge Reader is developed as a sequence of independently reviewable and
 main_baseline: c76d3b39e1a7d58f38b78c837e25aafff3ba2b07
 main_version: 5.8.0-alpha1
 development_version: 5.9.0-alpha1
-current_development_stage: Phase 9.0
+completed_development_stages:
+  - Phase 9.0
+  - Phase 9.1
+current_development_stage: Phase 9.2
 development_status: alpha
 release_candidate: false
 freeze_approved: false
@@ -33,7 +36,7 @@ The following capabilities are not yet integrated into `main` and must not be de
 - **Phase 0:** raw-source identity, encoding, Unicode, and admission checks;
 - **Phase 1:** heading recovery, Unit Index generation, and structural continuity validation;
 - **Phase 2E:** conservative Claim candidate extraction before Phase 3 validation;
-- shared streaming hashing for large source, database, wheel, benchmark, and freeze artifacts;
+- migration of existing large-artifact hashing call sites to the shared streaming helper;
 - raw-corpus end-to-end orchestration;
 - independent long-corpus blind evaluation and result-drift measurement.
 
@@ -61,6 +64,18 @@ Phase 9 connects the existing Phase 2–8 components to a raw-corpus entry point
 | 9.15 | focused integration acceptance | Focused tests only |
 
 The complete Python 3.10/3.11/3.12 regression matrix, long-corpus execution, performance measurement, drift comparison, release packaging, and candidate PR are deferred until the implementation stages are complete.
+
+## Phase 9.1 result — shared streaming SHA-256
+
+`tkr/hashing.py` now provides a bounded-memory hashing foundation for later admission and artifact migration work:
+
+- `sha256_stream()` hashes binary streams from their current position;
+- `sha256_file()` hashes regular files without `read_bytes()`;
+- `inspect_file()` returns deterministic path, size, SHA-256, and block-size metadata and rejects files that change during hashing;
+- `verify_file_sha256()` validates a 64-character hexadecimal expectation and performs exact comparison;
+- the default block size is 4 MiB and invalid block sizes, text streams, missing paths, and directories are rejected.
+
+The focused Phase 9.1 suite contains 11 tests covering empty files, UTF-8 Chinese text, multi-block bounded reads, current stream position, metadata output, uppercase expected hashes, mismatch detection, malformed hashes, invalid block sizes, missing files, and directories. Existing Phase 2–8 call sites are intentionally not migrated in this stage.
 
 ## Current console commands
 
