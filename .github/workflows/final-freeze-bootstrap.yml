@@ -35,7 +35,7 @@ jobs:
             test "$(sha256sum /tmp/final-freeze.patch.gz.b64 | cut -d' ' -f1)" = "6b6a1d5ac4dfed134fd26a5c7cfdcb2b853f6f327eb855c2f20196957cff71d1"
             base64 --decode /tmp/final-freeze.patch.gz.b64 > /tmp/final-freeze.patch.gz
             sha256sum /tmp/final-freeze.patch.gz
-            test "$(sha256sum /tmp/final-freeze.patch.gz | cut -d' ' -f1)" = "6859437757c920f3c12b33ce0c93c3c29dfec5c866c7c85ce8f268532615da33"
+            test "$(sha256sum /tmp/final-freeze.patch.gz | cut -d' ' -f1)" = "8e4843babed3962fda4aef214687ced726b7ed72e23b035d0f5176b7a40df54f"
             gzip --decompress --stdout /tmp/final-freeze.patch.gz > /tmp/final-freeze.patch
             sha256sum /tmp/final-freeze.patch
             test "$(sha256sum /tmp/final-freeze.patch | cut -d' ' -f1)" = "3cc9a3a4421e497f9ddec70896aa7a57f429f900e265d3b409b449c055546ea6"
