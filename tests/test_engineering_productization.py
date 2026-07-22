@@ -408,7 +408,7 @@ class SecureProjectAndQueryTests(unittest.TestCase):
     def test_unsupported_query_is_refused(self):
         with tempfile.TemporaryDirectory() as td:
             project = self._build(Path(td))
-            packet = answer_secure_knowledge_project(project, "陆川为什么要击败韩岳？")
+            packet = answer_secure_knowledge_project(project, "这部作品的主题是什么？")
             self.assertEqual(packet.qa_packet["decision"], "refused_unsupported")
 
     def test_answer_packet_recomputes_exactly(self):
