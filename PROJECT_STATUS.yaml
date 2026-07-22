@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T05:08:00Z
+updated_at_utc: 2026-07-22T06:10:00Z
 
 main:
   branch: main
@@ -17,6 +17,7 @@ development:
   integrated_stage_1_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   integrated_stage_2_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
   integrated_stage_3_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
+  integrated_stage_4_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
@@ -30,11 +31,13 @@ development:
     - Phase 9.9
     - Phase 9.10
     - Phase 9.11
+    - Phase 9.12
   completed_large_stages:
     - Stage 1
     - Stage 2
     - Stage 3
-  next_large_stage: Stage 4
+    - Stage 4
+  next_large_stage: Stage 5
   next_stage_status: not_started
 
 stage_1:
@@ -43,11 +46,9 @@ stage_1:
   integration_status: merged_into_canonical_phase9_base
   pull_request: 11
   merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
-  local_focused_checks:
+  focused_checks:
     status: passed
     test_count: 15
-  github_focused_checks:
-    status: passed
     python_versions: ["3.10", "3.11", "3.12"]
     workflow_run_id: 29888109850
   project_acceptance: false
@@ -58,11 +59,9 @@ stage_2:
   integration_status: merged_into_canonical_phase9_base
   pull_request: 12
   merge_commit: 5b985a7bdde81900159125f597196bb7aa8c5b56
-  local_focused_checks:
+  focused_checks:
     status: passed
     test_count: 21
-  github_focused_checks:
-    status: passed
     python_versions: ["3.10", "3.11", "3.12"]
     workflow_run_id: 29890012483
   project_acceptance: false
@@ -73,11 +72,9 @@ stage_3:
   integration_status: merged_into_canonical_phase9_base
   pull_request: 13
   merge_commit: 17aae8a1ca65c47df0c86481c2d0e07c3e77a1e8
-  local_focused_checks:
+  focused_checks:
     status: passed
     test_count: 31
-  github_focused_checks:
-    status: passed
     python_versions: ["3.10", "3.11", "3.12"]
     workflow_run_id: 29892803967
   capabilities:
@@ -94,6 +91,43 @@ stage_3:
     entity_fact_timeline_conflict_bridge: implemented
     constrained_model_task_interface: implemented
     deterministic_artifact_set: implemented
+    json_schema_contracts: implemented
+  project_acceptance: false
+
+stage_4:
+  estimated_engineering_time: 18_to_28_hours
+  implementation_status: complete
+  integration_status: merged_into_canonical_phase9_base
+  pull_request: 15
+  merge_commit: 3b5cc2852bfefbbc70f2af04dd43a25b35eee2ff
+  focused_checks:
+    status: passed
+    test_count: 27
+    python_versions: ["3.10", "3.11", "3.12"]
+    workflow_run_id: 29895687071
+  regression_checks:
+    stage_2_workflow_run_id: 29895687036
+    stage_2_status: passed
+    stage_3_workflow_run_id: 29895687057
+    stage_3_status: passed
+  capabilities:
+    unified_project_cli: implemented
+    raw_to_index_orchestration: implemented
+    original_and_normalized_source_binding: implemented
+    stage_1_to_3_artifact_publication: implemented
+    stage_3_to_phase_5_compatibility_bridge: implemented
+    fresh_entity_normalization_revalidation: implemented
+    sqlite_index_build: implemented
+    immutable_project_manifest: implemented
+    source_and_database_integrity_verification: implemented
+    typed_query_and_strict_refusal: implemented
+    exact_citation_chain: implemented
+    project_bound_answer_packets: implemented
+    answer_recomputation_verification: implemented
+    canonical_index_gate: implemented
+    verified_project_reuse: implemented
+    atomic_project_replacement: implemented
+    deterministic_project_identity: implemented
     json_schema_contracts: implemented
   project_acceptance: false
 
@@ -132,6 +166,7 @@ branch_governance:
     - feature/phase9-stage1-safety-hardening
     - feature/phase9-stage2-deterministic-structure
     - feature/phase9-stage3-evidence-semantics
+    - feature/phase9-stage4-end-to-end-knowledge-v3
   superseded_or_invalid_sources:
     - branch: feature/full-ingestion-v5.9-alpha1
       reason: Closed encoded-payload draft PR 9; not an accepted implementation source.
@@ -139,6 +174,10 @@ branch_governance:
       reason: Created from main without Phase 9.2 and Phase 9.3; do not merge.
     - branch: feature/phase9-4-anomaly-contamination
       reason: Superseded by the converged Stage 1 implementation.
+    - branch: feature/phase9-stage4-end-to-end-knowledge
+      reason: Created before final Stage 3 status synchronization; superseded.
+    - branch: feature/phase9-stage4-end-to-end-knowledge-v2
+      reason: Valid Stage 4 implementation but divergent history; PR 14 closed and implementation replayed from the latest base.
 
 large_stage_plan:
   - stage: Stage 1
@@ -159,12 +198,12 @@ large_stage_plan:
   - stage: Stage 4
     scope: end-to-end knowledge orchestration, retrieval, strict QA, citations, and refusal
     estimate: 18_to_28_hours
-    status: planned_not_started
+    status: complete_integrated
     project_acceptance: false
   - stage: Stage 5
     scope: engineering hardening and complete Skill productization
     estimate: 16_to_24_hours
-    status: planned
+    status: planned_not_started
     project_acceptance: false
   - stage: Stage 6
     scope: all-capability analysis and final project acceptance
