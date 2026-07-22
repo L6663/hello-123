@@ -5,6 +5,9 @@
 ```yaml
 stage: Stage 1
 implementation: complete
+integration: merged_into_feature/phase9-0-baseline-cleanup
+pull_request: 11
+merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
 local_focused_tests: 15_passed
 github_focused_checks: passed
 python_versions:
@@ -27,6 +30,7 @@ The planned Stage 1 effort was **4–6 engineering hours**. This estimate covers
 - Established `feature/phase9-stage1-safety-hardening` from the latest Phase 9.0–9.3 base.
 - Superseded stale Phase 9.4 branches and PR #10.
 - Restricted legacy Phase 2–8 pull-request workflows to `main` targets so intermediate Phase 9 work no longer triggers release or acceptance workflows.
+- Merged PR #11 into the canonical Phase 9 development base.
 
 ### Corpus safety
 
