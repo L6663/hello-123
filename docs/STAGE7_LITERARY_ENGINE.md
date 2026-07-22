@@ -14,6 +14,8 @@ This document describes a development capability. It is not a project-acceptance
 
 Current implementation slice: **Stage 7.1 evidence, epistemic tiers, temporal records, and Notion projection**. Synthetic regression is active; integrated scoring is not yet performed.
 
+Stage 7.1 currently has ten synthetic focused regressions. The suite includes forged-evidence rejection, JSONL/SQLite cross-store divergence rejection, temporal relationship lookup, A/B/C separation, event-component retrieval, tamper detection, and Notion projection checks. These are engineering regressions, not a final literary score.
+
 ## Non-compensating target gates
 
 Every domain must independently reach at least 9.0 during final integrated evaluation:
@@ -81,6 +83,8 @@ A verified literary sidecar contains:
 
 The source project must first pass the existing secure knowledge-project verification.
 
+The sidecar verifier cross-checks every chapter, evidence, entity, assertion, relationship, event, and revision identifier between JSONL and SQLite. Matching individual file hashes are not sufficient when the two stores disagree.
+
 ## CLI
 
 ```bash
@@ -88,6 +92,15 @@ tkr-literary build PROJECT --outdir LITERARY_DIR
 tkr-literary verify LITERARY_DIR
 tkr-literary query LITERARY_DIR "林舟首次出场在哪一章？"
 tkr-literary export-notion LITERARY_DIR --outdir NOTION_PACKAGE
+```
+
+The same commands are exposed through the directly uploaded Skill entrypoint:
+
+```bash
+python scripts/tkr.py literary build PROJECT --outdir LITERARY_DIR
+python scripts/tkr.py literary verify LITERARY_DIR
+python scripts/tkr.py literary query LITERARY_DIR "林舟首次出场在哪一章？"
+python scripts/tkr.py literary export-notion LITERARY_DIR --outdir NOTION_PACKAGE
 ```
 
 The commands have no project-acceptance or freeze authority.
