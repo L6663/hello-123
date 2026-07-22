@@ -12,7 +12,8 @@ completed_development_stages:
   - Phase 9.0
   - Phase 9.1
   - Phase 9.2
-current_development_stage: Phase 9.3
+  - Phase 9.3
+current_development_stage: Phase 9.4
 development_status: alpha
 release_candidate: false
 freeze_approved: false
@@ -91,6 +92,20 @@ The focused Phase 9.1 suite contains 11 tests covering empty files, UTF-8 Chines
 - NUL-bearing input keeps `line_count=null` and `line_count_reliable=false` because encoding inspection has not yet distinguished UTF-16 from binary content.
 
 The focused Phase 9.2 suite contains 11 tests covering supported TXT and Markdown files, content-derived identity, LF, CRLF boundary handling, mixed newlines, trailing and non-trailing lines, empty input, UTF-16-like NUL bytes, unsupported suffixes, report serialization, missing files, and directories. No decoding, normalization, contamination analysis, heading recognition, or full regression is performed in this stage.
+
+## Phase 9.3 result — encoding and Unicode inspection
+
+`tkr/encoding_inspection.py` now performs bounded-memory strict decoding and Unicode-quality inspection:
+
+- UTF-8, UTF-8 BOM, UTF-16 LE BOM, and UTF-16 BE BOM are decoded strictly;
+- BOM-free UTF-16 is selected only when byte-position or encoded-newline signals exist and remains a `review` candidate;
+- GB18030 is a strict fallback candidate and remains `review`, because successful legacy decoding does not prove the historical source encoding;
+- UTF-32 BOMs are detected explicitly and rejected as unsupported rather than being misclassified as UTF-16;
+- incremental decoders preserve multibyte sequences across read-block boundaries;
+- the report records the selected decoder, selection basis, confidence, attempted decoders, decoded character and line counts, decoded newline family, replacement characters, abnormal controls, Unicode noncharacters, NUL characters, and embedded BOM characters;
+- strict decoding failure produces an explicit blocker and never substitutes replacement decoding.
+
+The focused Phase 9.3 suite contains 15 tests covering UTF-8 Chinese text, UTF-8 BOM, UTF-16 LE/BE BOMs, BOM-free UTF-16 review routing, GB18030 fallback, replacement characters, controls, NUL, Unicode noncharacters, embedded BOMs, unsupported UTF-32 BOMs, invalid byte sequences, unsupported suffixes, empty files, missing paths, and directories. Text normalization, anomaly classification, contamination analysis, heading recognition, and full regression remain outside this stage.
 
 ## Current console commands
 
