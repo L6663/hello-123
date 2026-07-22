@@ -11,6 +11,9 @@ on:
       - "tests/test_anomaly_detection.py"
       - "schemas/anomaly-*.schema.json"
       - "pyproject.toml"
+      - "README.md"
+      - "PROJECT_STATUS.yaml"
+      - "docs/stage-1-result.md"
       - ".github/workflows/phase9-stage1-focused.yml"
   workflow_dispatch:
 
@@ -40,5 +43,7 @@ jobs:
         run: python -m unittest -v tests.test_anomaly_detection
       - name: Verify command entry point
         run: tkr-anomaly-scan --help > /dev/null
+      - name: Verify status boundary
+        run: python -c "from pathlib import Path; s=Path('PROJECT_STATUS.yaml').read_text(); assert 'project_acceptance: false' in s and 'minimum_score_per_capability: 9.0' in s"
       - name: State non-acceptance boundary
         run: echo "Focused developer checks only; no project acceptance was performed."
