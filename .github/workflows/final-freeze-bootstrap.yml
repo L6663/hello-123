@@ -1,9 +1,9 @@
 name: Final freeze one-time bootstrap
 
 on:
-  push:
+  pull_request:
     branches:
-      - release/v5.9.0-final-freeze
+      - feature/phase9-0-baseline-cleanup
     paths:
       - ".final-freeze/**"
       - ".github/workflows/final-freeze-bootstrap.yml"
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release/v5.9.0-final-freeze
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Reconstruct and verify patch
@@ -40,4 +40,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "release: assemble Text Knowledge Reader v5.9.0 final freeze"
-          git push origin HEAD:release/v5.9.0-final-freeze
+          git push origin "HEAD:${{ github.head_ref }}"
