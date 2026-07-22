@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T03:00:00Z
+updated_at_utc: 2026-07-22T03:20:00Z
 
 main:
   branch: main
@@ -19,6 +19,7 @@ development:
     - Phase 9.1
     - Phase 9.2
     - Phase 9.3
+    - Phase 9.4
   current_large_stage: Stage 1
   current_scope: development_line_convergence_and_corpus_safety
 
@@ -28,8 +29,14 @@ stage_1:
   local_focused_checks:
     status: passed
     test_count: 15
-  github_focused_checks: pending
-  integration_status: pending_pull_request_review
+  github_focused_checks:
+    status: passed
+    python_versions:
+      - "3.10"
+      - "3.11"
+      - "3.12"
+    workflow_run_id: 29888109850
+  integration_status: ready_to_merge
   capabilities:
     workflow_governance: implemented
     unicode_and_web_anomaly_candidates: implemented
@@ -85,7 +92,7 @@ large_stage_plan:
   - stage: Stage 1
     scope: development-line convergence and corpus safety
     estimate: 4_to_6_hours
-    status: implementation_complete_checks_pending
+    status: complete_ready_to_merge
     project_acceptance: false
   - stage: Stage 2
     scope: deterministic heading detection, Unit Index, and continuity validation
