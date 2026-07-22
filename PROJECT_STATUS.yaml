@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v2
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T03:20:00Z
+updated_at_utc: 2026-07-22T03:26:00Z
 
 main:
   branch: main
@@ -13,19 +13,25 @@ development:
   status: alpha
   mode: skill_optimization_only
   canonical_base_branch: feature/phase9-0-baseline-cleanup
-  active_branch: feature/phase9-stage1-safety-hardening
+  active_branch: feature/phase9-0-baseline-cleanup
+  integrated_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   completed_development_stages:
     - Phase 9.0
     - Phase 9.1
     - Phase 9.2
     - Phase 9.3
     - Phase 9.4
-  current_large_stage: Stage 1
-  current_scope: development_line_convergence_and_corpus_safety
+  completed_large_stages:
+    - Stage 1
+  next_large_stage: Stage 2
+  next_stage_status: not_started
 
 stage_1:
   estimated_engineering_time: 4_to_6_hours
   implementation_status: complete
+  integration_status: merged_into_canonical_phase9_base
+  pull_request: 11
+  merge_commit: 444f21513002345c578f89d8afd32c1ff50eaa8b
   local_focused_checks:
     status: passed
     test_count: 15
@@ -36,7 +42,6 @@ stage_1:
       - "3.11"
       - "3.12"
     workflow_run_id: 29888109850
-  integration_status: ready_to_merge
   capabilities:
     workflow_governance: implemented
     unicode_and_web_anomaly_candidates: implemented
@@ -86,18 +91,18 @@ branch_governance:
     - branch: feature/anomaly-pollution-v5.9-phase9.4
       reason: Created from main without Phase 9.2 and Phase 9.3; do not merge.
     - branch: feature/phase9-4-anomaly-contamination
-      reason: Superseded by the converged Stage 1 branch based on the latest Phase 9 base.
+      reason: Superseded by the converged Stage 1 implementation.
 
 large_stage_plan:
   - stage: Stage 1
     scope: development-line convergence and corpus safety
     estimate: 4_to_6_hours
-    status: complete_ready_to_merge
+    status: complete_integrated
     project_acceptance: false
   - stage: Stage 2
     scope: deterministic heading detection, Unit Index, and continuity validation
     estimate: 12_to_18_hours
-    status: planned
+    status: planned_not_started
     project_acceptance: false
   - stage: Stage 3
     scope: evidence-grounded Claim extraction and factual-status semantics
