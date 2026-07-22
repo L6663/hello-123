@@ -1,0 +1,44 @@
+name: Phase 9 stage 1 focused developer checks
+
+on:
+  pull_request:
+    branches:
+      - feature/phase9-0-baseline-cleanup
+    paths:
+      - "tkr/anomaly_detection.py"
+      - "tkr/anomaly_artifacts.py"
+      - "tkr/anomaly_cli.py"
+      - "tests/test_anomaly_detection.py"
+      - "schemas/anomaly-*.schema.json"
+      - "pyproject.toml"
+      - ".github/workflows/phase9-stage1-focused.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused:
+    name: Stage 1 implementation check / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install development package
+        run: python -m pip install --no-deps -e .
+      - name: Compile Stage 1 modules
+        run: python -m py_compile tkr/anomaly_detection.py tkr/anomaly_artifacts.py tkr/anomaly_cli.py
+      - name: Validate JSON schema syntax
+        run: python -c "import json, pathlib; [json.loads(p.read_text()) for p in pathlib.Path('schemas').glob('anomaly-*.schema.json')]"
+      - name: Run focused Stage 1 tests
+        run: python -m unittest -v tests.test_anomaly_detection
+      - name: Verify command entry point
+        run: tkr-anomaly-scan --help > /dev/null
+      - name: State non-acceptance boundary
+        run: echo "Focused developer checks only; no project acceptance was performed."
