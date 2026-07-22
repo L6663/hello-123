@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/heading-candidate.schema.json",
+  "title": "Text Knowledge Reader Heading Candidate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "heading_id", "source_id", "source_sha256", "rule_id",
+    "unit_type", "hierarchy_level", "ordinal", "ordinal_text", "title",
+    "raw_heading", "boundary_start_char", "start_char", "end_char",
+    "heading_end_char", "body_start_char", "start_line", "end_line",
+    "confidence", "accepted_as_boundary", "signals"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-heading-candidate-v1"},
+    "heading_id": {"type": "string", "pattern": "^hdg_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "unit_type": {"type": "string", "enum": ["volume", "part", "chapter", "section", "prologue", "preface", "epilogue", "afterword", "extra_story", "appendix"]},
+    "hierarchy_level": {"type": "integer", "minimum": 1, "maximum": 4},
+    "ordinal": {"type": ["integer", "null"], "minimum": 0},
+    "ordinal_text": {"type": "string"},
+    "title": {"type": "string"},
+    "raw_heading": {"type": "string"},
+    "boundary_start_char": {"type": "integer", "minimum": 0},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 0},
+    "heading_end_char": {"type": "integer", "minimum": 0},
+    "body_start_char": {"type": "integer", "minimum": 0},
+    "start_line": {"type": "integer", "minimum": 1},
+    "end_line": {"type": "integer", "minimum": 1},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "accepted_as_boundary": {"type": "boolean"},
+    "signals": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}
