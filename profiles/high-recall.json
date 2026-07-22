@@ -1,0 +1,14 @@
+{
+  "schema_version": "tkr-engineering-profile-v1",
+  "name": "high-recall",
+  "description": "Review-mode build with expanded deterministic candidate and finding limits for complex long-form corpora.",
+  "index_mode": "review",
+  "max_candidates": 500000,
+  "max_findings": 150000,
+  "max_model_tasks": 150000,
+  "max_clause_characters": 900,
+  "emit_model_tasks": true,
+  "cache_enabled": true,
+  "lock_stale_seconds": 43200,
+  "cleanup_stale_seconds": 172800
+}
