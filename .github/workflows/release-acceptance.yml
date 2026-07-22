@@ -6,6 +6,8 @@ on:
       - "release/**"
       - "feature/release-freeze-v5.8-alpha1"
   pull_request:
+    branches:
+      - main
 permissions:
   contents: read
 env:
