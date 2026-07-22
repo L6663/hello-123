@@ -33,6 +33,10 @@ include = ["tkr*"]
   "SKILL.md",
   "README.md",
   "PROJECT_STATUS.yaml",
+  "pyproject.toml",
+]
+"share/text-knowledge-reader/tkr" = [
+  "tkr/__init__.py",
 ]
 "share/text-knowledge-reader/schemas" = [
   "schemas/anomaly-finding.schema.json",
