@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/structure-finding.schema.json",
+  "title": "Text Knowledge Reader Structure Finding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "finding_id", "rule_id", "category", "severity",
+    "confidence", "recommended_action", "unit_id", "related_unit_ids",
+    "start_char", "end_char", "start_line", "end_line", "signals"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-structure-finding-v1"},
+    "finding_id": {"type": "string", "pattern": "^stf_[0-9a-f]{32}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "enum": ["heading_candidate", "heading_recovery", "continuity_anomaly", "structure_anomaly"]},
+    "severity": {"type": "string", "enum": ["low", "medium", "high"]},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+    "recommended_action": {"type": "string", "minLength": 1},
+    "unit_id": {"type": ["string", "null"], "pattern": "^unit_[0-9a-f]{32}$"},
+    "related_unit_ids": {"type": "array", "items": {"type": "string", "pattern": "^unit_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 0},
+    "start_line": {"type": "integer", "minimum": 1},
+    "end_line": {"type": "integer", "minimum": 1},
+    "signals": {"type": "array", "items": {"type": "string"}}
+  }
+}
