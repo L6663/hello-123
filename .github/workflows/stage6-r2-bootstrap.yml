@@ -30,8 +30,12 @@ jobs:
             git status --short
             git apply --check --recount --verbose .stage6/r2-remediation.patch
             git apply --recount --verbose .stage6/r2-remediation.patch
-            git apply --check --verbose .stage6/r2-canonical-compat.patch
-            git apply --verbose .stage6/r2-canonical-compat.patch
+            if [[ -f tkr/stage6_r1_heading_patch.py ]]; then
+              git apply --check --verbose .stage6/r2-canonical-compat.patch
+              git apply --verbose .stage6/r2-canonical-compat.patch
+            else
+              echo "Canonical R1 heading compatibility module is absent on this historical branch; defer compatibility patch to final integration tree."
+            fi
           } 2>&1 | tee /tmp/r2-apply.log
       - name: Upload patch diagnostics
         if: always()
