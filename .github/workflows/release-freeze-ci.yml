@@ -4,6 +4,8 @@ on:
     branches:
       - "feature/release-freeze-v5.8-alpha1"
   pull_request:
+    branches:
+      - main
     paths:
       - "tkr/release_freeze.py"
       - "tkr/release_freeze_cli.py"
