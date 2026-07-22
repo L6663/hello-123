@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/literary-report.schema.json",
+  "title": "Text Knowledge Reader literary sidecar report",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "status",
+    "literary_system_version",
+    "literary_index_schema_version",
+    "project_id",
+    "source_id",
+    "source_sha256",
+    "chapter_count",
+    "addressable_chapter_count",
+    "evidence_anchor_count",
+    "entity_count",
+    "assertion_count",
+    "tier_a_count",
+    "tier_b_count",
+    "tier_c_count",
+    "evidence_traceability_rate",
+    "chapter_address_coverage",
+    "logical_sha256",
+    "database_sha256",
+    "tier_contract",
+    "interpretation_may_be_presented_as_source_fact",
+    "project_acceptance_performed",
+    "may_accept_project",
+    "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-report-v1"},
+    "status": {"const": "completed"},
+    "literary_system_version": {"const": "tkr-literary-v1"},
+    "literary_index_schema_version": {"const": "tkr-literary-index-v1"},
+    "project_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "chapter_count": {"type": "integer", "minimum": 0},
+    "addressable_chapter_count": {"type": "integer", "minimum": 0},
+    "evidence_anchor_count": {"type": "integer", "minimum": 0},
+    "entity_count": {"type": "integer", "minimum": 0},
+    "assertion_count": {"type": "integer", "minimum": 0},
+    "tier_a_count": {"type": "integer", "minimum": 0},
+    "tier_b_count": {"type": "integer", "minimum": 0},
+    "tier_c_count": {"type": "integer", "minimum": 0},
+    "evidence_traceability_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "chapter_address_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+    "logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "annotation_sha256": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      ]
+    },
+    "tier_contract": {
+      "type": "object",
+      "required": ["A", "B", "C"],
+      "properties": {
+        "A": {"type": "string", "minLength": 1},
+        "B": {"type": "string", "minLength": 1},
+        "C": {"type": "string", "minLength": 1}
+      }
+    },
+    "interpretation_may_be_presented_as_source_fact": {"const": false},
+    "author_intent_may_be_asserted_without_direct_evidence": {"const": false},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
