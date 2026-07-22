@@ -21,6 +21,7 @@ tkr-gold-benchmark = "tkr.gold_benchmark_cli:main"
 tkr-release-freeze = "tkr.release_freeze_cli:main"
 tkr-anomaly-scan = "tkr.anomaly_cli:main"
 tkr-structure-index = "tkr.structure_cli:main"
+tkr-semantic-extract = "tkr.semantic_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -33,4 +34,9 @@ include = ["tkr*"]
   "schemas/unit-record.schema.json",
   "schemas/structure-finding.schema.json",
   "schemas/structure-report.schema.json",
+  "schemas/semantic-candidate.schema.json",
+  "schemas/semantic-finding.schema.json",
+  "schemas/model-extraction-task.schema.json",
+  "schemas/accepted-claim-record.schema.json",
+  "schemas/semantic-report.schema.json",
 ]
