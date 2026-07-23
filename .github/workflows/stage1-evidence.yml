@@ -37,10 +37,48 @@ jobs:
         run: |
           python -m py_compile \
             scripts/tkr.py \
-            tkr/character_engine.py
+            tkr/character_engine.py \
+            tkr/character_project.py \
+            tkr/character_cli.py
+
+      - name: Validate Stage 4 schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          names = [
+              "focused-character.schema.json",
+              "character-attribute.schema.json",
+              "character-state.schema.json",
+              "character-relationship.schema.json",
+              "character-event-link.schema.json",
+              "character-annotation.schema.json",
+              "character-project-report.schema.json",
+              "character-project-verification.schema.json",
+          ]
+          for name in names:
+              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
+              assert payload["$schema"].endswith("2020-12/schema")
+              assert payload["type"] == "object"
+          PY
 
       - name: Stage 4 tests
-        run: python -m unittest tests.test_character_engine -v
+        run: |
+          python -m unittest \
+            tests.test_character_engine \
+            tests.test_character_project -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: CLI smoke check
+        run: |
+          tkr-character --help >/dev/null
+          tkr-character build --help >/dev/null
+          tkr-character verify --help >/dev/null
+          tkr-character query --help >/dev/null
+          python scripts/tkr.py character --help >/dev/null
+          python scripts/tkr.py character-build --help >/dev/null
+          python scripts/tkr.py character-verify --help >/dev/null
+          python scripts/tkr.py character-query --help >/dev/null
