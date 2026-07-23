@@ -30,6 +30,7 @@ tkr-chapter = "tkr.chapter_cli:main"
 tkr-event = "tkr.event_cli:main"
 tkr-character = "tkr.character_cli:main"
 tkr-reason = "tkr.reasoning_cli:main"
+tkr-notion = "tkr.notion_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -105,6 +106,15 @@ include = ["tkr*"]
   "schemas/reasoning-project-report.schema.json",
   "schemas/reasoning-project-verification.schema.json",
   "schemas/layered-answer-packet.schema.json",
+  "schemas/notion-page.schema.json",
+  "schemas/notion-relation.schema.json",
+  "schemas/notion-review-item.schema.json",
+  "schemas/notion-sync-ledger.schema.json",
+  "schemas/notion-sync-action.schema.json",
+  "schemas/notion-workspace-schema.schema.json",
+  "schemas/notion-project-report.schema.json",
+  "schemas/notion-project-manifest.schema.json",
+  "schemas/notion-project-verification.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -130,4 +140,6 @@ include = ["tkr*"]
   "docs/STAGE4_FOCUSED_CHARACTER_ENGINE_RESULT.md",
   "docs/STAGE5_LAYERED_REASONING_ENGINE.md",
   "docs/STAGE5_LAYERED_REASONING_ENGINE_RESULT.md",
+  "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM.md",
+  "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM_RESULT.md",
 ]
