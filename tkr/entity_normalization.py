@@ -25,7 +25,7 @@ from .claim_validation import (
     validate_claim,
 )
 
-NORMALIZER_VERSION = "tkr-entity-normalizer-v2"
+NORMALIZER_VERSION = "tkr-entity-normalizer-v3"
 
 _ASSERTION_BREAK_RE = re.compile(r"[\n。！？!?；;]+")
 _EARLIER_RE = re.compile(
@@ -699,6 +699,85 @@ def _canonical_name(component: Sequence[Mention]) -> str:
     return min(counts, key=lambda name: (-counts[name], first_position[name], name))
 
 
+def _build_ambiguity_groups(
+    mentions: Sequence[Mention],
+    mention_to_entity: Mapping[str, str],
+) -> list[AmbiguityGroup]:
+    """Return unresolved same-surface entity groups within each source."""
+
+    surface_to_entities: dict[tuple[str, str], set[str]] = defaultdict(set)
+    surface_to_mentions: dict[tuple[str, str], set[str]] = defaultdict(set)
+    surface_forms: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for mention in mentions:
+        key = (mention.source_id, mention.normalized_surface)
+        entity_id = mention_to_entity[mention.mention_id]
+        surface_to_entities[key].add(entity_id)
+        surface_to_mentions[key].add(mention.mention_id)
+        surface_forms[key].add(mention.surface)
+
+    ambiguities: list[AmbiguityGroup] = []
+    for (source_id, surface), entity_ids in sorted(surface_to_entities.items()):
+        if len(entity_ids) <= 1:
+            continue
+        ambiguity_id = _stable_id(
+            "amb_", NORMALIZER_VERSION, source_id, surface, tuple(sorted(entity_ids))
+        )
+        ambiguities.append(
+            AmbiguityGroup(
+                ambiguity_id=ambiguity_id,
+                source_id=source_id,
+                normalized_surface=surface,
+                surfaces=tuple(sorted(surface_forms[(source_id, surface)])),
+                entity_ids=tuple(sorted(entity_ids)),
+                mention_ids=tuple(sorted(surface_to_mentions[(source_id, surface)])),
+                reason="SAME_SURFACE_MULTIPLE_ENTITIES",
+            )
+        )
+    return ambiguities
+
+
+def _ambiguity_fact_conflicts(
+    ambiguities: Sequence[AmbiguityGroup],
+    facts: Sequence[Fact],
+) -> list[Conflict]:
+    """Block canonical publication for facts whose entity identity is unresolved.
+
+    Ambiguity groups are retrieval metadata, while ``Fact.conflict_ids`` is
+    intentionally restricted to actual Conflict identifiers.  Therefore each
+    ambiguity that touches a fact is materialized as one review conflict whose
+    details bind the exact ambiguity ID.
+    """
+
+    conflicts: list[Conflict] = []
+    for ambiguity in ambiguities:
+        entity_ids = set(ambiguity.entity_ids)
+        affected = [
+            fact
+            for fact in facts
+            if fact.subject_entity_id in entity_ids or fact.object_entity_id in entity_ids
+        ]
+        if not affected:
+            continue
+        conflicts.append(
+            _conflict(
+                "AMBIGUOUS_ENTITY_REFERENCE",
+                severity="review",
+                status="unresolved",
+                entity_ids=ambiguity.entity_ids,
+                fact_ids=[fact.fact_id for fact in affected],
+                mention_ids=ambiguity.mention_ids,
+                details={
+                    "ambiguity_id": ambiguity.ambiguity_id,
+                    "reason": ambiguity.reason,
+                    "source_id": ambiguity.source_id,
+                    "normalized_surface": ambiguity.normalized_surface,
+                    "surfaces": list(ambiguity.surfaces),
+                },
+            )
+        )
+    return conflicts
+
+
 def _attach_claim_conflicts(conflicts: Sequence[Conflict], facts: Sequence[Fact]) -> list[Conflict]:
     by_result = {fact.claim_result_id: fact.fact_id for fact in facts}
     attached: list[Conflict] = []
@@ -897,7 +976,9 @@ def normalize_entities(
         )
 
     facts.sort(key=lambda item: (item.source_id, item.evidence_start, item.fact_id))
+    ambiguities = _build_ambiguity_groups(mentions, mention_to_entity)
     conflicts = _attach_claim_conflicts(conflicts, facts)
+    conflicts.extend(_ambiguity_fact_conflicts(ambiguities, facts))
     conflicts.extend(_detect_fact_conflicts(facts))
     conflicts = sorted({item.conflict_id: item for item in conflicts}.values(), key=lambda item: item.conflict_id)
 
@@ -947,34 +1028,6 @@ def normalize_entities(
             )
         )
     timeline = tuple(timeline_rows)
-
-    surface_to_entities: dict[tuple[str, str], set[str]] = defaultdict(set)
-    surface_to_mentions: dict[tuple[str, str], set[str]] = defaultdict(set)
-    surface_forms: dict[tuple[str, str], set[str]] = defaultdict(set)
-    for mention in mentions:
-        key = (mention.source_id, mention.normalized_surface)
-        entity_id = mention_to_entity[mention.mention_id]
-        surface_to_entities[key].add(entity_id)
-        surface_to_mentions[key].add(mention.mention_id)
-        surface_forms[key].add(mention.surface)
-    ambiguities: list[AmbiguityGroup] = []
-    for (source_id, surface), entity_ids in sorted(surface_to_entities.items()):
-        if len(entity_ids) <= 1:
-            continue
-        ambiguity_id = _stable_id(
-            "amb_", NORMALIZER_VERSION, source_id, surface, tuple(sorted(entity_ids))
-        )
-        ambiguities.append(
-            AmbiguityGroup(
-                ambiguity_id=ambiguity_id,
-                source_id=source_id,
-                normalized_surface=surface,
-                surfaces=tuple(sorted(surface_forms[(source_id, surface)])),
-                entity_ids=tuple(sorted(entity_ids)),
-                mention_ids=tuple(sorted(surface_to_mentions[(source_id, surface)])),
-                reason="SAME_SURFACE_MULTIPLE_ENTITIES",
-            )
-        )
 
     blocker_count = sum(item.severity == "blocker" for item in conflicts)
     contested_count = sum(fact.canonical_status == "contested" for fact in normalized_facts)

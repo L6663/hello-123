@@ -19,7 +19,7 @@ import unicodedata
 
 from .chunking import UnitSpan
 
-VALIDATOR_VERSION = "tkr-claim-validator-v1"
+VALIDATOR_VERSION = "tkr-claim-validator-v2-r3"
 SUPPORTED_CLAIM_TYPES = frozenset(
     {"alias", "defeats", "located_in", "permission", "count", "date"}
 )
@@ -488,9 +488,43 @@ def _modal_review(
     )
 
 
+_CLAIM_FUNCTION_TERMS = frozenset({
+    "但", "又", "因", "因此", "其实", "同时", "随后", "然后", "依然", "能", "可",
+    "总", "容", "并", "且", "终", "少", "四字", "之后", "地", "已", "所以", "连接", "却",
+})
+_CLAIM_BAD_PREFIXES = (
+    "但", "又", "因", "因此", "其实", "同时", "随后", "然后", "依然", "已经被",
+    "凭着", "助", "众妖见", "让", "如何", "为何", "看来", "仿佛", "总之",
+    "斗法", "再加上", "便能", "就是", "为了", "所以", "现在", "想在", "入门不过",
+    "没", "便算默认", "俨然如",
+)
+_CLAIM_BAD_SUFFIXES = (
+    "为何", "虽", "已经被", "可算是", "看来", "仿佛", "之间", "之时", "以来",
+    "见", "间", "后", "过", "能", "可", "便", "就", "仍", "又", "因", "但", "却",
+)
+_CLAIM_BAD_OBJECT_PREFIXES = ("的", "了", "过的", "负", "不上", "不得不", "地", "得上")
+
+
+def _canonical_relation_term(value: str, *, object_side: bool = False) -> bool:
+    token = _normalized_text(value)
+    if not token or len(token) > 16 or token in _CLAIM_FUNCTION_TERMS:
+        return False
+    if any(token.startswith(prefix) for prefix in _CLAIM_BAD_PREFIXES):
+        return False
+    if any(token.endswith(suffix) for suffix in _CLAIM_BAD_SUFFIXES):
+        return False
+    if object_side and any(token.startswith(prefix) for prefix in _CLAIM_BAD_OBJECT_PREFIXES):
+        return False
+    if re.search(r"(?:为何|怎么|什么|可以|不能|不得|能够|已经|成为|用这|凭着|助|见|听你|让他|之内|时候|非但|机会|被|轻易|自觉|目的|曾以|数量|之不武|所剩不多)", token):
+        return False
+    return True
+
+
 def _validate_alias(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     if not candidate.subject or not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("ALIAS_TERMS_REQUIRED",))
+    if not _canonical_relation_term(candidate.subject) or not _canonical_relation_term(candidate.object, object_side=True):
+        return _finish(candidate, evidence, status=_STATUS_REVIEW, reasons=("RELATION_ENDPOINT_REQUIRES_REVIEW",))
     forward = _relation_regex(candidate.subject, candidate.object, _ALIAS_MARKERS)
     reverse = _relation_regex(candidate.object, candidate.subject, _ALIAS_MARKERS)
     positive, modal_positive = _partition_modal(
@@ -537,6 +571,8 @@ def _validate_directional(
 ) -> ClaimValidationResult:
     if not candidate.subject or not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("RELATION_TERMS_REQUIRED",))
+    if not _canonical_relation_term(candidate.subject) or not _canonical_relation_term(candidate.object, object_side=True):
+        return _finish(candidate, evidence, status=_STATUS_REVIEW, reasons=("RELATION_ENDPOINT_REQUIRES_REVIEW",))
     direct_pattern = _relation_regex(candidate.subject, candidate.object, markers)
     reverse_pattern = _relation_regex(candidate.object, candidate.subject, markers)
     direct, modal_direct = _partition_modal(_clean_matches(direct_pattern, evidence), evidence)
@@ -596,9 +632,11 @@ def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValid
     if not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))
     if not candidate.subject:
-        # Subjectless permission/prohibition text is unsafe to canonicalize.
-        # It is often elliptical dialogue, a response particle, or a copular
-        # false positive such as "可以是". Keep it for review without indexing.
+        # A subjectless permission/prohibition is not safe to canonicalize. In
+        # literary text it is frequently an elliptical utterance ("不能去"), a
+        # response particle ("不能哦"), or a false positive such as "可以是".
+        # Preserve it as a review candidate so a later speaker/coreference
+        # resolver may supply the actor, but never publish it as a typed fact.
         return _finish(
             candidate,
             evidence,
