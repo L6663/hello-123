@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-project-manifest.schema.json",
+  "title": "Stage 6 Notion Project manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "notion_project_schema_version", "notion_engine_version", "chapter_project_logical_sha256", "literary_project_ids", "literary_logical_sha256s", "evidence_project_logical_sha256s", "event_project_logical_sha256", "character_project_logical_sha256", "reasoning_project_logical_sha256", "ledger_sha256", "logical_sha256", "database_sha256", "files", "project_acceptance_performed", "may_accept_project", "may_release", "may_freeze"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-project-manifest-v1"},
+    "notion_project_schema_version": {"const": "tkr-notion-project-v1"},
+    "notion_engine_version": {"type": "string", "minLength": 1},
+    "chapter_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "literary_project_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "literary_logical_sha256s": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "uniqueItems": true},
+    "evidence_project_logical_sha256s": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "uniqueItems": true},
+    "event_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "character_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reasoning_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "ledger_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+    "logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

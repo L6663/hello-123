@@ -14,6 +14,7 @@ from tkr.character_cli import main as character_main  # noqa: E402
 from tkr.evidence_cli import main as evidence_main  # noqa: E402
 from tkr.event_cli import main as event_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
+from tkr.notion_cli import main as notion_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
 from tkr.reasoning_cli import main as reasoning_main  # noqa: E402
 from tkr.skill_cli import main as skill_main  # noqa: E402
@@ -50,6 +51,11 @@ REASONING_ALIASES = {
     "reason-verify": "verify",
     "reason-query": "query",
 }
+NOTION_ALIASES = {
+    "notion-build": "build",
+    "notion-verify": "verify",
+    "notion-plan": "plan",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,7 +71,8 @@ def main(argv: list[str] | None = None) -> int:
             "  event build | event verify | event query\n"
             "  character build | character verify | character query\n"
             "  reason build | reason verify | reason query\n"
-            "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, reason-*\n\n"
+            "  notion build | notion verify | notion plan\n"
+            "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, reason-*, notion-*\n\n"
             "Reasoning query modes:\n"
             "  fact_only | fact_and_synthesis | analysis | counterfactual | provenance\n\n"
             "Examples:\n"
@@ -78,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/tkr.py event --help\n"
             "  python scripts/tkr.py character --help\n"
             "  python scripts/tkr.py reason --help\n"
-            "  python scripts/tkr.py literary export-notion literary --outdir notion-package"
+            "  python scripts/tkr.py notion --help"
         )
         return 0
 
@@ -113,6 +120,10 @@ def main(argv: list[str] | None = None) -> int:
         return reasoning_main(["--help"] if len(args) == 1 else args[1:])
     if command in REASONING_ALIASES:
         return reasoning_main([REASONING_ALIASES[command], *args[1:]])
+    if command == "notion":
+        return notion_main(["--help"] if len(args) == 1 else args[1:])
+    if command in NOTION_ALIASES:
+        return notion_main([NOTION_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-review-item.schema.json",
+  "title": "Stage 6 Notion review item",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "review_id", "rule_id", "severity", "message", "affected_page_keys", "affected_relation_ids", "recommended_action"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-review-item-v1"},
+    "review_id": {"type": "string", "pattern": "^nrv_[0-9a-f]{32}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["low", "medium", "high", "critical"]},
+    "message": {"type": "string", "minLength": 1},
+    "affected_page_keys": {"type": "array", "items": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "affected_relation_ids": {"type": "array", "items": {"type": "string", "pattern": "^nrl_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "recommended_action": {"type": "string", "minLength": 1}
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-sync-ledger.schema.json",
+  "title": "Stage 6 Notion synchronization ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-sync-ledger-v1"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "page_key", "notion_page_id", "content_sha256", "relation_sha256", "archived"],
+        "properties": {
+          "schema_version": {"const": "tkr-notion-sync-ledger-v1"},
+          "page_key": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"},
+          "notion_page_id": {"type": "string"},
+          "content_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+          "relation_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+          "archived": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}
