@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v7
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T02:43:00Z
+updated_at_utc: 2026-07-23T02:48:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,18 +27,15 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  active_branch: feature/v6-stage3-event-causality-engine
-  active_pull_request: 30
+  current_branch: develop/v6-literary-engine
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
-  current_stage: Stage 3 Event Causality Engine
-  stage_document: docs/STAGE3_EVENT_CAUSALITY_ENGINE.md
-  stage_result_document: docs/STAGE3_EVENT_CAUSALITY_ENGINE_RESULT.md
-  current_stage_status: validated_ready_for_final_exact_head
+    - Stage 3 Event Causality Engine
+  next_stage: Stage 4 Focused Character Engine
+  current_stage_status: stage_3_completed_and_integrated
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
-  substage_release_allowed: false
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
@@ -53,21 +50,20 @@ v6_development:
     pull_request: 28
     final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
     final_workflow_run_id: 29971391164
-    final_workflow_status: passed
     squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
   stage_2_integration:
     pull_request: 29
     focused_test_count: 17
     final_pr_head: 564e9282632390ccb39987be4964d903009c7394
     final_workflow_run_id: 29973788342
-    final_workflow_status: passed
     squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
-  stage_3_validation:
+  stage_3_integration:
+    pull_request: 30
     focused_test_count: 16
-    latest_passed_head: 5f9b1b9f5cbe1a6f568bd6f372adf2972c32d187
-    latest_passed_workflow_run_id: 29974960981
-    latest_passed_workflow_status: passed
-    final_exact_head_check: pending
+    final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
+    final_workflow_run_id: 29975176620
+    final_workflow_status: passed
+    squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
     checks:
       - package_installation
       - module_compilation
@@ -75,17 +71,6 @@ v6_development:
       - stage_3_focused_tests
       - full_repository_regression
       - installed_and_bundled_CLI_smoke
-  reused_integrated_foundation:
-    source_pull_requests: [26, 28, 29]
-    capabilities:
-      - strict_source_and_Unit_identity
-      - anomaly_and_contamination_findings
-      - source_bound_evidence_units
-      - A_B_C_assertion_contracts
-      - immutable_physical_chapter_order
-      - reviewable_canonical_chapter_order
-      - JSONL_SQLite_cross_store_verification
-      - evidence_first_query_and_refusal
   private_corpus_used: false
   real_corpus_acceptance_deferred: true
   project_acceptance_performed: false
@@ -102,14 +87,11 @@ stage_1:
   pull_request: 28
   squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
   mandatory_gates:
-    every_A_claim_has_exact_clean_evidence: passed
-    every_B_claim_has_multiple_independent_A_supports: passed
-    every_C_claim_is_explicitly_attributed_and_cannot_render_as_fact: passed
-    source_offsets_text_and_hashes_recompute_exactly: passed
-    polluted_or_review_evidence_cannot_support_A: passed
-    JSONL_and_SQLite_identifiers_match: passed
-    clean_text_coverage_is_measured: passed
-    repeated_builds_are_logically_identical: passed
+    source_bound_evidence: passed
+    A_B_C_support_contracts: passed
+    pollution_blocking: passed
+    JSONL_SQLite_integrity: passed
+    deterministic_rebuild: passed
     focused_and_full_repository_regression: passed
 
 stage_2:
@@ -117,67 +99,27 @@ stage_2:
   status: completed_and_integrated
   pull_request: 29
   focused_test_count: 17
-  final_pr_head: 564e9282632390ccb39987be4964d903009c7394
-  final_workflow_run_id: 29973788342
   squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
   mandatory_gates:
     source_spans_and_hashes_recompute: passed
     parent_volume_mappings_are_auditable: passed
     physical_order_is_immutable: passed
     canonical_order_is_candidate_only: passed
-    duplicate_gap_inversion_unknown_and_contamination_are_explicit: passed
-    cross_source_overlap_and_order_disagreement_are_explicit: passed
-    JSONL_and_SQLite_identifiers_match: passed
-    report_counts_and_hashes_recompute: passed
-    repeated_builds_are_deterministic: passed
+    structural_anomalies_are_explicit: passed
+    cross_source_order_findings_are_explicit: passed
+    JSONL_SQLite_integrity: passed
+    deterministic_rebuild: passed
     absent_addresses_refuse: passed
     focused_and_full_repository_regression: passed
 
 stage_3:
   name: Event Causality Engine
-  status: validated_ready_for_merge
-  objective: model_only_material_events_and_supported_causal_chains_with_A_B_C_and_temporal_separation
+  status: completed_and_integrated
   pull_request: 30
   focused_test_count: 16
-  internal_slices:
-    - id: 3.1
-      name: Focused_Canonical_Event_Model
-      status: completed
-    - id: 3.2
-      name: A_B_C_Event_Components
-      status: completed
-    - id: 3.3
-      name: Temporal_Causal_Edges
-      status: completed
-    - id: 3.4
-      name: Event_Project_SQLite_and_Verifier
-      status: completed
-    - id: 3.5
-      name: Evidence_Linked_Path_Queries
-      status: completed
-    - id: 3.6
-      name: Regression_and_Stage_Integration
-      status: passed_pending_final_exact_head
-  outputs:
-    - tkr/event_engine.py
-    - tkr/event_project.py
-    - tkr/event_cli.py
-    - schemas/causal-event.schema.json
-    - schemas/event-component.schema.json
-    - schemas/event-causal-edge.schema.json
-    - schemas/event-annotation.schema.json
-    - schemas/event-project-report.schema.json
-    - schemas/event-project-verification.schema.json
-    - tests/test_event_engine.py
-    - tests/test_event_project.py
-  artifacts:
-    - events.jsonl
-    - event-components.jsonl
-    - event-causal-edges.jsonl
-    - event-findings.jsonl
-    - event.sqlite
-    - event-project-report.json
-    - artifact-manifest.json
+  final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
+  final_workflow_run_id: 29975176620
+  squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
   mandatory_gates:
     active_events_are_chapter_and_evidence_bound: passed
     active_edges_have_verified_endpoints_and_support: passed
@@ -186,15 +128,13 @@ stage_3:
     cycles_and_unsupported_references_are_explicit: passed
     review_required_graphs_refuse_causal_answers: passed
     query_paths_return_edge_and_evidence_support: passed
-    JSONL_and_SQLite_identifiers_match: passed
-    report_counts_and_hashes_recompute: passed
-    repeated_builds_are_deterministic: passed
+    JSONL_and_SQLite_integrity: passed
+    deterministic_rebuild: passed
     unsupported_paths_refuse: passed
     focused_and_full_repository_regression: passed
   stage_validation_performed: true
   stage_validation_status: passed
-  stage_merge_approved_by_user_continuation: true
-  stage_merged: false
+  stage_merged: true
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -225,4 +165,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: run_final_exact_head_CI_then_squash_merge_pull_request_30
+next_action: create_stage_4_focused_character_branch_and_pull_request
