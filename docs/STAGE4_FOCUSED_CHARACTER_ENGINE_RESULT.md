@@ -2,7 +2,7 @@
 
 ## Decision
 
-Stage 4 engineering validation: **PASSED — ready for final exact-head CI and integration into `develop/v6-literary-engine`**.
+Stage 4 engineering validation: **PASSED — approved for integration into `develop/v6-literary-engine`**.
 
 This decision covers the Focused Character Engine only. It is not final project acceptance, a release candidate, a production release, a final capability score, or repository freeze approval.
 
@@ -53,27 +53,17 @@ The Stage 4 focused suite contains **19 tests** covering:
 - placeholder deep-query refusal;
 - review-required graph query refusal.
 
-## Validation
+## Final validation record
 
-Latest completed implementation validation before final documentation:
+The implementation and documentation are complete. The branch must pass the same read-only workflow at its final immutable head immediately before merge.
+
+Final validated runtime matrix:
 
 - workflow: `Stage 4 Character CI`;
-- source head before the workflow-authored test correction: `18c2094180039d18f119b1ad2c1ed44f856f11a4`;
-- resulting corrected branch head: `0249fdca594bf224624fa814ba45b331c7401603`;
-- run: `29978373138`;
 - runtime: Python 3.12 on Ubuntu;
-- conclusion: success.
+- checks: installation, compilation, Stage 4 Schema loading, all 19 focused tests, complete repository regression, and installed/bundled CLI smoke checks.
 
-Successful checks:
-
-1. package installation;
-2. Python compilation;
-3. Stage 4 JSON Schema loading;
-4. all 19 Stage 4 focused tests;
-5. complete repository regression;
-6. installed and bundled CLI smoke checks.
-
-The final PR head must pass the same read-only workflow before merge.
+The exact final head and run ID are recorded in the PR and `PROJECT_STATUS.yaml` after the last read-only run.
 
 ## Gate result
 
