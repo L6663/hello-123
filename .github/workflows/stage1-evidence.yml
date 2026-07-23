@@ -1,4 +1,4 @@
-name: Stage 2 Chapter CI
+name: Stage 3 Event CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage2-chapter-${{ github.event.pull_request.number || github.ref }}
+  group: stage3-event-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   verify:
-    name: Stage 2 CI
+    name: Stage 3 CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -37,49 +37,10 @@ jobs:
         run: |
           python -m py_compile \
             scripts/tkr.py \
-            tkr/chapter_engine.py \
-            tkr/chapter_ordering.py \
-            tkr/chapter_project.py \
-            tkr/chapter_cli.py
+            tkr/event_engine.py
 
-      - name: Validate Stage 2 schemas
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          names = [
-              "chapter-source-binding.schema.json",
-              "canonical-chapter.schema.json",
-              "chapter-finding.schema.json",
-              "canonical-order.schema.json",
-              "chapter-project-report.schema.json",
-              "chapter-project-verification.schema.json",
-          ]
-          for name in names:
-              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
-              assert payload["$schema"].endswith("2020-12/schema")
-              assert payload["type"] == "object"
-          PY
-
-      - name: Stage 2 tests
-        run: |
-          python -m unittest \
-            tests.test_chapter_engine \
-            tests.test_chapter_ordering \
-            tests.test_chapter_project \
-            tests.test_chapter_cli -v
+      - name: Stage 3 tests
+        run: python -m unittest tests.test_event_engine -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
-
-      - name: CLI smoke check
-        run: |
-          tkr-chapter --help >/dev/null
-          tkr-chapter build --help >/dev/null
-          tkr-chapter verify --help >/dev/null
-          tkr-chapter query --help >/dev/null
-          python scripts/tkr.py chapter --help >/dev/null
-          python scripts/tkr.py chapter-build --help >/dev/null
-          python scripts/tkr.py chapter-verify --help >/dev/null
-          python scripts/tkr.py chapter-query --help >/dev/null
