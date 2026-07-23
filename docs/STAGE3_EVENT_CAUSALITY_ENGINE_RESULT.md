@@ -2,9 +2,19 @@
 
 ## Decision
 
-Stage 3 engineering validation: **PASSED — ready for final exact-head CI and integration into `develop/v6-literary-engine`**.
+Stage 3 engineering validation: **PASSED — completed and integrated into `develop/v6-literary-engine`**.
 
 This decision covers the focused Event Causality Engine only. It is not final project acceptance, a release candidate, a production release, a final capability score, or repository freeze approval.
+
+## Integration record
+
+- pull request: `#30`;
+- final PR head: `4b7a3f194e6d4843169a0ed6684bce950aff67f5`;
+- final workflow: `Stage 3 Event CI`;
+- final workflow run: `29975176620`;
+- final workflow conclusion: success;
+- squash merge commit: `9b2fd15972da1ba58f8d50f81b42ee7b7c708359`;
+- integration branch: `develop/v6-literary-engine`.
 
 ## Delivered scope
 
@@ -16,12 +26,11 @@ Stage 3 delivers:
 - A/B/C-separated `cause`, `process`, `outcome`, `consequence`, `foreshadowing`, and `recovery` components;
 - supported `triggers`, `enables`, `escalates`, `prevents`, `reveals`, `undermines`, `resolves`, `foreshadows`, and `recovers` edges;
 - temporal-direction validation;
-- active-cycle, unknown-support, endpoint, position, and interpretation-leakage findings;
+- explicit cycle, unknown-support, endpoint, position, and interpretation findings;
 - deterministic JSONL and SQLite Event Projects with foreign keys;
-- logical hash, database hash, manifest, Chapter Project, literary-project, and annotation verification;
+- logical hash, database hash, manifest, input-project and annotation verification;
 - active graph and `review_required` graph states;
-- event profile, component, upstream, downstream, supported causal path, and foreshadowing queries;
-- exact assertion and evidence expansion in query packets;
+- evidence-expanded event profile, upstream, downstream, causal path, and foreshadowing queries;
 - `tkr-event build`, `verify`, and `query` commands;
 - bundled `scripts/tkr.py event ...` entry points.
 
@@ -29,46 +38,17 @@ The engine does not create heavy nodes for low-impact scenes. Unsupported paths 
 
 ## Focused regression
 
-The Stage 3 focused suite contains **16 tests** covering:
+The Stage 3 focused suite contains **16 tests** covering event significance, A/B/C support rules, temporal direction, recovery references, graph validation, unknown support, position binding, cycles, deterministic builds, SQLite integrity, review-required projects, tamper rejection, evidence-expanded queries, unsupported paths, and review refusal.
 
-- active-event significance and evidence requirements;
-- B-grade multiple-support rules;
-- C-grade attribution and limitation rules;
-- forward temporal direction;
-- backward-reference recovery edges;
-- valid A-grade event graphs;
-- unknown assertion/evidence rejection;
-- event-position binding;
-- active causal cycles;
-- deterministic graph builds;
-- immutable Event Project build and verification;
-- SQLite integrity and foreign keys;
-- deterministic JSONL and database bytes;
-- review-required cycle projects;
-- tampered artifact rejection;
-- evidence-expanded event profile, path, and foreshadowing queries;
-- refusal for unsupported paths and review-required graphs.
+## Final validation
 
-## Validation
-
-Latest completed implementation validation before final documentation:
-
-- workflow: `Stage 3 Event CI`;
-- head: `5f9b1b9f5cbe1a6f568bd6f372adf2972c32d187`;
-- run: `29974960981`;
 - runtime: Python 3.12 on Ubuntu;
-- conclusion: success.
-
-Successful checks:
-
-1. package installation;
-2. Python compilation;
-3. Stage 3 JSON Schema loading;
-4. all 16 Stage 3 focused tests;
-5. complete repository regression;
-6. installed and bundled CLI smoke checks.
-
-The final PR head must pass the same workflow before merge.
+- package installation: passed;
+- Python compilation: passed;
+- Stage 3 JSON Schema loading: passed;
+- all 16 Stage 3 focused tests: passed;
+- complete repository regression: passed;
+- installed and bundled CLI smoke checks: passed.
 
 ## Gate result
 
@@ -86,18 +66,6 @@ The final PR head must pass the same workflow before merge.
 | Repeated builds are deterministic | Passed |
 | Unsupported causal paths refuse | Passed |
 | Focused and repository regression | Passed |
-
-## Workflow policy
-
-GitHub Actions remain in reduced-noise mode:
-
-- one Stage 3 workflow;
-- one Python runtime;
-- one job;
-- pull request and manual triggers only;
-- obsolete concurrent runs cancelled;
-- no routine artifact upload;
-- no release, final acceptance, or freeze workflow.
 
 ## Remaining boundary
 
