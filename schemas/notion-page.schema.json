@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-page.schema.json",
+  "title": "Stage 6 deterministic Notion page",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "page_key", "database_key", "record_type", "record_id", "title", "properties", "sections", "epistemic_layer", "publication_status", "source_lineage", "content_sha256"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-page-v1"},
+    "page_key": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"},
+    "database_key": {"enum": ["sources", "chapters", "evidence", "facts_a", "synthesis_b", "interpretations_c", "counterfactuals_h", "events", "characters", "review_queue"]},
+    "record_type": {"type": "string", "minLength": 1},
+    "record_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "properties": {"type": "object"},
+    "sections": {"type": "object"},
+    "epistemic_layer": {"enum": ["", "A", "B", "C", "H"]},
+    "publication_status": {"enum": ["published", "minimal", "review", "superseded"]},
+    "source_lineage": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
