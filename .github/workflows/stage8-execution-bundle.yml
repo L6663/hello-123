@@ -85,11 +85,23 @@ jobs:
 
       - name: Verify private artifacts are absent
         run: |
-          python tkr/private_artifact_guard.py --root execution-bundle/source --output execution-bundle/private-artifact-guard.json
           python - <<'PY'
           import json
           from pathlib import Path
-          report = json.loads(Path('execution-bundle/private-artifact-guard.json').read_text(encoding='utf-8'))
+          from tkr.private_artifact_guard import scan_paths
+
+          source_root = Path('execution-bundle/source')
+          paths = [
+              path.relative_to(source_root).as_posix()
+              for path in source_root.rglob('*')
+              if path.is_file()
+          ]
+          report = scan_paths(paths)
+          output = Path('execution-bundle/private-artifact-guard.json')
+          output.write_text(
+              json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
           assert report['passed'] is True
           assert report['finding_count'] == 0
           assert report['project_acceptance_performed'] is False
