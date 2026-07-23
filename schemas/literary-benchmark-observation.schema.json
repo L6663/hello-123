@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/literary-benchmark-observation.schema.json",
+  "title": "Literary Regression Benchmark Observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "packet"],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-benchmark-observation-v1"},
+    "case_id": {"type": "string", "minLength": 1},
+    "packet": {
+      "type": "object",
+      "required": [
+        "mode", "decision", "reason_codes", "facts", "synthesis",
+        "interpretation", "counterfactual", "provenance",
+        "may_accept_project", "may_release", "may_freeze"
+      ],
+      "properties": {
+        "mode": {"enum": ["fact_only", "fact_and_synthesis", "analysis", "counterfactual", "provenance"]},
+        "decision": {"enum": ["answered", "partial", "refused"]},
+        "reason_codes": {"type": "array", "items": {"type": "string"}},
+        "facts": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "synthesis": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "interpretation": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "counterfactual": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "provenance": {"type": "array", "items": {"type": "object"}},
+        "may_accept_project": {"type": "boolean"},
+        "may_release": {"type": "boolean"},
+        "may_freeze": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "required": ["node_id", "layer", "evidence_anchor_ids"],
+      "properties": {
+        "node_id": {"type": "string", "minLength": 1},
+        "layer": {"enum": ["A", "B", "C", "H"]},
+        "evidence_anchor_ids": {
+          "type": "array", "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}
