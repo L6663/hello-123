@@ -1,10 +1,10 @@
-"""Text Knowledge Reader staged hardening and literary knowledge package."""
+"""Text Knowledge Reader release-candidate literary knowledge package."""
 
-__version__ = "6.0.0-alpha1"
+__version__ = "6.0.0rc1"
 
 # Historical Stage 6-R1 deterministic correctness fixes remain active for the
 # v5.9 base runtime inherited by v6. They grant no acceptance, release-candidate,
-# certification, or freeze authority.
+# publication, certification, or freeze authority.
 from .stage6_r1_remediation import apply_stage6_r1_remediation as _apply_stage6_r1_remediation
 
 _apply_stage6_r1_remediation()
