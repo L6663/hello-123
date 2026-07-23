@@ -289,7 +289,13 @@ def _project_inputs(root: Path) -> tuple[dict[str, object], str, list[dict[str, 
     if source_path.is_symlink() or not source_path.is_file():
         raise LiteraryEngineError("normalized source is not a safe regular file")
     try:
-        source_text = source_path.read_text(encoding="utf-8")
+        # Preserve the exact decoded newline sequence because source-project
+        # offsets and normalized_source_sha256 are bound to the stored text.
+        # Path.read_text() uses universal-newline translation and silently
+        # rewrites CRLF to LF, invalidating both the hash and every character
+        # offset for Windows-origin corpora.
+        with source_path.open("r", encoding="utf-8", newline="") as handle:
+            source_text = handle.read()
     except (OSError, UnicodeError) as exc:
         raise LiteraryEngineError(f"normalized source cannot be read strictly: {exc}") from exc
     units = _load_jsonl(root / "stage2-structure" / "unit-index.jsonl", "unit index", allow_empty=False)
