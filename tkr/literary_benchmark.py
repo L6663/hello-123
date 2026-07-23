@@ -546,6 +546,14 @@ def _inspect_packet(packet: Mapping[str, object]) -> _PacketInspection:
     decision = packet.get("decision")
     if decision not in DECISIONS:
         integrity_errors.append("PACKET_DECISION_INVALID")
+    graph_status = packet.get("graph_status")
+    if graph_status not in {"completed", "review_required"}:
+        integrity_errors.append("PACKET_GRAPH_STATUS_INVALID")
+    if graph_status == "review_required" and mode != "provenance" and decision != "refused":
+        integrity_errors.append("PACKET_REVIEW_REQUIRED_BUT_NOT_REFUSED")
+    conflicts = packet.get("conflicts")
+    if not isinstance(conflicts, list):
+        integrity_errors.append("PACKET_CONFLICTS_NOT_ARRAY")
     packet_reason_codes = _packet_string_list(
         packet.get("reason_codes"), "PACKET_REASON_CODES", integrity_errors
     )
