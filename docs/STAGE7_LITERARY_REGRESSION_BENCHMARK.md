@@ -6,6 +6,8 @@ Stage 7 converts the v6 literary engine from a set of independently tested subsy
 
 This is one major engineering stage. Internal implementation slices are checkpoints only; they are not releases, final acceptance events, or freeze authority.
 
+Integration pull request: `#34`, targeting `develop/v6-literary-engine`.
+
 ## Why the legacy Gold benchmark is insufficient
 
 The v5 strict-QA benchmark measures six typed predicates and hard refusals. Those gates remain valuable for exact facts, but they cannot establish literary reliability for:
