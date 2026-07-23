@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tkr.literary_benchmark import (
+    ANSWER_PACKET_SCHEMA_VERSION,
     CASE_SCHEMA_VERSION,
     DOMAINS,
     OBSERVATION_SCHEMA_VERSION,
@@ -42,6 +43,7 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                     "expected_layers": [],
                     "expected_node_ids": [],
                     "required_evidence_anchor_ids": [],
+                    "expected_evidence_by_node": {},
                     "forbidden_node_ids": [f"forbidden-{index}"],
                     "expected_reason_codes": ["NO_SUPPORTED_REASONING_NODE_SELECTED"],
                     "source_sha256s": ["a" * 64],
@@ -53,7 +55,7 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                     "rationale": "Synthetic smoke refusal case.",
                 })
                 packet = {
-                    "schema_version": "tkr-layered-answer-packet-v1",
+                    "schema_version": ANSWER_PACKET_SCHEMA_VERSION,
                     "mode": mode,
                     "decision": "refused",
                     "reason_codes": ["NO_SUPPORTED_REASONING_NODE_SELECTED"],
@@ -83,6 +85,7 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                     "expected_layers": [layer],
                     "expected_node_ids": [node_id],
                     "required_evidence_anchor_ids": [anchor_id],
+                    "expected_evidence_by_node": {node_id: [anchor_id]},
                     "forbidden_node_ids": [f"forbidden-{index}"],
                     "expected_reason_codes": [],
                     "source_sha256s": ["b" * 64],
@@ -94,7 +97,7 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                     "rationale": "Synthetic smoke answer case.",
                 })
                 packet = {
-                    "schema_version": "tkr-layered-answer-packet-v1",
+                    "schema_version": ANSWER_PACKET_SCHEMA_VERSION,
                     "mode": mode,
                     "decision": "answered",
                     "reason_codes": [],
@@ -119,15 +122,20 @@ class LiteraryBenchmarkTests(unittest.TestCase):
             })
         cases_path = root / "cases.jsonl"
         observations_path = root / "observations.jsonl"
-        cases_path.write_text(
-            "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in cases),
-            encoding="utf-8",
-        )
-        observations_path.write_text(
-            "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in observations),
-            encoding="utf-8",
-        )
+        self._write_jsonl(cases_path, cases)
+        self._write_jsonl(observations_path, observations)
         return cases_path, observations_path
+
+    @staticmethod
+    def _read_jsonl(path: Path) -> list[dict[str, object]]:
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+    @staticmethod
+    def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
+        path.write_text(
+            "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+            encoding="utf-8",
+        )
 
     def test_smoke_passes_all_domains_without_granting_authority(self) -> None:
         with TemporaryDirectory() as directory:
@@ -145,14 +153,11 @@ class LiteraryBenchmarkTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             cases, observations = self._fixture(root)
-            rows = [json.loads(line) for line in observations.read_text(encoding="utf-8").splitlines()]
-            target = next(row for row in rows if row["packet"]["decision"] == "answered")
-            node = target["packet"]["facts"][0]
-            node["layer"] = "C"
+            rows = self._read_jsonl(observations)
+            target = next(row for row in rows if row["packet"]["facts"])
+            target["packet"]["facts"][0]["layer"] = "C"
             target["packet"]["may_release"] = True
-            observations.write_text(
-                "".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8"
-            )
+            self._write_jsonl(observations, rows)
             report = evaluate_benchmark(cases, observations, profile="smoke")
             self.assertFalse(report.passed)
             self.assertIn("EPISTEMIC_LAYER_LEAKAGE_PRESENT", report.blockers)
@@ -187,6 +192,45 @@ class LiteraryBenchmarkTests(unittest.TestCase):
             cases.write_text(first + "\n" + first + "\n", encoding="utf-8")
             with self.assertRaises(LiteraryBenchmarkError):
                 evaluate_benchmark(cases, observations, profile="smoke")
+
+    def test_anchor_on_wrong_node_is_a_citation_mismatch(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases, observations = self._fixture(root)
+            rows = self._read_jsonl(observations)
+            target = next(row for row in rows if row["packet"]["facts"])
+            node = target["packet"]["facts"][0]
+            node["evidence_anchor_ids"] = []
+            target["packet"]["provenance"][0]["node_id"] = "different-node"
+            self._write_jsonl(observations, rows)
+            report = evaluate_benchmark(cases, observations, profile="smoke")
+            self.assertFalse(report.passed)
+            self.assertIn("CITATION_MISMATCH_PRESENT", report.blockers)
+            failed = next(item for item in report.cases if item.case_id == target["case_id"])
+            self.assertTrue(failed.missing_evidence_bindings)
+
+    def test_malformed_answer_packet_is_a_hard_blocker(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases, observations = self._fixture(root)
+            rows = self._read_jsonl(observations)
+            target = next(row for row in rows if row["packet"]["facts"])
+            target["packet"]["facts"] = {"not": "an array"}
+            del target["packet"]["may_freeze"]
+            self._write_jsonl(observations, rows)
+            report = evaluate_benchmark(cases, observations, profile="smoke")
+            self.assertFalse(report.passed)
+            self.assertIn("ANSWER_PACKET_INTEGRITY_ERRORS_PRESENT", report.blockers)
+
+    def test_annotator_cannot_be_counted_as_reviewer(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases, observations = self._fixture(root)
+            rows = self._read_jsonl(cases)
+            rows[0]["reviewer_ids"] = [rows[0]["annotator_id"]]
+            self._write_jsonl(cases, rows)
+            with self.assertRaises(LiteraryBenchmarkError):
+                evaluate_benchmark(cases, observations, profile="release")
 
 
 if __name__ == "__main__":
