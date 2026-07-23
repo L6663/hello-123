@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/character-project-verification.schema.json",
+  "title": "Stage 4 Character Project verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "valid", "graph_valid", "reason_codes",
+    "checked_file_count", "chapter_project_logical_sha256", "literary_project_ids",
+    "event_project_logical_sha256", "annotation_sha256", "logical_sha256",
+    "database_sha256", "project_acceptance_performed", "may_accept_project",
+    "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-character-project-verification-v1"},
+    "status": {"enum": ["verified", "rejected"]},
+    "valid": {"type": "boolean"},
+    "graph_valid": {"type": "boolean"},
+    "reason_codes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "checked_file_count": {"type": "integer", "minimum": 0},
+    "chapter_project_logical_sha256": {"type": "string"},
+    "literary_project_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "event_project_logical_sha256": {"type": "string"},
+    "annotation_sha256": {"type": "string"},
+    "logical_sha256": {"type": "string"},
+    "database_sha256": {"type": "string"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
