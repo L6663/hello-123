@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v15
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T10:08:00Z
+updated_at_utc: 2026-07-23T10:16:00Z
 
 historical_release:
   version: 5.9.0
@@ -38,7 +38,7 @@ v6_development:
     - Stage 6-R1 Notion Knowledge System
     - Stage 7 Literary Regression Benchmark
   current_stage: Stage 8 Final Productization and Acceptance
-  current_stage_status: engineering_implementation_complete_exact_head_ci_pending
+  current_stage_status: code_validation_passed_final_status_ci_pending
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
     display_name: Stage 8 Productization CI
@@ -106,8 +106,12 @@ integrations:
     pull_request: 35
     branch: feature/v6-stage8-final-productization-acceptance
     focused_test_count: 12
-    exact_head_workflow_run_id: pending
-    exact_head_workflow_status: pending
+    code_validation_head: e5857d0cb294a385385cedf22141a44fe8bf3240
+    code_validation_workflow_run_id: 29997880685
+    code_validation_workflow_status: passed
+    final_validated_head: pending
+    final_workflow_run_id: pending
+    final_workflow_status: pending
     squash_merge_commit: pending
 
 stage_6:
@@ -180,7 +184,7 @@ stage_7:
 
 stage_8:
   name: Final Productization and Acceptance
-  status: engineering_implementation_complete_exact_head_ci_pending
+  status: code_validation_passed_final_status_ci_pending
   objective: productize_v6_and_create_a_hash_bound_explicitly_approved_final_acceptance_path
   pull_request: 35
   product_version: 6.0.0rc1
@@ -232,22 +236,30 @@ stage_8:
     may_release: false
     may_freeze: false
   mandatory_gates:
-    safe_root_confined_artifacts: implemented
-    complete_artifact_hash_recomputation: implemented
-    stage_7_release_report_recomputation: implemented
-    private_blind_hash_and_role_binding: implemented
-    package_matrix_binding: implemented
-    reproducible_wheel_binding: implemented
-    source_provenance_binding: implemented
-    engineering_ci_binding: implemented
-    skill_audit_and_doctor_binding: implemented
-    explicit_approval_separation: implemented
-    release_and_freeze_authority_separation: implemented
-    focused_adversarial_regression: twelve_tests_passed_locally
-    full_repository_regression: pending_ci
-    python_package_matrix: pending_ci
-    reproducible_wheel_gate: pending_ci
-    exact_head_ci: pending
+    safe_root_confined_artifacts: passed
+    complete_artifact_hash_recomputation: passed
+    stage_7_release_report_recomputation: passed
+    private_blind_hash_and_role_binding: passed
+    package_matrix_binding: passed
+    reproducible_wheel_binding: passed
+    source_provenance_binding: passed
+    engineering_ci_binding: passed
+    skill_audit_and_doctor_binding: passed
+    explicit_approval_separation: passed
+    release_and_freeze_authority_separation: passed
+    focused_adversarial_regression: twelve_tests_passed
+    full_repository_regression_python_3_10: passed
+    full_repository_regression_python_3_11: passed
+    full_repository_regression_python_3_12: passed
+    clean_install_python_3_10: passed
+    clean_install_python_3_11: passed
+    clean_install_python_3_12: passed
+    installed_skill_audit_and_doctor: passed
+    installed_and_bundled_cli_contracts: passed
+    public_schema_contracts: passed
+    reproducible_wheel_gate: passed
+    code_validation_ci: passed
+    final_exact_head_ci: pending
 
 entity_policy:
   core_characters: deep_model
@@ -286,4 +298,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: pass_stage_8_exact_head_ci_then_integrate_engineering_without_claiming_real_private_acceptance
+next_action: pass_final_stage_8_status_head_ci_then_integrate_engineering_without_claiming_real_private_acceptance
