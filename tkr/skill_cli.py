@@ -1,4 +1,4 @@
-"""CLI for Stage 5 Skill product audit, doctor, and profile discovery."""
+"""CLI for Stage 8 Skill product audit, doctor, and profile discovery."""
 from __future__ import annotations
 
 import argparse
@@ -25,24 +25,37 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tkr-skill",
         description=(
-            "Inspect the complete Text Knowledge Reader Skill product. "
-            "These checks do not perform final project acceptance."
+            "Inspect the complete Text Knowledge Reader 6.0.0rc1 Skill product. "
+            "These checks are technical evidence and do not perform private "
+            "blind acceptance, public release, or repository freeze."
         ),
     )
     commands = parser.add_subparsers(dest="command", required=True)
 
-    doctor = commands.add_parser("doctor", help="check Python, SQLite, storage, profiles, and Skill layout")
+    doctor = commands.add_parser(
+        "doctor",
+        help="check Python, SQLite, storage, profiles, and the Stage 8 Skill layout",
+    )
     doctor.add_argument("--root", type=Path)
     doctor.add_argument("--output", type=Path)
 
-    audit = commands.add_parser("audit", help="audit required Skill files, schemas, profiles, docs, and examples")
+    audit = commands.add_parser(
+        "audit",
+        help="audit required Skill files, schemas, profiles, docs, examples, and commands",
+    )
     audit.add_argument("--root", type=Path)
     audit.add_argument("--output", type=Path)
 
-    profiles = commands.add_parser("profiles", help="list built-in engineering profiles and hashes")
+    profiles = commands.add_parser(
+        "profiles",
+        help="list built-in engineering profiles and hashes",
+    )
     profiles.add_argument("--output", type=Path)
 
-    show = commands.add_parser("show-profile", help="show and validate one built-in or file-based profile")
+    show = commands.add_parser(
+        "show-profile",
+        help="show and validate one built-in or file-based profile",
+    )
     show.add_argument("profile")
     show.add_argument("--output", type=Path)
     return parser
@@ -60,13 +73,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             _write(args.output, report.to_dict())
             return 0 if report.passed else 2
         if args.command == "profiles":
-            _write(args.output, {"profiles": profile_catalog(), "project_acceptance_performed": False})
+            _write(
+                args.output,
+                {
+                    "profiles": profile_catalog(),
+                    "project_acceptance_performed": False,
+                    "may_accept_project": False,
+                    "release_candidate": False,
+                    "may_release": False,
+                    "may_freeze": False,
+                },
+            )
             return 0
         profile = load_engineering_profile(args.profile)
         payload = profile.to_dict()
         payload["profile_sha256"] = profile_sha256(profile)
         payload["project_acceptance_performed"] = False
         payload["may_accept_project"] = False
+        payload["release_candidate"] = False
+        payload["may_release"] = False
         payload["may_freeze"] = False
         _write(args.output, payload)
         return 0
