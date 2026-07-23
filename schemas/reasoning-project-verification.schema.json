@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-project-verification.schema.json",
+  "title": "Reasoning Project Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "valid", "graph_valid", "reason_codes",
+    "checked_file_count", "logical_sha256", "database_sha256",
+    "project_acceptance_performed", "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-project-verification-v1"},
+    "status": {"enum": ["valid", "invalid"]},
+    "valid": {"type": "boolean"},
+    "graph_valid": {"type": "boolean"},
+    "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "checked_file_count": {"type": "integer", "minimum": 0},
+    "logical_sha256": {"type": "string"},
+    "database_sha256": {"type": "string"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
