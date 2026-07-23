@@ -1,4 +1,4 @@
-name: Stage 6 Notion CI
+name: Stage 7 Literary Benchmark CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage6-notion-${{ github.event.pull_request.number || github.ref }}
+  group: stage7-literary-benchmark-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   verify:
-    name: Stage 6 CI
+    name: Stage 7 CI
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,27 +37,20 @@ jobs:
         run: |
           python -m py_compile \
             scripts/tkr.py \
-            tkr/notion_engine.py \
-            tkr/notion_project.py \
-            tkr/notion_cli.py \
-            tkr/stage6_notion_r1.py
+            tkr/literary_benchmark.py \
+            tkr/literary_benchmark_cli.py
 
-      - name: Validate Stage 6 schemas
+      - name: Validate Stage 7 schemas
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
           names = [
-              "notion-page.schema.json",
-              "notion-relation.schema.json",
-              "notion-review-item.schema.json",
-              "notion-sync-ledger.schema.json",
-              "notion-sync-action.schema.json",
-              "notion-workspace-schema.schema.json",
-              "notion-project-report.schema.json",
-              "notion-project-manifest.schema.json",
-              "notion-project-verification.schema.json",
+              "literary-benchmark-case.schema.json",
+              "literary-benchmark-observation.schema.json",
+              "literary-benchmark-report.schema.json",
+              "literary-benchmark-verification.schema.json",
           ]
           for name in names:
               payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
@@ -65,23 +58,17 @@ jobs:
               assert payload["type"] == "object"
           PY
 
-      - name: Stage 6 tests
-        run: |
-          python -m unittest \
-            tests.test_notion_engine \
-            tests.test_notion_project \
-            tests.test_notion_stage6_r1 -v
+      - name: Stage 7 tests
+        run: python -m unittest tests.test_literary_benchmark -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
 
       - name: CLI smoke check
         run: |
-          tkr-notion --help >/dev/null
-          tkr-notion build --help >/dev/null
-          tkr-notion verify --help >/dev/null
-          tkr-notion plan --help >/dev/null
-          python scripts/tkr.py notion --help >/dev/null
-          python scripts/tkr.py notion-build --help >/dev/null
-          python scripts/tkr.py notion-verify --help >/dev/null
-          python scripts/tkr.py notion-plan --help >/dev/null
+          tkr-literary-benchmark --help >/dev/null
+          tkr-literary-benchmark evaluate --help >/dev/null
+          tkr-literary-benchmark verify --help >/dev/null
+          python scripts/tkr.py benchmark --help >/dev/null
+          python scripts/tkr.py benchmark-evaluate --help >/dev/null
+          python scripts/tkr.py benchmark-verify --help >/dev/null
