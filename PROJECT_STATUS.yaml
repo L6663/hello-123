@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v7
+schema_version: tkr-project-status-v8
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T02:48:00Z
+updated_at_utc: 2026-07-23T04:08:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,19 +27,22 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
+  active_branch: feature/v6-stage4-focused-character-engine
+  active_pull_request: 31
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
-  next_stage: Stage 4 Focused Character Engine
-  current_stage_status: stage_3_completed_and_integrated
+  current_stage: Stage 4 Focused Character Engine
+  current_stage_status: final_exact_head_passed_ready_for_merge
+  stage_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE.md
+  stage_result_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE_RESULT.md
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 3 Event CI
+    display_name: Stage 4 Character CI
     mode: concise_pull_request_and_manual_only
     jobs: 1
     python_versions: ["3.12"]
@@ -62,13 +65,18 @@ v6_development:
     focused_test_count: 16
     final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
     final_workflow_run_id: 29975176620
-    final_workflow_status: passed
     squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
+  stage_4_validation:
+    pull_request: 31
+    focused_test_count: 19
+    final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
+    final_workflow_run_id: 29978722137
+    final_workflow_status: passed
     checks:
       - package_installation
       - module_compilation
-      - stage_3_schema_loading
-      - stage_3_focused_tests
+      - stage_4_schema_loading
+      - stage_4_focused_tests
       - full_repository_regression
       - installed_and_bundled_CLI_smoke
   private_corpus_used: false
@@ -136,6 +144,76 @@ stage_3:
   stage_validation_status: passed
   stage_merged: true
 
+stage_4:
+  name: Focused Character Engine
+  status: final_exact_head_passed_ready_for_merge
+  objective: deeply_model_core_characters_moderately_model_material_characters_and_keep_minor_people_minimal
+  pull_request: 31
+  focused_test_count: 19
+  final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
+  final_workflow_run_id: 29978722137
+  internal_slices:
+    - id: 4.1
+      name: Character_Scope_and_Selection
+      status: completed
+    - id: 4.2
+      name: Evidence_Bound_Character_Attributes_and_States
+      status: completed
+    - id: 4.3
+      name: Time_Bounded_Relationships
+      status: completed
+    - id: 4.4
+      name: Major_Event_Links
+      status: completed
+    - id: 4.5
+      name: A_B_C_Character_Arcs
+      status: completed
+    - id: 4.6
+      name: Character_Project_Verifier_Query_and_Regression
+      status: completed
+  outputs:
+    - tkr/character_engine.py
+    - tkr/character_project.py
+    - tkr/character_cli.py
+    - schemas/focused-character.schema.json
+    - schemas/character-attribute.schema.json
+    - schemas/character-state.schema.json
+    - schemas/character-relationship.schema.json
+    - schemas/character-event-link.schema.json
+    - schemas/character-annotation.schema.json
+    - schemas/character-project-report.schema.json
+    - schemas/character-project-verification.schema.json
+    - tests/test_character_engine.py
+    - tests/test_character_project.py
+  artifacts:
+    - characters.jsonl
+    - character-attributes.jsonl
+    - character-states.jsonl
+    - character-relationships.jsonl
+    - character-event-links.jsonl
+    - character-findings.jsonl
+    - character.sqlite
+    - character-project-report.json
+    - artifact-manifest.json
+  mandatory_gates:
+    core_and_important_require_material_impact: passed
+    placeholders_cannot_receive_invented_depth: passed
+    mention_only_names_are_not_canonical_entities: passed
+    character_records_are_chapter_assertion_and_evidence_bound: passed
+    event_links_require_verified_Event_Project: passed
+    review_required_event_graphs_block_active_character_conclusions: passed
+    A_B_C_character_arcs_do_not_leak: passed
+    temporal_states_and_relationships_are_queryable: passed
+    alias_and_state_conflicts_are_explicit: passed
+    JSONL_and_SQLite_integrity: passed
+    deterministic_rebuild: passed
+    unsupported_deep_queries_refuse: passed
+    focused_and_full_repository_regression: passed
+  stage_validation_performed: true
+  stage_validation_status: passed
+  stage_merge_approved_by_user_continuation: true
+  stage_merged: false
+
 replanned_major_stages:
   - Stage 1: Evidence Engine
   - Stage 2: Chapter Structure Engine
@@ -165,4 +243,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: create_stage_4_focused_character_branch_and_pull_request
+next_action: squash_merge_pull_request_31

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-knowledge-reader-core"
 version = "6.0.0-alpha1"
-description = "Auditable long-text ingestion, source-bound evidence, canonical chapter structure, focused event causality, epistemic-tier separation, strict QA, and recoverable builds"
+description = "Auditable long-text ingestion, source-bound evidence, canonical chapter structure, focused event causality and character modeling, epistemic-tier separation, strict QA, and recoverable builds"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -28,6 +28,7 @@ tkr-literary = "tkr.literary_cli:main"
 tkr-evidence = "tkr.evidence_cli:main"
 tkr-chapter = "tkr.chapter_cli:main"
 tkr-event = "tkr.event_cli:main"
+tkr-character = "tkr.character_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -88,6 +89,14 @@ include = ["tkr*"]
   "schemas/event-annotation.schema.json",
   "schemas/event-project-report.schema.json",
   "schemas/event-project-verification.schema.json",
+  "schemas/focused-character.schema.json",
+  "schemas/character-attribute.schema.json",
+  "schemas/character-state.schema.json",
+  "schemas/character-relationship.schema.json",
+  "schemas/character-event-link.schema.json",
+  "schemas/character-annotation.schema.json",
+  "schemas/character-project-report.schema.json",
+  "schemas/character-project-verification.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -108,4 +117,7 @@ include = ["tkr*"]
   "docs/STAGE2_CHAPTER_STRUCTURE_ENGINE.md",
   "docs/STAGE2_CHAPTER_STRUCTURE_ENGINE_RESULT.md",
   "docs/STAGE3_EVENT_CAUSALITY_ENGINE.md",
+  "docs/STAGE3_EVENT_CAUSALITY_ENGINE_RESULT.md",
+  "docs/STAGE4_FOCUSED_CHARACTER_ENGINE.md",
+  "docs/STAGE4_FOCUSED_CHARACTER_ENGINE_RESULT.md",
 ]

@@ -1,4 +1,4 @@
-name: Stage 3 Event CI
+name: Stage 4 Character CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage3-event-${{ github.event.pull_request.number || github.ref }}
+  group: stage4-character-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   verify:
-    name: Stage 3 CI
+    name: Stage 4 CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -37,23 +37,25 @@ jobs:
         run: |
           python -m py_compile \
             scripts/tkr.py \
-            tkr/event_engine.py \
-            tkr/event_project.py \
-            tkr/event_cli.py
+            tkr/character_engine.py \
+            tkr/character_project.py \
+            tkr/character_cli.py
 
-      - name: Validate Stage 3 schemas
+      - name: Validate Stage 4 schemas
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
           names = [
-              "causal-event.schema.json",
-              "event-component.schema.json",
-              "event-causal-edge.schema.json",
-              "event-annotation.schema.json",
-              "event-project-report.schema.json",
-              "event-project-verification.schema.json",
+              "focused-character.schema.json",
+              "character-attribute.schema.json",
+              "character-state.schema.json",
+              "character-relationship.schema.json",
+              "character-event-link.schema.json",
+              "character-annotation.schema.json",
+              "character-project-report.schema.json",
+              "character-project-verification.schema.json",
           ]
           for name in names:
               payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
@@ -61,22 +63,22 @@ jobs:
               assert payload["type"] == "object"
           PY
 
-      - name: Stage 3 tests
+      - name: Stage 4 tests
         run: |
           python -m unittest \
-            tests.test_event_engine \
-            tests.test_event_project -v
+            tests.test_character_engine \
+            tests.test_character_project -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
 
       - name: CLI smoke check
         run: |
-          tkr-event --help >/dev/null
-          tkr-event build --help >/dev/null
-          tkr-event verify --help >/dev/null
-          tkr-event query --help >/dev/null
-          python scripts/tkr.py event --help >/dev/null
-          python scripts/tkr.py event-build --help >/dev/null
-          python scripts/tkr.py event-verify --help >/dev/null
-          python scripts/tkr.py event-query --help >/dev/null
+          tkr-character --help >/dev/null
+          tkr-character build --help >/dev/null
+          tkr-character verify --help >/dev/null
+          tkr-character query --help >/dev/null
+          python scripts/tkr.py character --help >/dev/null
+          python scripts/tkr.py character-build --help >/dev/null
+          python scripts/tkr.py character-verify --help >/dev/null
+          python scripts/tkr.py character-query --help >/dev/null

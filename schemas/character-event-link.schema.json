@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/character-event-link.schema.json",
+  "title": "Stage 4 character event link",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "link_id", "character_id", "event_id", "role", "tier",
+    "assertion_ids", "evidence_anchor_ids", "confidence", "limitations",
+    "attribution", "status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-character-event-link-v1"},
+    "link_id": {"type": "string", "minLength": 1},
+    "character_id": {"type": "string", "pattern": "^fch_[0-9a-f]{32}$"},
+    "event_id": {"type": "string", "pattern": "^cev_[0-9a-f]{32}$"},
+    "role": {"enum": ["participant", "causes", "enables", "chooses", "transformed_by", "suffers_consequence", "resolves"]},
+    "tier": {"enum": ["A", "B", "C"]},
+    "assertion_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "evidence_anchor_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "attribution": {"enum": ["source_explicit", "source_direct_event", "source_direct_dialogue", "cross_evidence_synthesis", "model_interpretation"]},
+    "status": {"enum": ["active", "contested", "review_only", "superseded"]}
+  }
+}

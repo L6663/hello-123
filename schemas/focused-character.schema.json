@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/focused-character.schema.json",
+  "title": "Stage 4 focused character",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "character_id", "canonical_name", "aliases", "scope",
+    "selection_reasons", "first_chapter_id", "last_chapter_id", "first_position",
+    "last_position", "evidence_anchor_ids", "limitations", "review_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-focused-character-v1"},
+    "character_id": {"type": "string", "pattern": "^fch_[0-9a-f]{32}$"},
+    "canonical_name": {"type": "string", "minLength": 1},
+    "aliases": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "scope": {"enum": ["core", "important", "placeholder"]},
+    "selection_reasons": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "main_plot_driver", "core_character_transformation",
+          "major_event_cause_or_resolution", "major_faction_authority_or_collapse",
+          "world_state_or_central_artifact_impact"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "first_chapter_id": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+    "last_chapter_id": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+    "first_position": {"type": "integer", "minimum": 0},
+    "last_position": {"type": "integer", "minimum": 0},
+    "evidence_anchor_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "review_status": {"enum": ["active", "contested", "review_only", "superseded"]}
+  }
+}
