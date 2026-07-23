@@ -2,9 +2,18 @@
 
 ## Decision
 
-Stage 1 engineering validation: **PASSED — ready for integration into `develop/v6-literary-engine`**.
+Stage 1 engineering validation: **PASSED AND INTEGRATED** into `develop/v6-literary-engine`.
 
 This decision covers the Stage 1 Evidence Engine implementation only. It is not final project acceptance, a release candidate, a production release, or repository freeze approval.
+
+## Integration record
+
+- pull request: `#28`;
+- final PR head: `322ec12aacacaf0d123a28641c933d0e60e4e37b`;
+- final exact-head workflow: `29971391164`;
+- workflow conclusion: success;
+- squash merge commit: `9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562`;
+- integration branch: `develop/v6-literary-engine`.
 
 ## Integrated scope
 
@@ -31,9 +40,8 @@ The existing v6 literary query and Notion projection remain the presentation lay
 Concise GitHub workflow:
 
 - workflow: `Stage 1 Evidence CI`;
-- implementation head: `c49b80848681d434b96c7fdb936f66158b05f6ad`;
-- run: `29971223760`;
 - runtime: Python 3.12 on Ubuntu;
+- final run: `29971391164`;
 - conclusion: success.
 
 Successful checks:
@@ -63,7 +71,7 @@ Stage 1 focused coverage includes clean-body extraction, pollution blocking, exa
 
 ## Workflow policy
 
-GitHub Actions are re-enabled in a reduced-noise form:
+GitHub Actions are enabled in a reduced-noise form:
 
 - one Stage 1 workflow;
 - one Python runtime;
