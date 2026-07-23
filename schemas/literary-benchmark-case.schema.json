@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/literary-benchmark-case.schema.json",
+  "title": "Literary Regression Benchmark Gold Case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "case_id", "domain", "question", "mode",
+    "expected_decision", "expected_layers", "expected_node_ids",
+    "required_evidence_anchor_ids", "forbidden_node_ids",
+    "expected_reason_codes", "source_sha256s", "tags",
+    "allow_additional_nodes", "annotation_status", "annotator_id",
+    "reviewer_ids", "rationale"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-benchmark-case-v1"},
+    "case_id": {"type": "string", "minLength": 1},
+    "domain": {
+      "enum": [
+        "chapter_traceability", "evidence_traceability", "entity_identity",
+        "temporal_relationships", "event_causality", "cold_detail_recall",
+        "dialogue_recall", "motive_reasoning", "foreshadowing_resolution",
+        "theme_interpretation", "epistemic_separation", "refusal_safety"
+      ]
+    },
+    "question": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["fact_only", "fact_and_synthesis", "analysis", "counterfactual", "provenance"]},
+    "expected_decision": {"enum": ["answered", "partial", "refused"]},
+    "expected_layers": {
+      "type": "array", "uniqueItems": true,
+      "items": {"enum": ["A", "B", "C", "H"]}
+    },
+    "expected_node_ids": {"$ref": "#/$defs/uniqueStrings"},
+    "required_evidence_anchor_ids": {"$ref": "#/$defs/uniqueStrings"},
+    "forbidden_node_ids": {"$ref": "#/$defs/uniqueStrings"},
+    "expected_reason_codes": {"$ref": "#/$defs/uniqueStrings"},
+    "source_sha256s": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    },
+    "tags": {"$ref": "#/$defs/uniqueStrings"},
+    "allow_additional_nodes": {"type": "boolean"},
+    "annotation_status": {"type": "string", "minLength": 1},
+    "annotator_id": {"type": "string", "minLength": 1},
+    "reviewer_ids": {"$ref": "#/$defs/uniqueStrings"},
+    "rationale": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "uniqueStrings": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}
