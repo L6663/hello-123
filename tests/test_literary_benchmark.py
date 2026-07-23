@@ -57,12 +57,14 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                 packet = {
                     "schema_version": ANSWER_PACKET_SCHEMA_VERSION,
                     "mode": mode,
+                    "graph_status": "completed",
                     "decision": "refused",
                     "reason_codes": ["NO_SUPPORTED_REASONING_NODE_SELECTED"],
                     "facts": [],
                     "synthesis": [],
                     "interpretation": [],
                     "counterfactual": [],
+                    "conflicts": [],
                     "provenance": [],
                     "may_accept_project": False,
                     "may_release": False,
@@ -99,12 +101,14 @@ class LiteraryBenchmarkTests(unittest.TestCase):
                 packet = {
                     "schema_version": ANSWER_PACKET_SCHEMA_VERSION,
                     "mode": mode,
+                    "graph_status": "completed",
                     "decision": "answered",
                     "reason_codes": [],
                     "facts": [],
                     "synthesis": [],
                     "interpretation": [],
                     "counterfactual": [],
+                    "conflicts": [],
                     "provenance": [{"node_id": node_id, "evidence_anchor_ids": [anchor_id]}],
                     "may_accept_project": False,
                     "may_release": False,
@@ -217,6 +221,18 @@ class LiteraryBenchmarkTests(unittest.TestCase):
             target = next(row for row in rows if row["packet"]["facts"])
             target["packet"]["facts"] = {"not": "an array"}
             del target["packet"]["may_freeze"]
+            self._write_jsonl(observations, rows)
+            report = evaluate_benchmark(cases, observations, profile="smoke")
+            self.assertFalse(report.passed)
+            self.assertIn("ANSWER_PACKET_INTEGRITY_ERRORS_PRESENT", report.blockers)
+
+    def test_review_required_packet_must_refuse_outside_provenance(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases, observations = self._fixture(root)
+            rows = self._read_jsonl(observations)
+            target = next(row for row in rows if row["packet"]["facts"])
+            target["packet"]["graph_status"] = "review_required"
             self._write_jsonl(observations, rows)
             report = evaluate_benchmark(cases, observations, profile="smoke")
             self.assertFalse(report.passed)
