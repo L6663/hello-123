@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/evidence-coverage.schema.json",
+  "title": "Text Knowledge Reader Evidence Coverage Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_engine_version",
+    "source_id",
+    "source_sha256",
+    "source_character_count",
+    "chapter_count",
+    "eligible_chapter_count",
+    "blocked_chapter_count",
+    "evidence_unit_count",
+    "eligible_content_character_count",
+    "indexed_content_character_count",
+    "excluded_whitespace_character_count",
+    "uncovered_content_character_count",
+    "overlap_content_character_count",
+    "coverage_rate",
+    "uncovered_spans",
+    "overlap_spans",
+    "blocked_spans",
+    "complete"
+  ],
+  "$defs": {
+    "coverageSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chapter_id", "start_char", "end_char", "reason"],
+      "properties": {
+        "chapter_id": {"type": "string", "minLength": 1},
+        "start_char": {"type": "integer", "minimum": 0},
+        "end_char": {"type": "integer", "minimum": 1},
+        "reason": {"enum": ["uncovered_content", "overlap", "blocked_chapter"]}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "tkr-evidence-coverage-v1"},
+    "evidence_engine_version": {"const": "tkr-evidence-engine-v1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_character_count": {"type": "integer", "minimum": 0},
+    "chapter_count": {"type": "integer", "minimum": 0},
+    "eligible_chapter_count": {"type": "integer", "minimum": 0},
+    "blocked_chapter_count": {"type": "integer", "minimum": 0},
+    "evidence_unit_count": {"type": "integer", "minimum": 0},
+    "eligible_content_character_count": {"type": "integer", "minimum": 0},
+    "indexed_content_character_count": {"type": "integer", "minimum": 0},
+    "excluded_whitespace_character_count": {"type": "integer", "minimum": 0},
+    "uncovered_content_character_count": {"type": "integer", "minimum": 0},
+    "overlap_content_character_count": {"type": "integer", "minimum": 0},
+    "coverage_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "uncovered_spans": {"type": "array", "items": {"$ref": "#/$defs/coverageSpan"}},
+    "overlap_spans": {"type": "array", "items": {"$ref": "#/$defs/coverageSpan"}},
+    "blocked_spans": {"type": "array", "items": {"$ref": "#/$defs/coverageSpan"}},
+    "complete": {"type": "boolean"}
+  }
+}
