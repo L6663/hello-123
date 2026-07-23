@@ -9,3 +9,14 @@ dist/
 *.egg-info/
 .venv/
 venv/
+
+# Stage 8-R1 private acceptance runtime. These files must remain outside the
+# public repository and outside GitHub Actions.
+.tkr-private-acceptance/
+private-acceptance/
+private-acceptance-root/
+private-corpus/
+private-gold/
+private-observations/
+步剑庭*.txt
+步剑庭*.zip

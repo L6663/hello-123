@@ -1,0 +1,54 @@
+name: Private Artifact Guard
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-artifact-guard:
+    name: Reject tracked private acceptance artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile guard
+        run: python -m py_compile tkr/private_artifact_guard.py
+
+      - name: Run focused guard tests
+        run: python -m unittest tests.test_private_artifact_guard -v
+
+      - name: Scan tracked path identities
+        run: |
+          python -m tkr.private_artifact_guard \
+            --root . \
+            --output private-artifact-guard.json
+          cat private-artifact-guard.json
+
+      - name: Confirm fail-closed authority state
+        run: |
+          python - <<'PY'
+          import json
+
+          payload = json.load(open("private-artifact-guard.json", encoding="utf-8"))
+          assert payload["passed"] is True
+          assert payload["finding_count"] == 0
+          assert payload["content_scanned"] is False
+          assert payload["private_data_echoed"] is False
+          assert payload["project_acceptance_performed"] is False
+          assert payload["release_candidate"] is False
+          assert payload["may_release"] is False
+          assert payload["may_freeze"] is False
+          PY
