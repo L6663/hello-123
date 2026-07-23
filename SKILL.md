@@ -1,92 +1,74 @@
 ---
 name: text-knowledge-reader
-description: Build auditable long-text knowledge projects with strict source identity, contamination isolation, exact Evidence Units, multi-file chapter catalogs, focused event and character models, A/B/C/H layered reasoning, evidence-first queries, and Notion-ready exports. Use for novels, historical corpora, technical documents, notes, and other long text where source traceability and refusal are required.
+description: Build auditable long-text knowledge systems with strict source identity, contamination isolation, exact Evidence Units, multi-file chapter catalogs, focused events and characters, A/B/C/H layered reasoning, reversible Notion synchronization plans, exact provenance, and deterministic refusal.
 ---
 
 # Text Knowledge Reader
 
 **Development version:** 6.0.0-alpha1  
-**Historical release:** 5.9.0 at `archive/v5.9.0-final`  
-**Current development:** Stage 1–4 integrated; Stage 5 Layered Reasoning Engine under final integration  
+**Historical stable release:** 5.9.0 at `archive/v5.9.0-final`  
+**Integrated v6 stages:** Stage 1–5  
+**Current stage:** Stage 6-R1 Notion Knowledge System, final integration  
 **Authority:** no v6 final acceptance, release, or freeze
 
 ## Purpose
 
-Use this Skill to convert uploaded long text into a source-bound, reviewable knowledge system without silently repairing, deleting, renumbering, reordering, or inventing source content.
+Convert uploaded long text into a source-bound, reviewable knowledge system without silently repairing, deleting, renumbering, reordering, merging, or inventing source content.
 
-The v6 system has eight compatible project layers:
+The v6 project chain is:
 
-1. **Base source project** — strict decoding, source identity, anomaly isolation, Unit structure, deterministic fact predicates, entity normalization, retrieval, citations, and refusal.
-2. **Chapter Project** — one or more verified source projects mapped into immutable physical chapter order plus a separate reviewable canonical-order candidate.
-3. **Literary sidecar** — A/B/C assertions, selected entities, temporal relationships, reviewed literary events, revisions, and evidence-first retrieval.
-4. **Evidence Project** — complete trusted-body Evidence Units, exact Claim evidence anchors, Claim→Evidence edges, coverage accounting, SQLite integrity, and deterministic rebuild verification.
-5. **Event Project** — selected major events, A/B/C-separated event components, supported causal edges, temporal validation, path queries, and cycle/review findings.
-6. **Character Project** — scoped core/important/placeholder people, evidence-bound attributes and states, time-bounded relationships, verified major-event links, and A/B/C-separated core-character arcs.
-7. **Reasoning Project** — verified A facts, independently supported B synthesis, explicitly attributed C interpretation, non-canon H counterfactuals, separated answer packets, and exact provenance.
-8. **Notion-ready projection** — fact-separated chapter, assertion, event, focused-character, and reasoning records for external upload.
+1. **Base source project** — strict decoding, source identity, contamination and anomaly isolation, deterministic Units, base fact predicates, retrieval, citations, and refusal.
+2. **Chapter Project** — immutable physical order plus a separate reviewable canonical-order candidate.
+3. **Literary sidecar** — source-bound A/B/C assertions, selected entities, temporal relations, events, revisions, and exact Evidence Anchors.
+4. **Evidence Project** — complete clean-body Evidence Units, Claim→Evidence edges, coverage accounting, hashes, and SQLite integrity.
+5. **Event Project** — materially significant events, cause/process/outcome/consequence/foreshadowing/recovery components, and supported causal paths.
+6. **Character Project** — deep core characters, moderate important characters, minimal placeholders, time-bounded states and relationships, and evidence-bound arcs.
+7. **Reasoning Project** — A facts, independently supported B synthesis, attributed C interpretation, explicitly non-canon H counterfactuals, and provenance.
+8. **Notion Project** — stable page keys, physically separated A/B/C/H databases, referenced Evidence only, Review Queue, reversible sync plan, SQLite, Manifest, and verification.
 
 No layer bypasses verification of its inputs.
 
-## Inputs
-
-Supported inputs include:
-
-- one uploaded `.txt` or `.md` file;
-- several uploaded text files with explicit input order;
-- verified base source projects;
-- a verified Chapter Project;
-- one or more verified literary sidecars;
-- optional reviewed literary annotation JSONL;
-- reviewed Event Project annotation JSONL;
-- reviewed Character Project annotation JSONL;
-- a verified Event Project and Character Project;
-- reviewed Reasoning Project annotation JSONL;
-- a verified Reasoning Project;
-- factual, structural, relational, character-state, character-arc, event, evidence, chapter-location, causal-path, literary-analysis, provenance, or counterfactual questions.
-
-Supported strict decoding:
-
-- UTF-8;
-- UTF-8 with BOM;
-- UTF-16 LE with BOM;
-- UTF-16 BE with BOM.
-
-Never use replacement decoding. Never modify the user's original file in place.
-
 ## Epistemic contract
-
-Every knowledge conclusion and causal connection must retain its level.
 
 ### A — explicit source fact
 
-A records require exact clean evidence bound to source, Unit, chapter, original span, evidence text, hashes, and contamination/review state. A records cannot be synthesis or interpretation.
+A records require exact clean evidence bound to source, Unit, chapter, original offsets, text, hashes, and contamination state.
 
 ### B — cross-evidence synthesis
 
-B records summarize patterns or causal structure supported by multiple independent A records. Present them as synthesis, never as an explicit source sentence.
+B records require at least two independent A support branches. Repeated wording from one Evidence lineage does not count as independent support.
 
-### C — model literary interpretation
+### C — model interpretation
 
-C records may discuss theme, symbolism, narrative strategy, ethics, politics, or one plausible reading. They must be labeled model interpretation, cite A/B support, disclose limitations and alternative readings, and never enter A-grade fact or cause properties.
+C records must be labeled as model interpretation and include A/B support, limitations, attribution, and alternative readings. C never becomes source fact.
 
 ### H — hypothetical or counterfactual inference
 
-H records are not canon. They must identify the changed premise, retained verified facts, inference rule or causal path, uncertainty, and alternative outcomes. Never present H as original plot.
+H records are not canon. They must identify the changed premise, retained verified facts, inference rule, uncertainty, and alternatives.
 
-Do not silently promote H to C, C to B, or B to A.
+Never silently promote H→C, C→B, or B→A.
 
-## Workflow
+## Entity policy
 
-Treat the directory containing this `SKILL.md` as `SKILL_DIR`.
+- `core` — deep evidence-bound model;
+- `important` — role, major relations, states, and major-event model;
+- `placeholder` — minimal identity, location, and necessary participation only;
+- mention-only — remains in chapter/full-text retrieval and does not automatically become a canonical entity.
 
-### 1. Check the bundled Skill
+Mention frequency alone cannot promote a person. Low-impact people must not dilute mainline knowledge.
+
+## Directly uploadable Skill commands
+
+Treat the directory containing this file as `SKILL_DIR`.
+
+### Check the Skill
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" doctor
 python "${SKILL_DIR}/scripts/tkr.py" audit
 ```
 
-### 2. Build and verify every base source project
+### 1. Build and verify source projects
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" build INPUT.txt \
@@ -97,66 +79,32 @@ python "${SKILL_DIR}/scripts/tkr.py" build INPUT.txt \
 python "${SKILL_DIR}/scripts/tkr.py" verify BASE_PROJECT
 ```
 
-Profiles:
+Supported strict encodings: UTF-8, UTF-8 BOM, UTF-16 LE BOM, UTF-16 BE BOM. Never decode with replacement characters.
 
-- `balanced` — ordinary conservative build;
-- `strict` — canonical indexing only when explicitly requested;
-- `high-recall` — irregular corpora with additional review candidates.
+### 2. Build and verify the Chapter Project
 
-### 3. Build and verify the Chapter Project
-
-The source-project argument order is immutable input and physical file order. The canonical order is a separate numbering-derived candidate.
+Argument order is immutable physical input order.
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" chapter build \
-  PROJECT_A PROJECT_B PROJECT_C \
-  --outdir CHAPTER_PROJECT
+  PROJECT_A PROJECT_B --outdir CHAPTER_PROJECT
 
 python "${SKILL_DIR}/scripts/tkr.py" chapter verify CHAPTER_PROJECT \
   --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --source-project PROJECT_C
+  --source-project PROJECT_B
 ```
 
-Query an address or neighbors:
+Physical order is source authority. Canonical order is a numbering-derived candidate only.
 
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" chapter query CHAPTER_PROJECT \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --address 8 138
-
-python "${SKILL_DIR}/scripts/tkr.py" chapter query CHAPTER_PROJECT \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --chapter-id CHAPTER_ID \
-  --neighbors physical
-```
-
-`physical` means original input order. `canonical` means the numbering-derived candidate. Never describe the candidate as a source rewrite.
-
-### 4. Build and verify literary sidecars
-
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" literary build BASE_PROJECT \
-  --outdir LITERARY_PROJECT
-
-python "${SKILL_DIR}/scripts/tkr.py" literary verify LITERARY_PROJECT
-```
-
-Optional reviewed annotations:
+### 3. Build literary sidecars and Evidence Projects
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary build BASE_PROJECT \
   --outdir LITERARY_PROJECT \
-  --annotations REVIEWED_ANNOTATIONS.jsonl
-```
+  --annotations REVIEWED_LITERARY.jsonl
 
-Annotations receive no automatic authority. They must pass exact evidence and A/B/C validation.
+python "${SKILL_DIR}/scripts/tkr.py" literary verify LITERARY_PROJECT
 
-### 5. Build and verify the Evidence Project
-
-```bash
 python "${SKILL_DIR}/scripts/tkr.py" evidence build \
   BASE_PROJECT LITERARY_PROJECT \
   --outdir EVIDENCE_PROJECT
@@ -165,447 +113,173 @@ python "${SKILL_DIR}/scripts/tkr.py" evidence verify \
   BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT
 ```
 
-### 6. Build and verify the Event Project
+Annotations receive no automatic authority. They must pass exact evidence and layer validation.
 
-Event annotation JSONL may contain only reviewed `event`, `component`, and `edge` envelopes. Active events must materially affect the main plot, a core character, a major faction, world state, or a later major event.
+### 4. Build and verify the Event Project
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" event build \
   CHAPTER_PROJECT EVENTS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT \
   --outdir EVENT_PROJECT
 
 python "${SKILL_DIR}/scripts/tkr.py" event verify \
   EVENT_PROJECT CHAPTER_PROJECT EVENTS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT
 ```
 
-Query an event profile, upstream causes, downstream consequences, a supported path, or foreshadowing:
+Only events with material impact enter the formal graph. Unsupported causal paths refuse.
 
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" event query \
-  EVENT_PROJECT CHAPTER_PROJECT EVENTS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --literary-project LITERARY_PROJECT \
-  --name "联盟瓦解"
-
-python "${SKILL_DIR}/scripts/tkr.py" event query \
-  EVENT_PROJECT CHAPTER_PROJECT EVENTS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --literary-project LITERARY_PROJECT \
-  --path EVENT_A EVENT_B
-```
-
-If the Event Project status is `review_required`, causal answers must refuse until cycles or other high-severity findings are reviewed.
-
-### 7. Build and verify the Focused Character Project
-
-Character annotation JSONL may contain only reviewed `character`, `attribute`, `state`, `relationship`, and `event_link` envelopes. Core characters require material mainline impact; important characters require major-event, major-faction, core-character, or world-state impact; placeholders remain minimal. Mention frequency alone cannot promote a character.
+### 5. Build and verify the Focused Character Project
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" character build \
   CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT \
   --outdir CHARACTER_PROJECT
 
 python "${SKILL_DIR}/scripts/tkr.py" character verify \
   CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT
 ```
 
-Query a profile, state at a chapter position, relationship interval, major-event links, selection reason, or core-character arc:
+Placeholder depth requests must refuse.
 
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" character query \
-  CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --literary-project LITERARY_PROJECT \
-  --name "应飞扬"
-
-python "${SKILL_DIR}/scripts/tkr.py" character query \
-  CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
-  --source-project PROJECT_A \
-  --source-project PROJECT_B \
-  --literary-project LITERARY_PROJECT \
-  --arc "应飞扬"
-```
-
-Placeholder characters cannot receive complete ability systems, deep relationships, or character arcs. If the Event Project or Character Project is `review_required`, character conclusions must refuse.
-
-### 8. Build and verify the Layered Reasoning Project
-
-Reasoning annotation JSONL may contain only reviewed `node` and `edge` envelopes. A nodes must bind exact upstream records and Evidence Anchors. B nodes require at least two independent A branches. C nodes require A/B support, model attribution, limitations, and alternative readings. H nodes require a changed premise, inference rule, uncertainty, alternatives, and non-canon attribution.
+### 6. Build and verify the Layered Reasoning Project
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" reason build \
   CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
   CHARACTER_PROJECT CHARACTERS.jsonl REASONING.jsonl \
-  --source-project PROJECT_A \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT \
-  --evidence-binding PROJECT_A LITERARY_PROJECT EVIDENCE_PROJECT \
+  --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT \
   --outdir REASONING_PROJECT
 
 python "${SKILL_DIR}/scripts/tkr.py" reason verify \
   REASONING_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
   CHARACTER_PROJECT CHARACTERS.jsonl REASONING.jsonl \
-  --source-project PROJECT_A \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT \
-  --evidence-binding PROJECT_A LITERARY_PROJECT EVIDENCE_PROJECT
+  --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT
 ```
 
-Query modes are strict ceilings:
+Query ceilings: `fact_only`, `fact_and_synthesis`, `analysis`, `counterfactual`, and `provenance`.
+
+### 7. Build and verify the Notion Project
+
+The Notion Project generates a deterministic package and reversible sync plan. It does not delete remote pages or claim unrestricted Notion API authority.
 
 ```bash
-python "${SKILL_DIR}/scripts/tkr.py" reason query \
-  REASONING_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
-  CHARACTER_PROJECT CHARACTERS.jsonl REASONING.jsonl \
-  --source-project PROJECT_A \
+python "${SKILL_DIR}/scripts/tkr.py" notion build \
+  CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
+  CHARACTER_PROJECT CHARACTERS.jsonl \
+  REASONING_PROJECT REASONING.jsonl \
+  --source-project BASE_PROJECT \
   --literary-project LITERARY_PROJECT \
-  --evidence-binding PROJECT_A LITERARY_PROJECT EVIDENCE_PROJECT \
-  --mode fact_only --intent-tag mainline_cause
+  --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT \
+  --outdir NOTION_PROJECT
+
+python "${SKILL_DIR}/scripts/tkr.py" notion verify \
+  NOTION_PROJECT \
+  CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
+  CHARACTER_PROJECT CHARACTERS.jsonl \
+  REASONING_PROJECT REASONING.jsonl \
+  --source-project BASE_PROJECT \
+  --literary-project LITERARY_PROJECT \
+  --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT
+
+python "${SKILL_DIR}/scripts/tkr.py" notion plan \
+  NOTION_PROJECT \
+  CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl \
+  CHARACTER_PROJECT CHARACTERS.jsonl \
+  REASONING_PROJECT REASONING.jsonl \
+  --source-project BASE_PROJECT \
+  --literary-project LITERARY_PROJECT \
+  --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT \
+  --action create
 ```
 
-Available modes: `fact_only`, `fact_and_synthesis`, `analysis`, `counterfactual`, and `provenance`. Selecting a mode never authorizes creation of missing higher-layer content.
+An optional Ledger converts unchanged pages to `noop`, changed pages to `update`, missing remote IDs to review, and absent local pages to reversible `archive_candidate`. Automatic deletion is forbidden.
 
-### 9. Query the appropriate layer
+The earlier `literary export-notion` command remains a compatibility sidecar export. It is not the authoritative Stage 6 multi-project Notion workflow.
 
-Use the base layer for deterministic typed predicates:
+## Notion database contract
 
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" query BASE_PROJECT "陆川击败了谁？"
+The workspace uses ten physically separated logical databases:
+
+- Sources;
+- Chapters;
+- Evidence;
+- Facts A;
+- Synthesis B;
+- Interpretations C;
+- Counterfactuals H;
+- Events;
+- Characters;
+- Review Queue.
+
+A/B/C/H records may not share one database. Only Evidence Anchors referenced by published records are projected. Full Evidence Units remain local.
+
+Synchronization is two-phase:
+
+1. create/update pages and resolve stable `page_key` values to remote page IDs;
+2. apply relations only after both endpoints resolve.
+
+## Standard Notion Project artifacts
+
+```text
+notion-workspace-schema.json
+notion-pages.jsonl
+notion-relations.jsonl
+notion-review-items.jsonl
+notion-sync-plan.jsonl
+notion.sqlite
+notion-project-report.json
+artifact-manifest.json
 ```
 
-Use the Chapter Project for exact source location and order. Use the Event Project for supported causal chains. Use the Character Project for scoped profiles, time-bounded states and relationships, major-event participation, and core-character arcs. Use the Reasoning Project for section-separated fact, synthesis, interpretation, counterfactual, and provenance answers. Use the literary layer for other evidence-linked records.
-
-Never rewrite an A/B/C/H-separated response into one undifferentiated narrative.
-
-### 10. Export a Notion-ready package
-
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" literary export-notion LITERARY_PROJECT \
-  --outdir NOTION_PACKAGE
-```
-
-Preserve page IDs and relation IDs so later revisions update existing records rather than create duplicates.
-
-## Chapter Structure contract
-
-A Chapter Project records:
-
-- **physical order** — immutable supplied project order and source-local position;
-- **canonical-order candidate** — volume/chapter numbering order for review and retrieval.
-
-Volume ordinals may derive from a combined heading, explicit parent volume Unit, conservative preceding-volume context, or remain unresolved. The derivation basis must be retained.
-
-Required findings include duplicate keys/content, gaps, inversions, missing ordinals/headings/body, contamination, overlapping source ranges, and input order that differs from numbering order.
-
-## Event Causality contract
-
-Canonical event nodes are limited to materially significant events. Low-impact scenes remain chapter passages or review candidates.
-
-Internal event components:
-
-- `cause`;
-- `process`;
-- `outcome`;
-- `consequence`;
-- `foreshadowing`;
-- `recovery`.
-
-Event-to-event relations:
-
-- `triggers`;
-- `enables`;
-- `escalates`;
-- `prevents`;
-- `reveals`;
-- `undermines`;
-- `resolves`;
-- `foreshadows`;
-- `recovers`.
-
-Forward relations cannot silently point backward in time. `recovers` explicitly references an earlier clue or event. Causal cycles remain findings; they are never silently broken. Every query path must return its supporting assertions and evidence anchors.
-
-## Focused Character contract
-
-Character scopes are strict:
-
-- `core` — deep evidence-bound identity, goals, choices, states, major relationships, major events, and A/B/C-separated arcs;
-- `important` — moderate identity, role, state, major relationships, and major-event modeling;
-- `placeholder` — minimal identity, role, chapter location, and necessary event participation only;
-- mention-only — no canonical Character Project entity unless later evidence establishes material impact.
-
-A-grade character records require exact assertions and evidence anchors. B-grade character synthesis requires multiple supported A-grade records. C-grade character interpretation requires explicit model attribution and limitations. Only core characters may receive formal arc records. Alias collisions, contradictory overlapping states, unsupported event links, and placeholder depth leakage remain explicit findings.
-
-## Layered Reasoning contract
-
-Reasoning query modes are presentation ceilings:
-
-- `fact_only` — A only;
-- `fact_and_synthesis` — A and B in separate sections;
-- `analysis` — A, B, and C in separate sections;
-- `counterfactual` — verified A/B premises plus explicitly non-canon H inference;
-- `provenance` — support graph and Evidence lineage, including review findings.
-
-Every answer packet keeps facts, synthesis, interpretation, counterfactuals, conflicts, limitations, alternatives, and provenance separate. A partial answer must state which requested nodes or layers were refused. Duplicate restatements of one evidence lineage cannot satisfy B independence. Ordinary answer modes refuse when the Reasoning graph is `review_required`; provenance mode may expose the graph for review without presenting its claims as conclusions.
-
-## Base deterministic predicates
-
-The base fact engine supports `alias`, `defeats`, `located_in`, `permission`, `count`, and `date`. These form a deterministic A-grade foundation, not a claim that every literary fact is already extracted.
+Every package verifies source lineage, Manifest membership, content hashes, relation hashes, SQLite integrity, SQLite foreign keys, and full JSONL↔SQLite field equality.
 
 ## Refusal rules
 
 Refuse rather than improvise when:
 
-- a requested chapter address is absent or ambiguous;
-- file order or volume context is unresolved;
+- a source, project, report, Manifest, database, answer packet, or hash fails verification;
 - the relevant span is polluted or review-only;
-- any project, SQLite, report, manifest, source, or answer verification fails;
-- evidence exists but no validated conclusion supports the answer;
-- an Event Project, Character Project, or Reasoning Project is `review_required`;
-- an A node lacks exact upstream-bound evidence;
-- a B node lacks two independent A support branches;
-- a C node lacks attribution, support, limitations, or alternative readings;
-- an H node lacks a changed premise, inference rule, uncertainty, or non-canon labeling;
-- the query mode forbids the available reasoning layer;
-- a placeholder is asked for an unsupported deep relationship, ability system, personality analysis, or character arc;
+- a requested chapter address is missing or ambiguous;
+- an A record lacks exact Evidence;
+- a B record lacks independent A support;
+- a C record lacks attribution, limitations, support, or alternatives;
+- an H record lacks a changed premise, inference rule, uncertainty, or non-canon label;
+- an Event, Character, or Reasoning graph is `review_required`;
+- a placeholder is asked for unsupported depth;
 - no supported causal path exists;
-- a causal edge uses unknown assertions/evidence or invalid temporal direction;
-- an interpretation lacks A/B support;
-- missing post-gap content is requested as established fact.
+- a Notion relation endpoint is unresolved;
+- a remote page ID is reused;
+- a remote ID is absent for an existing Ledger page;
+- a deletion or archive is requested without explicit authorization.
 
 A refusal is a correct result.
 
 ## Safety boundaries
 
-1. Preserve original source bytes and SHA-256 identity.
-2. Never decode with replacement characters.
-3. Never auto-delete pollution, paratext, anomalies, or duplicates.
-4. Never rewrite chapter numbers, titles, file order, or source text.
-5. Keep physical and canonical candidate order separate.
-6. Never accept evidence whose offsets, text, and hashes do not match source.
-7. Never invent event nodes or causal links to complete a narrative.
-8. Never promote C-grade interpretation to A-grade cause.
-9. Never silently break causal cycles or contradictions.
-10. Never promote mention frequency into character importance.
-11. Never invent identity merges, personality, morality, growth, relationships, abilities, or character arcs.
-12. Never allow placeholder records to acquire core-character depth.
-13. Never collapse fact, synthesis, interpretation, and counterfactual sections.
-14. Never count duplicated evidence lineage as independent B support.
-15. Never present H counterfactuals as canon.
-16. Never answer from model memory when verified support is absent.
-17. Stop on any verification failure.
-18. Do not combine files without explicit order.
-19. Never claim all capabilities exceed 9.0 before final private blind evaluation.
-20. Never claim v6 release or freeze from an engineering-stage check.
-
-## Standard artifacts
-
-Base project:
-
-```text
-source/
-stage1-anomaly/
-stage2-structure/
-stage3-semantics/
-bridge/
-index/
-project-report.json
-project-manifest.json
-```
-
-Evidence Project:
-
-```text
-evidence-units.jsonl
-claim-evidence-anchors.jsonl
-claim-evidence-edges.jsonl
-evidence-coverage.json
-claim-graph-report.json
-evidence.sqlite
-evidence-project-report.json
-artifact-manifest.json
-```
-
-Chapter Project:
-
-```text
-source-bindings.jsonl
-chapters.jsonl
-canonical-order.jsonl
-chapter-findings.jsonl
-chapter.sqlite
-chapter-project-report.json
-artifact-manifest.json
-```
-
-Event Project:
-
-```text
-events.jsonl
-event-components.jsonl
-event-causal-edges.jsonl
-event-findings.jsonl
-event.sqlite
-event-project-report.json
-artifact-manifest.json
-```
-
-Character Project:
-
-```text
-characters.jsonl
-character-attributes.jsonl
-character-states.jsonl
-character-relationships.jsonl
-character-event-links.jsonl
-character-findings.jsonl
-character.sqlite
-character-project-report.json
-artifact-manifest.json
-```
-
-Reasoning Project:
-
-```text
-reasoning-nodes.jsonl
-reasoning-edges.jsonl
-reasoning-findings.jsonl
-reasoning.sqlite
-reasoning-project-report.json
-artifact-manifest.json
-```
-
-Literary sidecar:
-
-```text
-chapters.jsonl
-evidence-anchors.jsonl
-entities.jsonl
-assertions.jsonl
-relationships.jsonl
-events.jsonl
-revisions.jsonl
-literary.sqlite
-literary-report.json
-artifact-manifest.json
-```
-
-## Commands
-
-Bundled command surface:
-
-```text
-doctor
-audit
-profiles
-show-profile
-build
-verify
-query
-verify-answer
-chapter build
-chapter verify
-chapter query
-evidence build
-evidence verify
-event build
-event verify
-event query
-character build
-character verify
-character query
-reason build
-reason verify
-reason query
-literary build
-literary verify
-literary query
-literary export-notion
-```
-
-Automation aliases:
-
-```text
-chapter-build
-chapter-verify
-chapter-query
-evidence-build
-evidence-verify
-event-build
-event-verify
-event-query
-character-build
-character-verify
-character-query
-reason-build
-reason-verify
-reason-query
-literary-build
-literary-verify
-literary-query
-literary-export-notion
-```
-
-```bash
-python "${SKILL_DIR}/scripts/tkr.py" --help
-```
-
-## Output requirements
-
-For a Chapter Project, report source order, canonical candidate order, address coverage, findings, exact spans/hashes, and review requirements.
-
-For an Event Project, report:
-
-- selected event count and significance;
-- A/B/C component counts;
-- active and contested causal-edge counts;
-- cycles, unsupported references, and temporal findings;
-- chapter/literary/annotation binding hashes;
-- graph status: `completed` or `review_required`;
-- logical and database hashes.
-
-For a Character Project, report scope counts, selection reasons, A/B/C attribute counts, state and relationship intervals, major-event links, alias/state conflicts, graph status, logical hash, database hash, and placeholders kept minimal.
-
-For a Reasoning Project, report A/B/C/H counts, independent-support groups, conflicts, blocking findings, upstream binding hashes, graph status, logical hash, database hash, and available query modes.
-
-For an answer, report answer or refusal, query mode, separately rendered facts/synthesis/interpretation/counterfactuals, character scope when relevant, chapter/event bindings, exact Evidence Anchors, support chains, conflicts, limitations, alternatives, and partial-refusal reasons.
-
-## Final checks
-
-Before responding:
-
-1. Verify every base project used.
-2. Verify the Chapter Project for chapter/order information.
-3. Verify every literary sidecar used.
-4. Verify the Evidence Project for Claim support.
-5. Verify the Event Project for causal answers and character-event links.
-6. Verify the Character Project for character profiles, states, relationships, events, and arcs.
-7. Verify the Reasoning Project for A/B/C/H answers and provenance.
-8. Confirm exact offsets, text, hashes, and source identity.
-9. Confirm physical order was not rewritten.
-10. Confirm canonical order is labeled candidate.
-11. Confirm active events and modeled core/important characters are materially significant.
-12. Confirm placeholder and mention-only records were not given invented depth.
-13. Confirm every causal edge, character record, and reasoning node has verified support.
-14. Confirm B independence groups match actual A evidence lineages.
-15. Confirm C and H disclosures are present.
-16. Confirm `review_required` graphs refuse ordinary presentation.
-17. Confirm A/B/C/H separation remains intact.
-18. Confirm downloadable files exist at the exact linked path.
-19. State that v6 remains under development until final integrated acceptance.
-
-## Acceptance boundary
-
-The historical v5.9 release remains archived and unchanged. Stage 1, Stage 2, Stage 3, Stage 4, and Stage 5 checks are engineering evidence for the v6 development line. They do not establish that every final literary capability has reached 9.0, do not create a release candidate, and do not authorize repository freeze.
+1. Preserve original bytes and SHA-256 identity.
+2. Never mutate source text in place.
+3. Never use replacement decoding.
+4. Never silently repair chapter numbers, titles, order, or gaps.
+5. Keep physical order and canonical candidate order separate.
+6. Never accept mismatched offsets, text, or hashes.
+7. Never invent events, causes, identities, relationships, abilities, arcs, or interpretations.
+8. Never promote mention frequency into importance.
+9. Never mix A/B/C/H layers.
+10. Never count duplicate Evidence lineage as independent support.
+11. Never present H as canon.
+12. Never automatically delete remote Notion pages.
+13. Stop on any verification failure.
+14. Never claim all v6 capabilities exceed 9.0 before Stage 7–8 private blind acceptance.
+15. Never claim v6 release or freeze from an engineering-stage check.
