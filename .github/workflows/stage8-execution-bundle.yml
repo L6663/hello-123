@@ -38,8 +38,9 @@ jobs:
           git apply --check /tmp/stage8-r3.patch
           git apply /tmp/stage8-r3.patch
 
-      - name: Validate focused R3 regressions
+      - name: Validate reviewed R3 patch
         run: |
+          set -euo pipefail
           python -m py_compile \
             tkr/semantic_rules.py \
             tkr/claim_validation.py \
@@ -47,17 +48,11 @@ jobs:
             tkr/knowledge_models.py \
             tkr/engineering.py \
             tkr/stage6_r1_remediation.py
-          python -m unittest \
-            tests.test_semantic_precision_r3 \
-            tests.test_semantic_subjectless_permission \
-            tests.test_entity_ambiguity_fact_blocking \
-            tests.test_r3_runtime_identity \
-            tests.test_entity_normalization_adversarial \
-            tests.test_claim_validation \
-            tests.test_claim_validation_adversarial -v
-
-      - name: Validate complete repository
-        run: python -m unittest discover -s tests -p 'test_*.py'
+          if ! python -m unittest discover -s tests -p 'test_*.py' > /tmp/r3-tests.log 2>&1; then
+            cat /tmp/r3-tests.log
+            exit 1
+          fi
+          tail -n 5 /tmp/r3-tests.log
 
       - name: Reject tracked private artifacts
         run: |
