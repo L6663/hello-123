@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/chapter-finding.schema.json",
+  "title": "Stage 2 chapter structure finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "finding_id", "rule_id", "category", "severity",
+    "confidence", "recommended_action", "chapter_ids", "source_binding_ids",
+    "canonical_key", "signals"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-chapter-finding-v1"},
+    "finding_id": {"type": "string", "pattern": "^chf_[0-9a-f]{32}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["low", "medium", "high"]},
+    "confidence": {"enum": ["low", "medium", "high"]},
+    "recommended_action": {"type": "string", "minLength": 1},
+    "chapter_ids": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+      "uniqueItems": true
+    },
+    "source_binding_ids": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^csb_[0-9a-f]{32}$"},
+      "uniqueItems": true
+    },
+    "canonical_key": {"type": "string"},
+    "signals": {"type": "array", "items": {"type": "string"}}
+  }
+}
