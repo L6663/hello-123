@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v5
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T01:16:00Z
+updated_at_utc: 2026-07-23T01:19:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,13 +27,12 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  active_branch: feature/v6-stage1-evidence-engine
-  active_pull_request: 28
-  current_stage: Stage 1 Evidence Engine
+  current_branch: develop/v6-literary-engine
+  completed_stage: Stage 1 Evidence Engine
   stage_document: docs/STAGE1_EVIDENCE_ENGINE.md
   stage_result_document: docs/STAGE1_EVIDENCE_ENGINE_RESULT.md
-  current_stage_status: ready_for_integration
-  github_sync_policy: continuous_per_meaningful_increment
+  current_stage_status: completed_and_integrated
+  github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   substage_release_allowed: false
   workflows_enabled: true
@@ -45,10 +44,12 @@ v6_development:
     cancel_obsolete_runs: true
     routine_artifact_uploads: false
     release_or_freeze_workflows_enabled: false
-  validation:
-    status: passed
-    implementation_head: c49b80848681d434b96c7fdb936f66158b05f6ad
-    workflow_run_id: 29971223760
+  stage_1_integration:
+    pull_request: 28
+    final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
+    final_workflow_run_id: 29971391164
+    final_workflow_status: passed
+    squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
     checks:
       - package_installation
       - module_compilation
@@ -80,7 +81,7 @@ v6_development:
 
 stage_1:
   name: Evidence Engine
-  status: validated_ready_for_merge
+  status: completed_and_integrated
   objective: every_knowledge_record_is_source_bound_auditable_and_epistemically_separated
   internal_slices:
     - id: 1.1
@@ -100,7 +101,7 @@ stage_1:
       status: completed_via_integrated_literary_projection
     - id: 1.6
       name: Regression_and_stage_integration
-      status: passed_pending_merge
+      status: completed
   outputs:
     - tkr/evidence_engine.py
     - tkr/evidence_claims.py
@@ -127,7 +128,7 @@ stage_1:
   stage_validation_performed: true
   stage_validation_status: passed
   stage_merge_approved_by_user: true
-  stage_merged: false
+  stage_merged: true
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -158,4 +159,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: final_exact_head_CI_then_merge_pull_request_28
+next_action: create_stage_2_branch_and_pull_request_when_authorized
