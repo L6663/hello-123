@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-relation.schema.json",
+  "title": "Stage 6 deterministic Notion relation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "relation_id", "source_page_key", "relation_type", "target_page_key", "status"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-relation-v1"},
+    "relation_id": {"type": "string", "pattern": "^nrl_[0-9a-f]{32}$"},
+    "source_page_key": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"},
+    "relation_type": {"type": "string", "minLength": 1},
+    "target_page_key": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"},
+    "status": {"enum": ["active", "review", "superseded"]}
+  }
+}
