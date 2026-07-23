@@ -50,16 +50,21 @@ A high score in one domain cannot compensate for another domain below threshold.
 - stable case ID, domain, question, and permitted query mode;
 - expected decision and expected epistemic layers;
 - exact expected reasoning node IDs;
-- required evidence-anchor IDs;
+- aggregate required evidence-anchor IDs;
+- an exact `expected_evidence_by_node` mapping, so an anchor attached to the wrong conclusion cannot satisfy the case;
 - forbidden node IDs and required refusal reasons;
 - source SHA-256 identities;
 - annotation status, annotator, independent reviewers, and rationale.
+
+The runtime rejects Gold records whose aggregate and per-node evidence requirements disagree. The annotator cannot appear in `reviewer_ids`.
 
 Release Gold must contain at least 120 cases, at least eight per domain, at least 24 refusal cases, approved/adjudicated annotations, and two independent reviewers per case.
 
 ### Observations
 
-`literary-benchmark-observations.jsonl` contains one already-produced answer packet per Gold case. The benchmark never invokes an answer model and never accepts a scalar self-score. Observations must retain the A/B/C/H sections, provenance, query mode, decision, refusal reasons, and false authority flags.
+`literary-benchmark-observations.jsonl` contains one already-produced answer packet per Gold case. The benchmark never invokes an answer model and never accepts a scalar self-score. Observations must retain the exact layered-answer packet schema, A/B/C/H sections, provenance, query mode, decision, refusal reasons, and explicit false authority flags.
+
+Malformed sections, invalid node or layer values, duplicate nodes, invalid evidence arrays, missing authority flags, and answer-packet schema mismatches are measured failures rather than silently ignored data.
 
 ## Metrics and blockers
 
@@ -70,6 +75,7 @@ Each domain reports:
 - node precision and recall;
 - citation/evidence-anchor entailment rate;
 - epistemic layer separation rate;
+- answer-packet integrity rate;
 - correctness score;
 - safety score;
 - final domain score, defined as the lower of correctness and safety.
@@ -79,7 +85,8 @@ The following are hard blockers:
 - insufficient total, per-domain, refusal, annotation, or reviewer coverage;
 - any domain, correctness, or safety score below 9.0;
 - wrong answers or overanswers;
-- citation mismatches;
+- missing evidence or evidence attached to the wrong node;
+- malformed answer packets;
 - A/B/C/H layer leakage;
 - measurable hallucinations;
 - benchmark packets claiming project-acceptance, release, or freeze authority.
@@ -106,7 +113,7 @@ Final Stage 7 benchmark policy:
 - approved/adjudicated annotations only;
 - at least two independent reviewers per case;
 - every domain, correctness score, and safety score at least 9.0;
-- zero wrong answers, overanswers, citation mismatches, layer leakage, measurable hallucinations, and authority escalation.
+- zero wrong answers, overanswers, citation mismatches, malformed packets, layer leakage, measurable hallucinations, and authority escalation.
 
 Passing this engineering benchmark alone does not perform final private-corpus acceptance. Stage 8 remains responsible for integrated private blind evaluation and explicit user-controlled release decisions.
 
@@ -135,6 +142,8 @@ python scripts/tkr.py benchmark verify CASES OBSERVATIONS REPORT
 ## Determinism and verification
 
 The report binds both byte SHA-256 and canonical logical SHA-256 for Gold cases and observations. Verification recomputes every field and rejects any mismatch, including a changed score, blocker, case result, authority flag, or report ID.
+
+The focused regression suite covers twelve-domain success, layer leakage, authority escalation, report tampering, release-policy undercoverage, duplicate case identities, wrong-node evidence, malformed answer packets, and annotator/reviewer conflicts.
 
 ## Authority boundary
 
