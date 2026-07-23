@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v5
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T00:34:00Z
+updated_at_utc: 2026-07-23T01:16:00Z
 
 historical_release:
   version: 5.9.0
@@ -28,19 +28,33 @@ v6_development:
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
   active_branch: feature/v6-stage1-evidence-engine
+  active_pull_request: 28
   current_stage: Stage 1 Evidence Engine
   stage_document: docs/STAGE1_EVIDENCE_ENGINE.md
-  current_stage_status: started
+  stage_result_document: docs/STAGE1_EVIDENCE_ENGINE_RESULT.md
+  current_stage_status: ready_for_integration
   github_sync_policy: continuous_per_meaningful_increment
   delivery_policy: merge_and_report_by_complete_major_stage
   substage_release_allowed: false
-  workflows_enabled: false
-  workflow_policy_reason: disabled_by_user_request
-  validation_mode:
-    - manual_focused_tests
-    - manual_full_repository_regression
-    - deterministic_artifact_comparison
-    - recorded_stage_result
+  workflows_enabled: true
+  workflow_policy:
+    file: .github/workflows/stage1-evidence.yml
+    mode: concise_pull_request_and_manual_only
+    jobs: 1
+    python_versions: ["3.12"]
+    cancel_obsolete_runs: true
+    routine_artifact_uploads: false
+    release_or_freeze_workflows_enabled: false
+  validation:
+    status: passed
+    implementation_head: c49b80848681d434b96c7fdb936f66158b05f6ad
+    workflow_run_id: 29971223760
+    checks:
+      - package_installation
+      - module_compilation
+      - stage_1_focused_tests
+      - full_repository_regression
+      - installed_and_bundled_CLI_smoke
   reused_integrated_foundation:
     source_pull_request: 26
     capabilities:
@@ -66,40 +80,54 @@ v6_development:
 
 stage_1:
   name: Evidence Engine
-  status: active
+  status: validated_ready_for_merge
   objective: every_knowledge_record_is_source_bound_auditable_and_epistemically_separated
   internal_slices:
     - id: 1.1
       name: Evidence Schema
-      status: design_integrated_into_stage_scope
+      status: completed
     - id: 1.2
       name: Evidence Extractor
-      status: design_integrated_into_stage_scope
+      status: completed
     - id: 1.3
       name: Claim Engine
-      status: pending_implementation
+      status: completed
     - id: 1.4
       name: Evidence Validator
-      status: pending_implementation
+      status: completed
     - id: 1.5
       name: Query_and_Notion_projection
-      status: pending_implementation
+      status: completed_via_integrated_literary_projection
     - id: 1.6
-      name: Manual_regression_and_stage_integration
-      status: pending_implementation
+      name: Regression_and_stage_integration
+      status: passed_pending_merge
+  outputs:
+    - tkr/evidence_engine.py
+    - tkr/evidence_claims.py
+    - tkr/evidence_project.py
+    - tkr/evidence_cli.py
+    - schemas/evidence-unit.schema.json
+    - schemas/evidence-coverage.schema.json
+    - schemas/claim-evidence-edge.schema.json
+    - schemas/claim-graph-report.schema.json
+    - tests/test_evidence_engine.py
+    - tests/test_evidence_claims.py
+    - tests/test_evidence_project.py
   mandatory_gates:
-    - every_A_claim_has_exact_clean_evidence
-    - every_B_claim_has_multiple_independent_A_supports
-    - every_C_claim_is_explicitly_attributed_and_cannot_render_as_fact
-    - source_offsets_text_and_hashes_recompute_exactly
-    - polluted_or_review_evidence_cannot_support_A
-    - JSONL_and_SQLite_identifiers_match
-    - clean_text_coverage_is_measured
-    - repeated_builds_are_logically_identical
-    - notion_export_preserves_A_B_C_separation
-    - focused_and_full_manual_regression_pass
-  stage_acceptance_performed: false
-  stage_merge_approved: false
+    every_A_claim_has_exact_clean_evidence: passed
+    every_B_claim_has_multiple_independent_A_supports: passed
+    every_C_claim_is_explicitly_attributed_and_cannot_render_as_fact: passed
+    source_offsets_text_and_hashes_recompute_exactly: passed
+    polluted_or_review_evidence_cannot_support_A: passed
+    JSONL_and_SQLite_identifiers_match: passed
+    clean_text_coverage_is_measured: passed
+    repeated_builds_are_logically_identical: passed
+    notion_export_preserves_A_B_C_separation: passed_via_integrated_projection
+    focused_and_full_repository_regression: passed
+  stage_validation_performed: true
+  stage_validation_status: passed
+  stage_merge_approved_by_user: true
+  stage_merged: false
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -130,4 +158,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: implement_complete_stage_1_on_single_branch_and_single_pull_request
+next_action: final_exact_head_CI_then_merge_pull_request_28
