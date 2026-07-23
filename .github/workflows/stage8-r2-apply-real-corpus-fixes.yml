@@ -1,0 +1,138 @@
+name: Stage 8-R2 Apply Real Corpus Fixes
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reviewed-fixes:
+    if: github.event.pull_request.head.ref == 'feature/v6-stage8-r2-execution-bundle' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply deterministic real-corpus fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+
+          engine = root / 'tkr/literary_engine.py'
+          text = engine.read_text(encoding='utf-8')
+          replacements = [
+              (
+                  '''    *,\n    role: str,\n    supplied_hash_key: str | None = None,\n) -> EvidenceAnchor:\n''',
+                  '''    *,\n    role: str,\n    supplied_hash_key: str | None = None,\n    findings: Sequence[Mapping[str, object]] = (),\n) -> EvidenceAnchor:\n''',
+              ),
+              (
+                  '''        role,\n        chapter.contamination_status,\n    )\n''',
+                  '''        role,\n        _contamination_status(start, end, findings),\n    )\n''',
+              ),
+              (
+                  '''    entity_rows: Sequence[Mapping[str, object]],\n    fact_rows: Sequence[Mapping[str, object]],\n) -> tuple[list[EvidenceAnchor], list[LiteraryEntity], list[KnowledgeAssertion], dict[str, str]]:\n''',
+                  '''    entity_rows: Sequence[Mapping[str, object]],\n    fact_rows: Sequence[Mapping[str, object]],\n    anomaly_rows: Sequence[Mapping[str, object]],\n) -> tuple[list[EvidenceAnchor], list[LiteraryEntity], list[KnowledgeAssertion], dict[str, str]]:\n''',
+              ),
+              (
+                  '''        anchor = _anchor(source_text, row, chapter, role="entity_mention")\n''',
+                  '''        anchor = _anchor(source_text, row, chapter, role="entity_mention", findings=anomaly_rows)\n''',
+              ),
+              (
+                  '''        anchor = _anchor(source_text, row, chapter, role="direct_fact", supplied_hash_key="evidence_sha256")\n''',
+                  '''        anchor = _anchor(\n            source_text,\n            row,\n            chapter,\n            role="direct_fact",\n            supplied_hash_key="evidence_sha256",\n            findings=anomaly_rows,\n        )\n''',
+              ),
+              (
+                  '''        source_text, chapter_lookup, mention_rows, entity_rows, fact_rows\n''',
+                  '''        source_text, chapter_lookup, mention_rows, entity_rows, fact_rows, anomaly_rows\n''',
+              ),
+          ]
+          for old, new in replacements:
+              if old in text:
+                  text = text.replace(old, new, 1)
+              elif new not in text:
+                  raise SystemExit('literary engine no longer matches reviewed patch target')
+          engine.write_text(text, encoding='utf-8')
+
+          validator = root / 'tkr/claim_validation.py'
+          text = validator.read_text(encoding='utf-8')
+          old = '''def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:\n    if not candidate.object:\n        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))\n'''
+          new = '''def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:\n    if not candidate.object:\n        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))\n    if not candidate.subject:\n        # Subjectless permission/prohibition text is unsafe to canonicalize.\n        # It is often elliptical dialogue, a response particle, or a copular\n        # false positive such as "可以是". Keep it for review without indexing.\n        return _finish(\n            candidate,\n            evidence,\n            status=_STATUS_REVIEW,\n            reasons=("PERMISSION_SUBJECT_REQUIRED",),\n        )\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'PERMISSION_SUBJECT_REQUIRED' not in text:
+              raise SystemExit('claim validator no longer matches reviewed patch target')
+          validator.write_text(text, encoding='utf-8')
+
+          claim_test = root / 'tests/test_claim_validation.py'
+          text = claim_test.read_text(encoding='utf-8')
+          old = '''    def test_positive_permission_rejects_negative_evidence(self):\n        result = self.validate(\n            "不可以删除。",\n            claim_type="permission",\n            subject="",\n            object="删除",\n            polarity=True,\n        )\n        self.assertEqual(result.status, "rejected")\n        self.assertIn("PERMISSION_POLARITY_MISMATCH", result.reason_codes)\n'''
+          new = '''    def test_subjectless_permission_routes_to_review_before_polarity_evaluation(self):\n        result = self.validate(\n            "不可以删除。",\n            claim_type="permission",\n            subject="",\n            object="删除",\n            polarity=True,\n        )\n        self.assertEqual(result.status, "review")\n        self.assertFalse(result.may_index)\n        self.assertIn("PERMISSION_SUBJECT_REQUIRED", result.reason_codes)\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'test_subjectless_permission_routes_to_review_before_polarity_evaluation' not in text:
+              raise SystemExit('claim validation test no longer matches reviewed patch target')
+          claim_test.write_text(text, encoding='utf-8')
+
+          normalization_test = root / 'tests/test_entity_normalization_adversarial.py'
+          text = normalization_test.read_text(encoding='utf-8')
+          old = '''    def test_subjectless_permissions_in_different_sources_do_not_conflict(self):\n        first = "可以删除。"\n        second = "不可以删除。"\n        source = first + second\n        a = UnitSpan("u1", 0, len(first), "a")\n        b = UnitSpan("u1", a.end, len(source), "b")\n        positive = self.record(source, first, a, claim_type="permission", subject="", object="删除", polarity=True)\n        negative = self.record(source, second, b, claim_type="permission", subject="", object="删除", polarity=False, start=b.start)\n        bundle = normalize_entities([positive, negative], source, [a, b])\n        self.assertFalse(any(item.conflict_type.startswith("PERMISSION_POLARITY") for item in bundle.conflicts))\n'''
+          new = '''    def test_subjectless_permissions_are_not_accepted_for_normalization(self):\n        first = "可以删除。"\n        candidate = ClaimCandidate(\n            claim_type="permission",\n            subject="",\n            object="删除",\n            polarity=True,\n            source_id="a",\n            unit_id="u1",\n            evidence_start=0,\n            evidence_end=len(first),\n            evidence_text=first,\n        )\n        result = validate_claim(\n            candidate,\n            first,\n            unit_span=UnitSpan("u1", 0, len(first), "a"),\n            require_unit=True,\n        )\n        self.assertEqual(result.status, "review")\n        self.assertFalse(result.may_index)\n        self.assertIn("PERMISSION_SUBJECT_REQUIRED", result.reason_codes)\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'test_subjectless_permissions_are_not_accepted_for_normalization' not in text:
+              raise SystemExit('normalization test no longer matches reviewed patch target')
+          normalization_test.write_text(text, encoding='utf-8')
+
+          (root / 'tests/test_semantic_subjectless_permission.py').write_text('''from __future__ import annotations\n\nfrom pathlib import Path\nfrom tempfile import TemporaryDirectory\nimport unittest\n\nfrom tkr.semantic_extraction import inspect_source_semantics\n\n\nclass SubjectlessPermissionExtractionTests(unittest.TestCase):\n    def test_elliptical_permission_is_review_only(self) -> None:\n        with TemporaryDirectory() as directory:\n            path = Path(directory) / "sample.txt"\n            path.write_text("第一章\\n不能去！\\n", encoding="utf-8")\n            report = inspect_source_semantics(path)\n            matching = [item for item in report.candidates if item.claim_type == "permission"]\n            self.assertEqual(len(matching), 1)\n            self.assertEqual(matching[0].validation_status, "review")\n            self.assertFalse(matching[0].may_index)\n            self.assertIn("PERMISSION_SUBJECT_REQUIRED", matching[0].validation_reason_codes)\n            self.assertFalse(any(row.get("claim_type") == "permission" for row in report.accepted_records))\n\n    def test_copular_can_be_phrase_is_not_a_canonical_permission(self) -> None:\n        with TemporaryDirectory() as directory:\n            path = Path(directory) / "sample.txt"\n            path.write_text("第一章\\n可以是幻境中飞过的鸟雀。\\n", encoding="utf-8")\n            report = inspect_source_semantics(path)\n            matching = [item for item in report.candidates if item.claim_type == "permission"]\n            self.assertEqual(len(matching), 1)\n            self.assertEqual(matching[0].validation_status, "review")\n            self.assertFalse(matching[0].may_index)\n            self.assertFalse(any(row.get("claim_type") == "permission" for row in report.accepted_records))\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+
+          (root / 'tests/test_literary_evidence_contamination.py').write_text('''from __future__ import annotations\n\nfrom hashlib import sha256\nimport unittest\n\nfrom tkr import literary_engine\nfrom tkr.literary_models import CHAPTER_SCHEMA_VERSION, ChapterRecord\n\n\nclass LiteraryEvidenceContaminationTests(unittest.TestCase):\n    def chapter(self, source: str) -> ChapterRecord:\n        return ChapterRecord(\n            CHAPTER_SCHEMA_VERSION,\n            "chapter-1",\n            "source-1",\n            "a" * 64,\n            "unit-1",\n            "chapter",\n            0,\n            None,\n            1,\n            "第一章",\n            "第一章",\n            "第一章",\n            0,\n            len(source),\n            0,\n            len(source),\n            sha256(source.encode("utf-8")).hexdigest(),\n            "high",\n            "accepted",\n            "contaminated",\n        )\n\n    def test_clean_fact_span_inside_partly_contaminated_chapter_remains_clean(self) -> None:\n        source = "广告污染\\n张三击败李四。"\n        start = source.index("张三")\n        end = len(source)\n        row = {\n            "evidence_start": start,\n            "evidence_end": end,\n            "evidence_sha256": sha256(source[start:end].encode("utf-8")).hexdigest(),\n        }\n        findings = [{\n            "start_char": 0,\n            "end_char": source.index("张三"),\n            "category": "contamination_candidate",\n            "severity": "high",\n        }]\n        anchor = literary_engine._anchor(\n            source,\n            row,\n            self.chapter(source),\n            role="direct_fact",\n            supplied_hash_key="evidence_sha256",\n            findings=findings,\n        )\n        self.assertEqual(anchor.source_status, "clean")\n\n    def test_fact_span_overlapping_contamination_is_blocked(self) -> None:\n        source = "张三击败李四。"\n        row = {\n            "evidence_start": 0,\n            "evidence_end": len(source),\n            "evidence_sha256": sha256(source.encode("utf-8")).hexdigest(),\n        }\n        findings = [{\n            "start_char": 0,\n            "end_char": len(source),\n            "category": "contamination_candidate",\n            "severity": "high",\n        }]\n        anchor = literary_engine._anchor(\n            source,\n            row,\n            self.chapter(source),\n            role="direct_fact",\n            supplied_hash_key="evidence_sha256",\n            findings=findings,\n        )\n        self.assertEqual(anchor.source_status, "contaminated")\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+
+      - name: Validate focused and full regressions
+        run: |
+          python -m py_compile \
+            tkr/literary_engine.py \
+            tkr/claim_validation.py \
+            tests/test_literary_evidence_contamination.py \
+            tests/test_semantic_subjectless_permission.py
+          python -m unittest \
+            tests.test_literary_crlf \
+            tests.test_literary_evidence_contamination \
+            tests.test_semantic_subjectless_permission \
+            tests.test_literary_engine \
+            tests.test_claim_validation \
+            tests.test_claim_validation_adversarial \
+            tests.test_entity_normalization_adversarial -v
+          python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Commit reviewed fixes to pull-request branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tkr/literary_engine.py \
+            tkr/claim_validation.py \
+            tests/test_claim_validation.py \
+            tests/test_entity_normalization_adversarial.py \
+            tests/test_literary_evidence_contamination.py \
+            tests/test_semantic_subjectless_permission.py
+          if git diff --cached --quiet; then
+            echo 'Reviewed real-corpus fixes already present.'
+            exit 0
+          fi
+          git commit -m 'fix: harden real corpus literary bindings'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
