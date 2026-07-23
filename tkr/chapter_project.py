@@ -367,7 +367,7 @@ def _create_database(
             )
         for item in catalog.chapters:
             connection.execute(
-                "INSERT INTO chapters VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO chapters VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     item.chapter_id,
                     item.source_binding_id,
@@ -530,6 +530,8 @@ def build_chapter_project(
             "may_release": False,
             "may_freeze": False,
         }
+        report["schema_version"] = CHAPTER_PROJECT_REPORT_SCHEMA_VERSION
+        report["status"] = "completed"
         _write_atomic(temporary / "chapter-project-report.json", _json_bytes(report))
         files = []
         for path in sorted(temporary.iterdir()):
