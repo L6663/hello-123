@@ -22,6 +22,7 @@ from .chapter_engine import (
     SourceBinding,
     build_chapter_catalog,
 )
+from .chapter_ordering import augment_cross_source_order
 from .hashing import sha256_file
 from .project_security import verify_secure_knowledge_project
 
@@ -482,7 +483,7 @@ def build_chapter_project(
     projects = [Path(value) for value in source_projects]
     inputs, source_reports = _inputs(projects)
     try:
-        catalog = build_chapter_catalog(inputs)
+        catalog = augment_cross_source_order(build_chapter_catalog(inputs))
     except ChapterEngineError as exc:
         raise ChapterProjectError(str(exc)) from exc
     output = Path(output_directory)
@@ -643,7 +644,7 @@ def verify_chapter_project(
         inputs, _ = _inputs([Path(value) for value in source_projects])
         if tuple(item.project_id for item in inputs) != project_ids:
             reasons.append("CHAPTER_SOURCE_PROJECT_ORDER_MISMATCH")
-        catalog = build_chapter_catalog(inputs)
+        catalog = augment_cross_source_order(build_chapter_catalog(inputs))
         expected_payloads = _payloads(catalog)
         expected_logical = _logical_hash(expected_payloads, project_ids)
         if expected_logical != logical_sha:
