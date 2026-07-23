@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v8
+schema_version: tkr-project-status-v9
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T04:08:00Z
+updated_at_utc: 2026-07-23T04:14:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,16 +27,14 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  active_branch: feature/v6-stage4-focused-character-engine
-  active_pull_request: 31
+  current_branch: develop/v6-literary-engine
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
-  current_stage: Stage 4 Focused Character Engine
-  current_stage_status: final_exact_head_passed_ready_for_merge
-  stage_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE.md
-  stage_result_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE_RESULT.md
+    - Stage 4 Focused Character Engine
+  next_stage: Stage 5 Layered Reasoning Engine
+  current_stage_status: stage_4_completed_and_integrated
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   workflows_enabled: true
@@ -66,12 +64,13 @@ v6_development:
     final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
     final_workflow_run_id: 29975176620
     squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
-  stage_4_validation:
+  stage_4_integration:
     pull_request: 31
     focused_test_count: 19
-    final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
-    final_workflow_run_id: 29978722137
+    final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
+    final_workflow_run_id: 29978838494
     final_workflow_status: passed
+    squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
     checks:
       - package_installation
       - module_compilation
@@ -146,12 +145,13 @@ stage_3:
 
 stage_4:
   name: Focused Character Engine
-  status: final_exact_head_passed_ready_for_merge
+  status: completed_and_integrated
   objective: deeply_model_core_characters_moderately_model_material_characters_and_keep_minor_people_minimal
   pull_request: 31
   focused_test_count: 19
-  final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
-  final_workflow_run_id: 29978722137
+  final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
+  final_workflow_run_id: 29978838494
+  squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
   internal_slices:
     - id: 4.1
       name: Character_Scope_and_Selection
@@ -212,7 +212,7 @@ stage_4:
   stage_validation_performed: true
   stage_validation_status: passed
   stage_merge_approved_by_user_continuation: true
-  stage_merged: false
+  stage_merged: true
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -243,4 +243,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: squash_merge_pull_request_31
+next_action: create_stage_5_layered_reasoning_branch_and_pull_request
