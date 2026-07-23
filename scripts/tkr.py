@@ -9,6 +9,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
+from tkr.evidence_cli import main as evidence_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
 from tkr.skill_cli import main as skill_main  # noqa: E402
@@ -21,6 +22,10 @@ LITERARY_ALIASES = {
     "literary-query": "query",
     "literary-export-notion": "export-notion",
 }
+EVIDENCE_ALIASES = {
+    "evidence-build": "build",
+    "evidence-verify": "verify",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,7 +36,9 @@ def main(argv: list[str] | None = None) -> int:
             "  doctor | audit | profiles | show-profile\n"
             "  build | verify | query | verify-answer\n"
             "  literary build | literary verify | literary query | literary export-notion\n"
-            "  literary-build | literary-verify | literary-query | literary-export-notion\n\n"
+            "  evidence build | evidence verify\n"
+            "  literary-build | literary-verify | literary-query | literary-export-notion\n"
+            "  evidence-build | evidence-verify\n\n"
             "Examples:\n"
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
@@ -39,6 +46,8 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/tkr.py query project '陆川击败了谁？'\n"
             "  python scripts/tkr.py literary build project --outdir literary\n"
             "  python scripts/tkr.py literary query literary '陆川首次出场在哪一章？'\n"
+            "  python scripts/tkr.py evidence build project literary --outdir evidence-project\n"
+            "  python scripts/tkr.py evidence verify project literary evidence-project\n"
             "  python scripts/tkr.py literary export-notion literary --outdir notion-package"
         )
         return 0
@@ -56,6 +65,12 @@ def main(argv: list[str] | None = None) -> int:
         return literary_main(args[1:])
     if command in LITERARY_ALIASES:
         return literary_main([LITERARY_ALIASES[command], *args[1:]])
+    if command == "evidence":
+        if len(args) == 1:
+            return evidence_main(["--help"])
+        return evidence_main(args[1:])
+    if command in EVIDENCE_ALIASES:
+        return evidence_main([EVIDENCE_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 

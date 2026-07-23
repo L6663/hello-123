@@ -1,0 +1,60 @@
+name: Stage 1 Evidence CI
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+  workflow_dispatch:
+
+concurrency:
+  group: stage1-evidence-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  verify:
+    name: Stage 1 CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: python -m pip install .
+
+      - name: Compile
+        run: |
+          python -m py_compile \
+            scripts/tkr.py \
+            tkr/evidence_engine.py \
+            tkr/evidence_claims.py \
+            tkr/evidence_project.py \
+            tkr/evidence_cli.py
+
+      - name: Stage 1 tests
+        run: |
+          python -m unittest \
+            tests.test_evidence_engine \
+            tests.test_evidence_claims \
+            tests.test_evidence_project -v
+
+      - name: Repository regression
+        run: python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: CLI smoke check
+        run: |
+          tkr-evidence --help >/dev/null
+          tkr-evidence build --help >/dev/null
+          tkr-evidence verify --help >/dev/null
+          python scripts/tkr.py evidence --help >/dev/null

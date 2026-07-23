@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/evidence-unit.schema.json",
+  "title": "Text Knowledge Reader Evidence Unit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "source_id",
+    "source_sha256",
+    "unit_id",
+    "chapter_id",
+    "volume_ordinal",
+    "chapter_ordinal",
+    "original_heading",
+    "normalized_heading",
+    "paragraph_ordinal",
+    "sequence_in_chapter",
+    "start_char",
+    "end_char",
+    "text",
+    "text_sha256",
+    "unit_content_sha256",
+    "source_status",
+    "boundary_kind",
+    "content_character_count",
+    "review_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-evidence-unit-v1"},
+    "evidence_id": {"type": "string", "pattern": "^evu_[0-9a-f]{32}$"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_id": {"type": "string", "minLength": 1},
+    "chapter_id": {"type": "string", "minLength": 1},
+    "volume_ordinal": {"type": ["integer", "null"], "minimum": 1},
+    "chapter_ordinal": {"type": ["integer", "null"], "minimum": 1},
+    "original_heading": {"type": "string"},
+    "normalized_heading": {"type": "string"},
+    "paragraph_ordinal": {"type": "integer", "minimum": 1},
+    "sequence_in_chapter": {"type": "integer", "minimum": 1},
+    "start_char": {"type": "integer", "minimum": 0},
+    "end_char": {"type": "integer", "minimum": 1},
+    "text": {"type": "string", "minLength": 1},
+    "text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit_content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_status": {"const": "clean"},
+    "boundary_kind": {
+      "enum": [
+        "paragraph",
+        "paragraph_group",
+        "sentence_group",
+        "oversize_sentence",
+        "chapter_body"
+      ]
+    },
+    "content_character_count": {"type": "integer", "minimum": 1},
+    "review_status": {"const": "accepted_evidence"}
+  }
+}

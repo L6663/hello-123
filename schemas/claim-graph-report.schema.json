@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/claim-graph-report.schema.json",
+  "title": "Text Knowledge Reader Claim-Evidence Graph Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "claim_graph_version",
+    "valid",
+    "assertion_count",
+    "edge_count",
+    "support_edge_count",
+    "contradict_edge_count",
+    "context_edge_count",
+    "tier_a_count",
+    "tier_b_count",
+    "tier_c_count",
+    "unsupported_assertion_count",
+    "unknown_evidence_reference_count",
+    "blocked_support_count",
+    "findings"
+  ],
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "assertion_id", "evidence_id", "message"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "assertion_id": {"type": "string", "minLength": 1},
+        "evidence_id": {"type": "string"},
+        "message": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "tkr-claim-graph-report-v1"},
+    "claim_graph_version": {"const": "tkr-claim-evidence-graph-v1"},
+    "valid": {"type": "boolean"},
+    "assertion_count": {"type": "integer", "minimum": 0},
+    "edge_count": {"type": "integer", "minimum": 0},
+    "support_edge_count": {"type": "integer", "minimum": 0},
+    "contradict_edge_count": {"type": "integer", "minimum": 0},
+    "context_edge_count": {"type": "integer", "minimum": 0},
+    "tier_a_count": {"type": "integer", "minimum": 0},
+    "tier_b_count": {"type": "integer", "minimum": 0},
+    "tier_c_count": {"type": "integer", "minimum": 0},
+    "unsupported_assertion_count": {"type": "integer", "minimum": 0},
+    "unknown_evidence_reference_count": {"type": "integer", "minimum": 0},
+    "blocked_support_count": {"type": "integer", "minimum": 0},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}
+  }
+}

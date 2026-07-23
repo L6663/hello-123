@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v4
+schema_version: tkr-project-status-v5
 repository: L6663/hello-123
-updated_at_utc: 2026-07-22T13:12:00Z
+updated_at_utc: 2026-07-23T01:16:00Z
 
 historical_release:
   version: 5.9.0
@@ -17,48 +17,57 @@ historical_release:
     blocker_count: 0
   user_goal_reassessment:
     performed: true
-    result: insufficient_for_complete_literary_knowledge_engine
+    result: insufficient_for_requested_literary_knowledge_engine
     reported_overall_reliability: 8.8
     reported_knowledge_regression: 8.6
-    below_target_areas:
-      - chapter_level_traceability
-      - exact_evidence_traceability
-      - cold_detail_and_minor_entity_recall
-      - complete_entity_coverage
-      - temporal_relationship_state
-      - fact_synthesis_interpretation_separation
     historical_release_mutated: false
 
 v6_development:
   version: 6.0.0-alpha1
   status: active_development
-  mode: complete_literary_knowledge_engine
+  mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  active_branch: feature/v6-stage7-literary-knowledge-engine
-  pull_request: 26
-  current_stage: Stage 7.1
-  current_stage_scope:
-    - chapter_and_volume_address_records
-    - exact_evidence_anchors
-    - A_B_C_epistemic_tiers
-    - typed_literary_entities
-    - temporal_relationship_records
-    - causal_event_components
-    - revision_records
-    - evidence_first_query_and_refusal
-    - fact_separated_notion_projection
-    - JSONL_SQLite_cross_store_verification
-    - bundled_skill_literary_entrypoint
-  current_stage_status: implementation_complete_pending_integration
-  latest_successful_development_workflow:
-    verified_head: 69c22318dbb6a5012e8c99e17d4d35cdc1b56f18
-    run_id: 29922025196
-    python_versions: ["3.10", "3.11", "3.12"]
-    focused_and_repository_regression: passed
-  final_exact_head_check: pending
-  focused_tests: 10
-  full_repository_regression: passed_on_latest_successful_development_workflow
-  synthetic_fixtures_only: true
+  active_branch: feature/v6-stage1-evidence-engine
+  active_pull_request: 28
+  current_stage: Stage 1 Evidence Engine
+  stage_document: docs/STAGE1_EVIDENCE_ENGINE.md
+  stage_result_document: docs/STAGE1_EVIDENCE_ENGINE_RESULT.md
+  current_stage_status: ready_for_integration
+  github_sync_policy: continuous_per_meaningful_increment
+  delivery_policy: merge_and_report_by_complete_major_stage
+  substage_release_allowed: false
+  workflows_enabled: true
+  workflow_policy:
+    file: .github/workflows/stage1-evidence.yml
+    mode: concise_pull_request_and_manual_only
+    jobs: 1
+    python_versions: ["3.12"]
+    cancel_obsolete_runs: true
+    routine_artifact_uploads: false
+    release_or_freeze_workflows_enabled: false
+  validation:
+    status: passed
+    implementation_head: c49b80848681d434b96c7fdb936f66158b05f6ad
+    workflow_run_id: 29971223760
+    checks:
+      - package_installation
+      - module_compilation
+      - stage_1_focused_tests
+      - full_repository_regression
+      - installed_and_bundled_CLI_smoke
+  reused_integrated_foundation:
+    source_pull_request: 26
+    capabilities:
+      - chapter_addressable_evidence_anchors
+      - exact_source_span_and_hash_binding
+      - A_B_C_assertion_contracts
+      - JSONL_SQLite_cross_store_verification
+      - evidence_first_query_and_refusal
+      - fact_separated_notion_projection
+  superseded_partial_work:
+    pull_request: 27
+    status: closed_not_merged
+    reason: stage_plan_restructured_and_minor_entity_scope_reduced
   private_corpus_used: false
   real_corpus_acceptance_deferred: true
   project_acceptance_performed: false
@@ -69,56 +78,77 @@ v6_development:
   may_release: false
   may_freeze: false
 
-stage_7_target_domains:
-  minimum_score_per_domain: 9.0
+stage_1:
+  name: Evidence Engine
+  status: validated_ready_for_merge
+  objective: every_knowledge_record_is_source_bound_auditable_and_epistemically_separated
+  internal_slices:
+    - id: 1.1
+      name: Evidence Schema
+      status: completed
+    - id: 1.2
+      name: Evidence Extractor
+      status: completed
+    - id: 1.3
+      name: Claim Engine
+      status: completed
+    - id: 1.4
+      name: Evidence Validator
+      status: completed
+    - id: 1.5
+      name: Query_and_Notion_projection
+      status: completed_via_integrated_literary_projection
+    - id: 1.6
+      name: Regression_and_stage_integration
+      status: passed_pending_merge
+  outputs:
+    - tkr/evidence_engine.py
+    - tkr/evidence_claims.py
+    - tkr/evidence_project.py
+    - tkr/evidence_cli.py
+    - schemas/evidence-unit.schema.json
+    - schemas/evidence-coverage.schema.json
+    - schemas/claim-evidence-edge.schema.json
+    - schemas/claim-graph-report.schema.json
+    - tests/test_evidence_engine.py
+    - tests/test_evidence_claims.py
+    - tests/test_evidence_project.py
+  mandatory_gates:
+    every_A_claim_has_exact_clean_evidence: passed
+    every_B_claim_has_multiple_independent_A_supports: passed
+    every_C_claim_is_explicitly_attributed_and_cannot_render_as_fact: passed
+    source_offsets_text_and_hashes_recompute_exactly: passed
+    polluted_or_review_evidence_cannot_support_A: passed
+    JSONL_and_SQLite_identifiers_match: passed
+    clean_text_coverage_is_measured: passed
+    repeated_builds_are_logically_identical: passed
+    notion_export_preserves_A_B_C_separation: passed_via_integrated_projection
+    focused_and_full_repository_regression: passed
+  stage_validation_performed: true
+  stage_validation_status: passed
+  stage_merge_approved_by_user: true
+  stage_merged: false
+
+replanned_major_stages:
+  - Stage 1: Evidence Engine
+  - Stage 2: Chapter Structure Engine
+  - Stage 3: Event Causality Engine
+  - Stage 4: Focused Character Engine
+  - Stage 5: Layered Reasoning Engine
+  - Stage 6: Notion Knowledge System
+  - Stage 7: Literary Regression Benchmark
+  - Stage 8: Final Productization and Acceptance
+
+entity_policy:
+  core_characters: deep_model
+  important_characters: role_and_major_event_model
+  minor_placeholders: minimal_or_chapter_only
+  no_impact_mentions: no_canonical_entity_required
+  goal: prevent_low_value_entity_expansion_from_diluting_mainline_knowledge
+
+final_acceptance_rule:
+  all_core_domains_must_score_at_least_9_0: true
   average_compensation_allowed: false
-  domains:
-    - id: 1
-      name: chapter_and_volume_reconstruction
-      status: pending_integrated_measurement
-    - id: 2
-      name: exact_evidence_traceability
-      status: pending_integrated_measurement
-    - id: 3
-      name: entity_coverage_and_identity_resolution
-      status: pending_integrated_measurement
-    - id: 4
-      name: temporal_relationship_retrieval
-      status: pending_integrated_measurement
-    - id: 5
-      name: event_causality_and_consequence_chains
-      status: pending_integrated_measurement
-    - id: 6
-      name: cold_detail_and_minor_character_retrieval
-      status: pending_integrated_measurement
-    - id: 7
-      name: exact_dialogue_and_source_text_retrieval
-      status: pending_integrated_measurement
-    - id: 8
-      name: fact_synthesis_interpretation_separation
-      status: pending_integrated_measurement
-    - id: 9
-      name: unsupported_and_polluted_source_refusal
-      status: pending_integrated_measurement
-    - id: 10
-      name: notion_projection_correctness
-      status: pending_integrated_measurement
-    - id: 11
-      name: incremental_revision_and_supersession
-      status: pending_integrated_measurement
-    - id: 12
-      name: deterministic_rebuild_and_security_verification
-      status: pending_integrated_measurement
-
-stage_7_remaining_slices:
-  - Stage 7.2: full_chapter_text_dialogue_and_minor_entity_index
-  - Stage 7.3: canonical_cross_file_chapter_map_and_missing_duplicate_registry
-  - Stage 7.4: relationship_change_and_event_chain_extraction
-  - Stage 7.5: incremental_revision_and_notion_update_application
-  - Stage 7.6: cold_detail_regression_and_private_corpus_final_acceptance
-
-acceptance_rule:
-  all_target_domains_must_score_at_least_9_0: true
   correctness_and_safety_must_each_score_at_least_9_0: true
   citation_mismatches_allowed: 0
   measured_hallucinations_allowed: 0
@@ -128,4 +158,4 @@ acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: integrate_stage_7_1_into_develop_then_start_stage_7_2
+next_action: final_exact_head_CI_then_merge_pull_request_28
