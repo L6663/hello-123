@@ -25,6 +25,7 @@ tkr-semantic-extract = "tkr.semantic_cli:main"
 tkr-project = "tkr.project_cli:main"
 tkr-skill = "tkr.skill_cli:main"
 tkr-literary = "tkr.literary_cli:main"
+tkr-evidence = "tkr.evidence_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
