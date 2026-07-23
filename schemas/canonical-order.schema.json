@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/canonical-order.schema.json",
+  "title": "Stage 2 canonical order candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "canonical_position", "chapter_id", "canonical_key",
+    "physical_position", "order_basis", "confidence"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-canonical-order-v1"},
+    "canonical_position": {"type": "integer", "minimum": 0},
+    "chapter_id": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+    "canonical_key": {"type": "string", "minLength": 1},
+    "physical_position": {"type": "integer", "minimum": 0},
+    "order_basis": {
+      "enum": [
+        "explicit_volume_and_chapter",
+        "special_unit_physical_fallback",
+        "unresolved_physical_fallback"
+      ]
+    },
+    "confidence": {"enum": ["high", "medium", "low"]}
+  }
+}
