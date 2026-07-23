@@ -36,9 +36,31 @@ jobs:
       - name: Compile
         run: |
           python -m py_compile \
+            scripts/tkr.py \
             tkr/reasoning_engine.py \
             tkr/reasoning_project.py \
             tkr/reasoning_cli.py
+
+      - name: Validate Stage 5 schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          names = [
+              "reasoning-node.schema.json",
+              "reasoning-edge.schema.json",
+              "reasoning-finding.schema.json",
+              "reasoning-annotation.schema.json",
+              "reasoning-project-report.schema.json",
+              "reasoning-project-verification.schema.json",
+              "layered-answer-packet.schema.json",
+          ]
+          for name in names:
+              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
+              assert payload["$schema"].endswith("2020-12/schema")
+              assert payload["type"] == "object"
+          PY
 
       - name: Stage 5 tests
         run: |
@@ -48,3 +70,14 @@ jobs:
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: CLI smoke check
+        run: |
+          tkr-reason --help >/dev/null
+          tkr-reason build --help >/dev/null
+          tkr-reason verify --help >/dev/null
+          tkr-reason query --help >/dev/null
+          python scripts/tkr.py reason --help >/dev/null
+          python scripts/tkr.py reason-build --help >/dev/null
+          python scripts/tkr.py reason-verify --help >/dev/null
+          python scripts/tkr.py reason-query --help >/dev/null
