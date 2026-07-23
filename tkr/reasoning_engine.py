@@ -126,6 +126,10 @@ class ReasoningNode:
         if self.layer == "A":
             if not self.upstream_record_ids or not self.evidence_anchor_ids:
                 raise ReasoningEngineError("layer A requires upstream records and exact evidence")
+            if not self.chapter_ids:
+                raise ReasoningEngineError("layer A requires at least one chapter location")
+            if len(self.independence_groups) != 1:
+                raise ReasoningEngineError("layer A requires exactly one evidence-independence group")
             if self.support_node_ids:
                 raise ReasoningEngineError("layer A cannot be derived from reasoning nodes")
             if self.attribution != "source_fact":
