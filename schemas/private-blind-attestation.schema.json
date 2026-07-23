@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "https://text-knowledge-reader.local/schemas/private-blind-attestation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attested_at_utc": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "type": "string"
+    },
+    "cases_file_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "corpus_not_used_for_v6_development": {
+      "const": true
+    },
+    "corpus_sha256s": {
+      "items": {
+        "$ref": "#/$defs/sha256"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "evaluator_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "gold_custodian_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "gold_hidden_from_answer_system": {
+      "const": true
+    },
+    "gold_locked_before_run": {
+      "const": true
+    },
+    "may_freeze": {
+      "const": false
+    },
+    "may_release": {
+      "const": false
+    },
+    "observations_file_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "observations_generated_without_gold_access": {
+      "const": true
+    },
+    "project_acceptance_performed": {
+      "const": false
+    },
+    "protocol_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "report_file_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "reviewer_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 2,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {
+      "const": "tkr-private-blind-attestation-v1"
+    },
+    "statement": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "status": {
+      "const": "approved"
+    }
+  },
+  "required": [
+    "schema_version",
+    "protocol_id",
+    "corpus_sha256s",
+    "cases_file_sha256",
+    "observations_file_sha256",
+    "report_file_sha256",
+    "gold_locked_before_run",
+    "gold_hidden_from_answer_system",
+    "observations_generated_without_gold_access",
+    "corpus_not_used_for_v6_development",
+    "evaluator_id",
+    "gold_custodian_id",
+    "reviewer_ids",
+    "status",
+    "statement",
+    "attested_at_utc",
+    "project_acceptance_performed",
+    "may_release",
+    "may_freeze"
+  ],
+  "title": "Private Blind Evaluation Attestation",
+  "type": "object"
+}
