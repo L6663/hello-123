@@ -1,27 +1,28 @@
 ---
 name: text-knowledge-reader
-description: Build auditable long-text knowledge projects with strict source identity, contamination isolation, exact Evidence Units, multi-file chapter catalogs, focused event causality, A/B/C epistemic separation, evidence-first queries, and Notion-ready exports. Use for novels, historical corpora, technical documents, notes, and other long text where source traceability and refusal are required.
+description: Build auditable long-text knowledge projects with strict source identity, contamination isolation, exact Evidence Units, multi-file chapter catalogs, focused event causality, scoped character modeling, A/B/C epistemic separation, evidence-first queries, and Notion-ready exports. Use for novels, historical corpora, technical documents, notes, and other long text where source traceability and refusal are required.
 ---
 
 # Text Knowledge Reader
 
 **Development version:** 6.0.0-alpha1  
 **Historical release:** 5.9.0 at `archive/v5.9.0-final`  
-**Current development:** Stage 1 Evidence Engine and Stage 2 Chapter Structure Engine integrated; Stage 3 Event Causality Engine under final integration  
+**Current development:** Stage 1 Evidence Engine, Stage 2 Chapter Structure Engine, and Stage 3 Event Causality Engine integrated; Stage 4 Focused Character Engine under final integration  
 **Authority:** no v6 final acceptance, release, or freeze
 
 ## Purpose
 
 Use this Skill to convert uploaded long text into a source-bound, reviewable knowledge system without silently repairing, deleting, renumbering, reordering, or inventing source content.
 
-The v6 system has six compatible project layers:
+The v6 system has seven compatible project layers:
 
 1. **Base source project** — strict decoding, source identity, anomaly isolation, Unit structure, deterministic fact predicates, entity normalization, retrieval, citations, and refusal.
 2. **Chapter Project** — one or more verified source projects mapped into immutable physical chapter order plus a separate reviewable canonical-order candidate.
 3. **Literary sidecar** — A/B/C assertions, selected entities, temporal relationships, reviewed literary events, revisions, and evidence-first retrieval.
 4. **Evidence Project** — complete trusted-body Evidence Units, exact Claim evidence anchors, Claim→Evidence edges, coverage accounting, SQLite integrity, and deterministic rebuild verification.
 5. **Event Project** — selected major events, A/B/C-separated event components, supported causal edges, temporal validation, path queries, and cycle/review findings.
-6. **Notion-ready projection** — fact-separated chapter, assertion, entity, and event pages for external upload.
+6. **Character Project** — scoped core/important/placeholder people, evidence-bound attributes and states, time-bounded relationships, verified major-event links, and A/B/C-separated core-character arcs.
+7. **Notion-ready projection** — fact-separated chapter, assertion, event, and focused-character pages for external upload.
 
 No layer bypasses verification of its inputs.
 
@@ -36,7 +37,9 @@ Supported inputs include:
 - one or more verified literary sidecars;
 - optional reviewed literary annotation JSONL;
 - reviewed Event Project annotation JSONL;
-- factual, structural, relational, event, evidence, chapter-location, causal-path, or literary-analysis questions.
+- reviewed Character Project annotation JSONL;
+- a verified Event Project and Character Project;
+- factual, structural, relational, character-state, character-arc, event, evidence, chapter-location, causal-path, or literary-analysis questions.
 
 Supported strict decoding:
 
@@ -194,7 +197,46 @@ python "${SKILL_DIR}/scripts/tkr.py" event query \
 
 If the Event Project status is `review_required`, causal answers must refuse until cycles or other high-severity findings are reviewed.
 
-### 7. Query the appropriate layer
+### 7. Build and verify the Focused Character Project
+
+Character annotation JSONL may contain only reviewed `character`, `attribute`, `state`, `relationship`, and `event_link` envelopes. Core characters require material mainline impact; important characters require major-event, major-faction, core-character, or world-state impact; placeholders remain minimal. Mention frequency alone cannot promote a character.
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" character build \
+  CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --literary-project LITERARY_PROJECT \
+  --outdir CHARACTER_PROJECT
+
+python "${SKILL_DIR}/scripts/tkr.py" character verify \
+  CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --literary-project LITERARY_PROJECT
+```
+
+Query a profile, state at a chapter position, relationship interval, major-event links, selection reason, or core-character arc:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" character query \
+  CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --literary-project LITERARY_PROJECT \
+  --name "应飞扬"
+
+python "${SKILL_DIR}/scripts/tkr.py" character query \
+  CHARACTER_PROJECT CHAPTER_PROJECT EVENT_PROJECT EVENTS.jsonl CHARACTERS.jsonl \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --literary-project LITERARY_PROJECT \
+  --arc "应飞扬"
+```
+
+Placeholder characters cannot receive complete ability systems, deep relationships, or character arcs. If the Event Project or Character Project is `review_required`, character conclusions must refuse.
+
+### 8. Query the appropriate layer
 
 Use the base layer for deterministic typed predicates:
 
@@ -202,11 +244,11 @@ Use the base layer for deterministic typed predicates:
 python "${SKILL_DIR}/scripts/tkr.py" query BASE_PROJECT "陆川击败了谁？"
 ```
 
-Use the Chapter Project for exact source location and order. Use the Event Project for supported causal chains. Use the literary layer for relationships, selected profiles, and explicitly separated analysis.
+Use the Chapter Project for exact source location and order. Use the Event Project for supported causal chains. Use the Character Project for scoped profiles, time-bounded states and relationships, major-event participation, and core-character arcs. Use the literary layer for other evidence-linked records and explicitly separated analysis.
 
 Do not rewrite an A/B/C-separated response into one undifferentiated narrative.
 
-### 8. Export a Notion-ready package
+### 9. Export a Notion-ready package
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary export-notion LITERARY_PROJECT \
@@ -253,6 +295,17 @@ Event-to-event relations:
 
 Forward relations cannot silently point backward in time. `recovers` explicitly references an earlier clue or event. Causal cycles remain findings; they are never silently broken. Every query path must return its supporting assertions and evidence anchors.
 
+## Focused Character contract
+
+Character scopes are strict:
+
+- `core` — deep evidence-bound identity, goals, choices, states, major relationships, major events, and A/B/C-separated arcs;
+- `important` — moderate identity, role, state, major relationships, and major-event modeling;
+- `placeholder` — minimal identity, role, chapter location, and necessary event participation only;
+- mention-only — no canonical Character Project entity unless later evidence establishes material impact.
+
+A-grade character records require exact assertions and evidence anchors. B-grade character synthesis requires multiple supported A-grade records. C-grade character interpretation requires explicit model attribution and limitations. Only core characters may receive formal arc records. Alias collisions, contradictory overlapping states, unsupported event links, and placeholder depth leakage remain explicit findings.
+
 ## Base deterministic predicates
 
 The base fact engine supports `alias`, `defeats`, `located_in`, `permission`, `count`, and `date`. These form a deterministic A-grade foundation, not a claim that every literary fact is already extracted.
@@ -266,7 +319,8 @@ Refuse rather than improvise when:
 - the relevant span is polluted or review-only;
 - any project, SQLite, report, manifest, source, or answer verification fails;
 - evidence exists but no validated conclusion supports the answer;
-- an Event Project is `review_required`;
+- an Event Project or Character Project is `review_required`;
+- a placeholder is asked for an unsupported deep relationship, ability system, personality analysis, or character arc;
 - no supported causal path exists;
 - a causal edge uses unknown assertions/evidence or invalid temporal direction;
 - an interpretation lacks A/B support;
@@ -285,11 +339,14 @@ A refusal is a correct result.
 7. Never invent event nodes or causal links to complete a narrative.
 8. Never promote C-grade interpretation to A-grade cause.
 9. Never silently break causal cycles or contradictions.
-10. Never answer from model memory when verified support is absent.
-11. Stop on any verification failure.
-12. Do not combine files without explicit order.
-13. Never claim all capabilities exceed 9.0 before final private blind evaluation.
-14. Never claim v6 release or freeze from an engineering-stage check.
+10. Never promote mention frequency into character importance.
+11. Never invent identity merges, personality, morality, growth, relationships, abilities, or character arcs.
+12. Never allow placeholder records to acquire core-character depth.
+13. Never answer from model memory when verified support is absent.
+14. Stop on any verification failure.
+15. Do not combine files without explicit order.
+16. Never claim all capabilities exceed 9.0 before final private blind evaluation.
+17. Never claim v6 release or freeze from an engineering-stage check.
 
 ## Standard artifacts
 
@@ -343,6 +400,20 @@ event-project-report.json
 artifact-manifest.json
 ```
 
+Character Project:
+
+```text
+characters.jsonl
+character-attributes.jsonl
+character-states.jsonl
+character-relationships.jsonl
+character-event-links.jsonl
+character-findings.jsonl
+character.sqlite
+character-project-report.json
+artifact-manifest.json
+```
+
 Literary sidecar:
 
 ```text
@@ -379,6 +450,9 @@ evidence verify
 event build
 event verify
 event query
+character build
+character verify
+character query
 literary build
 literary verify
 literary query
@@ -396,6 +470,9 @@ evidence-verify
 event-build
 event-verify
 event-query
+character-build
+character-verify
+character-query
 literary-build
 literary-verify
 literary-query
@@ -420,7 +497,9 @@ For an Event Project, report:
 - graph status: `completed` or `review_required`;
 - logical and database hashes.
 
-For an answer, report answer or refusal, tier, event component or edge type, path direction, chapter binding, supporting assertion IDs, exact evidence anchors, and limitations.
+For a Character Project, report scope counts, selection reasons, A/B/C attribute counts, state and relationship intervals, major-event links, alias/state conflicts, graph status, logical hash, database hash, and placeholders kept minimal.
+
+For an answer, report answer or refusal, epistemic tier, character scope when relevant, event component or edge type, path direction, chapter binding, supporting assertion IDs, exact evidence anchors, support chains, and limitations.
 
 ## Final checks
 
@@ -430,17 +509,19 @@ Before responding:
 2. Verify the Chapter Project for chapter/order information.
 3. Verify every literary sidecar used.
 4. Verify the Evidence Project for Claim support.
-5. Verify the Event Project for causal answers.
-6. Confirm exact offsets, text, hashes, and source identity.
-7. Confirm physical order was not rewritten.
-8. Confirm canonical order is labeled candidate.
-9. Confirm active events are materially significant.
-10. Confirm every causal edge has verified support and valid temporal direction.
-11. Confirm `review_required` graphs refuse causal presentation.
-12. Confirm A/B/C separation remains intact.
-13. Confirm downloadable files exist at the exact linked path.
-14. State that v6 remains under development until final integrated acceptance.
+5. Verify the Event Project for causal answers and character-event links.
+6. Verify the Character Project for character profiles, states, relationships, events, and arcs.
+7. Confirm exact offsets, text, hashes, and source identity.
+8. Confirm physical order was not rewritten.
+9. Confirm canonical order is labeled candidate.
+10. Confirm active events and modeled core/important characters are materially significant.
+11. Confirm placeholder and mention-only records were not given invented depth.
+12. Confirm every causal edge and character record has verified support.
+13. Confirm `review_required` graphs refuse presentation.
+14. Confirm A/B/C separation remains intact.
+15. Confirm downloadable files exist at the exact linked path.
+16. State that v6 remains under development until final integrated acceptance.
 
 ## Acceptance boundary
 
-The historical v5.9 release remains archived and unchanged. Stage 1, Stage 2, and Stage 3 checks are engineering evidence for the v6 development line. They do not establish that every final literary capability has reached 9.0, do not create a release candidate, and do not authorize repository freeze.
+The historical v5.9 release remains archived and unchanged. Stage 1, Stage 2, Stage 3, and Stage 4 checks are engineering evidence for the v6 development line. They do not establish that every final literary capability has reached 9.0, do not create a release candidate, and do not authorize repository freeze.
