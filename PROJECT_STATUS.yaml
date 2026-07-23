@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v8
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T04:02:00Z
+updated_at_utc: 2026-07-23T04:08:00Z
 
 historical_release:
   version: 5.9.0
@@ -34,7 +34,7 @@ v6_development:
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
   current_stage: Stage 4 Focused Character Engine
-  current_stage_status: validated_ready_for_final_exact_head
+  current_stage_status: final_exact_head_passed_ready_for_merge
   stage_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE.md
   stage_result_document: docs/STAGE4_FOCUSED_CHARACTER_ENGINE_RESULT.md
   github_sync_policy: one_branch_and_pull_request_per_major_stage
@@ -69,10 +69,9 @@ v6_development:
   stage_4_validation:
     pull_request: 31
     focused_test_count: 19
-    latest_validated_head: 0249fdca594bf224624fa814ba45b331c7401603
-    latest_workflow_run_id: 29978373138
-    latest_workflow_status: passed
-    final_exact_head_check: pending
+    final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
+    final_workflow_run_id: 29978722137
+    final_workflow_status: passed
     checks:
       - package_installation
       - module_compilation
@@ -147,10 +146,12 @@ stage_3:
 
 stage_4:
   name: Focused Character Engine
-  status: validated_ready_for_merge
+  status: final_exact_head_passed_ready_for_merge
   objective: deeply_model_core_characters_moderately_model_material_characters_and_keep_minor_people_minimal
   pull_request: 31
   focused_test_count: 19
+  final_pr_head: 299fa76b046675c5a9aa9a98742045067fdf5304
+  final_workflow_run_id: 29978722137
   internal_slices:
     - id: 4.1
       name: Character_Scope_and_Selection
@@ -169,7 +170,7 @@ stage_4:
       status: completed
     - id: 4.6
       name: Character_Project_Verifier_Query_and_Regression
-      status: passed_pending_final_exact_head
+      status: completed
   outputs:
     - tkr/character_engine.py
     - tkr/character_project.py
@@ -242,4 +243,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: run_final_exact_head_CI_then_squash_merge_pull_request_31
+next_action: squash_merge_pull_request_31
