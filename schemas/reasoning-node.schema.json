@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-node.schema.json",
+  "title": "Layered Reasoning Node",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "node_id", "layer", "statement", "intent_tags",
+    "chapter_ids", "entity_ids", "event_ids", "upstream_record_ids",
+    "support_node_ids", "evidence_anchor_ids", "independence_groups",
+    "confidence", "attribution", "limitations", "alternatives",
+    "counterfactual_premise", "inference_rule", "status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-node-v1"},
+    "node_id": {"type": "string", "pattern": "^rrn_[0-9a-f]{32}$"},
+    "layer": {"enum": ["A", "B", "C", "H"]},
+    "statement": {"type": "string", "minLength": 1},
+    "intent_tags": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "chapter_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "entity_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "event_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "upstream_record_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "support_node_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^rrn_[0-9a-f]{32}$"}},
+    "evidence_anchor_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "independence_groups": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "attribution": {"enum": ["source_fact", "cross_evidence_synthesis", "model_interpretation", "counterfactual_inference"]},
+    "limitations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "alternatives": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "counterfactual_premise": {"type": "string"},
+    "inference_rule": {"type": "string"},
+    "status": {"enum": ["active", "contested", "superseded", "review"]}
+  }
+}

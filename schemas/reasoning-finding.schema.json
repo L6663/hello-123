@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-finding.schema.json",
+  "title": "Layered Reasoning Finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "finding_id", "rule_id", "severity", "node_ids", "edge_ids", "signals", "recommended_action"],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-finding-v1"},
+    "finding_id": {"type": "string", "pattern": "^rrf_[0-9a-f]{32}$"},
+    "rule_id": {"type": "string", "minLength": 1},
+    "severity": {"enum": ["low", "medium", "high", "critical"]},
+    "node_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "edge_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "signals": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "recommended_action": {"type": "string", "minLength": 1}
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/layered-answer-packet.schema.json",
+  "title": "Layered Reasoning Answer Packet",
+  "type": "object",
+  "required": [
+    "schema_version", "mode", "graph_status", "decision", "reason_codes",
+    "facts", "synthesis", "interpretation", "counterfactual", "conflicts",
+    "provenance", "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-layered-answer-packet-v1"},
+    "mode": {"enum": ["fact_only", "fact_and_synthesis", "analysis", "counterfactual", "provenance"]},
+    "graph_status": {"enum": ["completed", "review_required"]},
+    "decision": {"enum": ["answered", "partial", "refused"]},
+    "reason_codes": {"type": "array", "items": {"type": "string"}},
+    "facts": {"type": "array", "items": {"$ref": "reasoning-node.schema.json"}},
+    "synthesis": {"type": "array", "items": {"$ref": "reasoning-node.schema.json"}},
+    "interpretation": {"type": "array", "items": {"$ref": "reasoning-node.schema.json"}},
+    "counterfactual": {"type": "array", "items": {"$ref": "reasoning-node.schema.json"}},
+    "conflicts": {"type": "array", "items": {"type": "object"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "alternatives": {"type": "array", "items": {"type": "string"}},
+    "provenance": {"type": "array", "items": {"type": "object"}},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v9
+schema_version: tkr-project-status-v10
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T04:14:00Z
+updated_at_utc: 2026-07-23T04:45:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,55 +27,66 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
+  active_branch: feature/v6-stage5-layered-reasoning-engine
+  active_pull_request: 32
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
     - Stage 4 Focused Character Engine
-  next_stage: Stage 5 Layered Reasoning Engine
-  current_stage_status: stage_4_completed_and_integrated
+  current_stage: Stage 5 Layered Reasoning Engine
+  current_stage_status: validated_ready_for_final_exact_head
+  stage_document: docs/STAGE5_LAYERED_REASONING_ENGINE.md
+  stage_result_document: docs/STAGE5_LAYERED_REASONING_ENGINE_RESULT.md
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
+  substage_release_allowed: false
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 4 Character CI
+    display_name: Stage 5 Reasoning CI
     mode: concise_pull_request_and_manual_only
     jobs: 1
     python_versions: ["3.12"]
     cancel_obsolete_runs: true
     routine_artifact_uploads: false
     release_or_freeze_workflows_enabled: false
-  stage_1_integration:
-    pull_request: 28
-    final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
-    final_workflow_run_id: 29971391164
-    squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
-  stage_2_integration:
-    pull_request: 29
-    focused_test_count: 17
-    final_pr_head: 564e9282632390ccb39987be4964d903009c7394
-    final_workflow_run_id: 29973788342
-    squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
-  stage_3_integration:
-    pull_request: 30
-    focused_test_count: 16
-    final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
-    final_workflow_run_id: 29975176620
-    squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
-  stage_4_integration:
-    pull_request: 31
-    focused_test_count: 19
-    final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
-    final_workflow_run_id: 29978838494
-    final_workflow_status: passed
-    squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
+  integrations:
+    stage_1:
+      pull_request: 28
+      final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
+      final_workflow_run_id: 29971391164
+      squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
+    stage_2:
+      pull_request: 29
+      focused_test_count: 17
+      final_pr_head: 564e9282632390ccb39987be4964d903009c7394
+      final_workflow_run_id: 29973788342
+      squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
+    stage_3:
+      pull_request: 30
+      focused_test_count: 16
+      final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
+      final_workflow_run_id: 29975176620
+      squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
+    stage_4:
+      pull_request: 31
+      focused_test_count: 19
+      final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
+      final_workflow_run_id: 29978838494
+      squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
+  stage_5_validation:
+    pull_request: 32
+    focused_test_count: 28
+    latest_passed_head: 55bf45149181b4d8c4a2a8e8ef00dd58c1aa59d7
+    latest_passed_workflow_run_id: 29980172568
+    latest_passed_workflow_status: passed
+    final_exact_head_check: pending
     checks:
       - package_installation
       - module_compilation
-      - stage_4_schema_loading
-      - stage_4_focused_tests
+      - stage_5_schema_loading
+      - stage_5_focused_tests
       - full_repository_regression
       - installed_and_bundled_CLI_smoke
   private_corpus_used: false
@@ -124,8 +135,6 @@ stage_3:
   status: completed_and_integrated
   pull_request: 30
   focused_test_count: 16
-  final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
-  final_workflow_run_id: 29975176620
   squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
   mandatory_gates:
     active_events_are_chapter_and_evidence_bound: passed
@@ -135,13 +144,10 @@ stage_3:
     cycles_and_unsupported_references_are_explicit: passed
     review_required_graphs_refuse_causal_answers: passed
     query_paths_return_edge_and_evidence_support: passed
-    JSONL_and_SQLite_integrity: passed
+    JSONL_SQLite_integrity: passed
     deterministic_rebuild: passed
     unsupported_paths_refuse: passed
     focused_and_full_repository_regression: passed
-  stage_validation_performed: true
-  stage_validation_status: passed
-  stage_merged: true
 
 stage_4:
   name: Focused Character Engine
@@ -149,52 +155,7 @@ stage_4:
   objective: deeply_model_core_characters_moderately_model_material_characters_and_keep_minor_people_minimal
   pull_request: 31
   focused_test_count: 19
-  final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
-  final_workflow_run_id: 29978838494
   squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
-  internal_slices:
-    - id: 4.1
-      name: Character_Scope_and_Selection
-      status: completed
-    - id: 4.2
-      name: Evidence_Bound_Character_Attributes_and_States
-      status: completed
-    - id: 4.3
-      name: Time_Bounded_Relationships
-      status: completed
-    - id: 4.4
-      name: Major_Event_Links
-      status: completed
-    - id: 4.5
-      name: A_B_C_Character_Arcs
-      status: completed
-    - id: 4.6
-      name: Character_Project_Verifier_Query_and_Regression
-      status: completed
-  outputs:
-    - tkr/character_engine.py
-    - tkr/character_project.py
-    - tkr/character_cli.py
-    - schemas/focused-character.schema.json
-    - schemas/character-attribute.schema.json
-    - schemas/character-state.schema.json
-    - schemas/character-relationship.schema.json
-    - schemas/character-event-link.schema.json
-    - schemas/character-annotation.schema.json
-    - schemas/character-project-report.schema.json
-    - schemas/character-project-verification.schema.json
-    - tests/test_character_engine.py
-    - tests/test_character_project.py
-  artifacts:
-    - characters.jsonl
-    - character-attributes.jsonl
-    - character-states.jsonl
-    - character-relationships.jsonl
-    - character-event-links.jsonl
-    - character-findings.jsonl
-    - character.sqlite
-    - character-project-report.json
-    - artifact-manifest.json
   mandatory_gates:
     core_and_important_require_material_impact: passed
     placeholders_cannot_receive_invented_depth: passed
@@ -205,14 +166,79 @@ stage_4:
     A_B_C_character_arcs_do_not_leak: passed
     temporal_states_and_relationships_are_queryable: passed
     alias_and_state_conflicts_are_explicit: passed
-    JSONL_and_SQLite_integrity: passed
+    JSONL_SQLite_integrity: passed
     deterministic_rebuild: passed
     unsupported_deep_queries_refuse: passed
+    focused_and_full_repository_regression: passed
+
+stage_5:
+  name: Layered Reasoning Engine
+  status: validated_ready_for_merge
+  objective: preserve_fact_synthesis_interpretation_and_counterfactual_boundaries_with_exact_provenance
+  pull_request: 32
+  focused_test_count: 28
+  internal_slices:
+    - id: 5.1
+      name: A_B_C_H_Reasoning_Contracts
+      status: completed
+    - id: 5.2
+      name: Independent_Support_and_Upstream_Lineage
+      status: completed
+    - id: 5.3
+      name: Conflict_Cycle_and_Review_Findings
+      status: completed
+    - id: 5.4
+      name: Section_Separated_Answer_Packets
+      status: completed
+    - id: 5.5
+      name: Reasoning_Project_SQLite_Verifier_and_Query
+      status: completed
+    - id: 5.6
+      name: Regression_and_Stage_Integration
+      status: passed_pending_final_exact_head
+  outputs:
+    - tkr/reasoning_engine.py
+    - tkr/reasoning_project.py
+    - tkr/reasoning_cli.py
+    - schemas/reasoning-node.schema.json
+    - schemas/reasoning-edge.schema.json
+    - schemas/reasoning-finding.schema.json
+    - schemas/reasoning-annotation.schema.json
+    - schemas/reasoning-project-report.schema.json
+    - schemas/reasoning-project-verification.schema.json
+    - schemas/layered-answer-packet.schema.json
+    - tests/test_reasoning_engine.py
+    - tests/test_reasoning_project.py
+  artifacts:
+    - reasoning-nodes.jsonl
+    - reasoning-edges.jsonl
+    - reasoning-findings.jsonl
+    - reasoning.sqlite
+    - reasoning-project-report.json
+    - artifact-manifest.json
+  query_modes:
+    - fact_only
+    - fact_and_synthesis
+    - analysis
+    - counterfactual
+    - provenance
+  mandatory_gates:
+    A_items_resolve_to_exact_upstream_bound_evidence: passed
+    B_items_have_two_independent_A_branches: passed
+    C_items_have_support_attribution_limitations_and_alternatives: passed
+    H_items_have_premise_inference_uncertainty_and_noncanon_status: passed
+    support_declarations_equal_active_support_edges: passed
+    conflicts_cycles_and_review_findings_are_explicit: passed
+    mode_forbidden_and_unsupported_layers_refuse: passed
+    answer_packets_preserve_A_B_C_H_sections: passed
+    provenance_expands_upstream_records_and_evidence: passed
+    JSONL_SQLite_integrity: passed
+    deterministic_rebuild: passed
     focused_and_full_repository_regression: passed
   stage_validation_performed: true
   stage_validation_status: passed
   stage_merge_approved_by_user_continuation: true
-  stage_merged: true
+  stage_merged: false
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -240,7 +266,8 @@ final_acceptance_rule:
   silent_source_corruption_allowed: 0
   unsupported_fact_promotion_allowed: 0
   interpretation_presented_as_source_fact_allowed: 0
+  counterfactual_presented_as_canon_allowed: 0
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: create_stage_5_layered_reasoning_branch_and_pull_request
+next_action: run_final_exact_head_CI_then_squash_merge_pull_request_32
