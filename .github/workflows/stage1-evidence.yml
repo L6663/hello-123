@@ -37,10 +37,46 @@ jobs:
         run: |
           python -m py_compile \
             scripts/tkr.py \
-            tkr/event_engine.py
+            tkr/event_engine.py \
+            tkr/event_project.py \
+            tkr/event_cli.py
+
+      - name: Validate Stage 3 schemas
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          names = [
+              "causal-event.schema.json",
+              "event-component.schema.json",
+              "event-causal-edge.schema.json",
+              "event-annotation.schema.json",
+              "event-project-report.schema.json",
+              "event-project-verification.schema.json",
+          ]
+          for name in names:
+              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
+              assert payload["$schema"].endswith("2020-12/schema")
+              assert payload["type"] == "object"
+          PY
 
       - name: Stage 3 tests
-        run: python -m unittest tests.test_event_engine -v
+        run: |
+          python -m unittest \
+            tests.test_event_engine \
+            tests.test_event_project -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: CLI smoke check
+        run: |
+          tkr-event --help >/dev/null
+          tkr-event build --help >/dev/null
+          tkr-event verify --help >/dev/null
+          tkr-event query --help >/dev/null
+          python scripts/tkr.py event --help >/dev/null
+          python scripts/tkr.py event-build --help >/dev/null
+          python scripts/tkr.py event-verify --help >/dev/null
+          python scripts/tkr.py event-query --help >/dev/null
