@@ -6,13 +6,18 @@ inputs:
 * a secure Text Knowledge Reader source project;
 * its verified literary knowledge sidecar.
 
-It publishes complete trusted-body Evidence Units, exact coverage accounting,
-explicit Claim-Evidence edges, graph validation, SQLite indexes, a report, and a
-hash manifest.  It has no project-acceptance, release, or freeze authority.
+It publishes two complementary evidence layers:
+
+* complete trusted-body ``EvidenceUnit`` records for retrieval and coverage;
+* exact ``EvidenceAnchor`` records directly referenced by Claims.
+
+The package also contains explicit Claim-Evidence edges, graph validation,
+SQLite indexes, reports, and a hash manifest.  It has no project-acceptance,
+release, or freeze authority.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
 from pathlib import Path, PurePosixPath
@@ -40,7 +45,12 @@ from .evidence_engine import (
 )
 from .hashing import sha256_file
 from .literary_engine import verify_literary_engine
-from .literary_models import EvidenceAnchor, KnowledgeAssertion, record_from_dict
+from .literary_models import (
+    ChapterRecord,
+    EvidenceAnchor,
+    KnowledgeAssertion,
+    record_from_dict,
+)
 from .project_security import verify_secure_knowledge_project
 
 EVIDENCE_PROJECT_SCHEMA_VERSION = "tkr-evidence-project-v1"
@@ -51,6 +61,7 @@ EVIDENCE_SQLITE_SCHEMA_VERSION = "tkr-evidence-sqlite-v1"
 
 _DATA_FILES = (
     "evidence-units.jsonl",
+    "claim-evidence-anchors.jsonl",
     "claim-evidence-edges.jsonl",
 )
 _REPORT_FILES = (
@@ -83,6 +94,7 @@ class EvidenceProjectBuildResult:
     eligible_chapter_count: int
     blocked_chapter_count: int
     evidence_unit_count: int
+    claim_evidence_anchor_count: int
     evidence_coverage_rate: float
     evidence_coverage_complete: bool
     assertion_count: int
@@ -101,13 +113,34 @@ class EvidenceProjectBuildResult:
         if self.status != "completed":
             raise EvidenceProjectError("Evidence project build status must be completed")
         if not self.evidence_coverage_complete or not self.claim_graph_valid:
-            raise EvidenceProjectError("completed Evidence project requires valid coverage and Claim graph")
-        if any((self.project_acceptance_performed, self.may_accept_project, self.may_release, self.may_freeze)):
+            raise EvidenceProjectError(
+                "completed Evidence project requires valid coverage and Claim graph"
+            )
+        for name in (
+            "chapter_count",
+            "eligible_chapter_count",
+            "blocked_chapter_count",
+            "evidence_unit_count",
+            "claim_evidence_anchor_count",
+            "assertion_count",
+            "claim_edge_count",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise EvidenceProjectError(f"{name} must be a non-negative integer")
+        if self.eligible_chapter_count + self.blocked_chapter_count != self.chapter_count:
+            raise EvidenceProjectError("eligible and blocked chapter counts are inconsistent")
+        if any(
+            (
+                self.project_acceptance_performed,
+                self.may_accept_project,
+                self.may_release,
+                self.may_freeze,
+            )
+        ):
             raise EvidenceProjectError("Evidence development project cannot grant release authority")
 
     def to_dict(self) -> dict[str, object]:
-        from dataclasses import asdict
-
         return asdict(self)
 
 
@@ -133,12 +166,17 @@ class EvidenceProjectVerification:
             raise EvidenceProjectError("Evidence verification schema version mismatch")
         if self.valid != (not self.reason_codes):
             raise EvidenceProjectError("Evidence verification validity does not match reason codes")
-        if any((self.project_acceptance_performed, self.may_accept_project, self.may_release, self.may_freeze)):
+        if any(
+            (
+                self.project_acceptance_performed,
+                self.may_accept_project,
+                self.may_release,
+                self.may_freeze,
+            )
+        ):
             raise EvidenceProjectError("Evidence verification cannot grant release authority")
 
     def to_dict(self) -> dict[str, object]:
-        from dataclasses import asdict
-
         payload = asdict(self)
         payload["reason_codes"] = list(self.reason_codes)
         return payload
@@ -149,7 +187,9 @@ def _canonical_json(value: object) -> str:
 
 
 def _json_bytes(value: object) -> bytes:
-    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    return (
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
 
 
 def _jsonl_bytes(values: Iterable[object]) -> bytes:
@@ -194,7 +234,9 @@ def _load_jsonl(path: Path, label: str) -> list[dict[str, object]]:
                     f"invalid {label} JSON at line {line_number}: {exc.msg}"
                 ) from exc
             if not isinstance(value, dict):
-                raise EvidenceProjectError(f"{label} record at line {line_number} must be an object")
+                raise EvidenceProjectError(
+                    f"{label} record at line {line_number} must be an object"
+                )
             rows.append(value)
     return rows
 
@@ -220,29 +262,38 @@ def _input_records(
     dict[str, object],
     dict[str, object],
     str,
-    list[object],
+    list[ChapterRecord],
     list[EvidenceAnchor],
     list[KnowledgeAssertion],
 ]:
     source_verification = verify_secure_knowledge_project(source_project)
     if not source_verification.valid:
         raise EvidenceProjectError(
-            "source project failed verification: " + ",".join(source_verification.reason_codes)
+            "source project failed verification: "
+            + ",".join(source_verification.reason_codes)
         )
     literary_verification = verify_literary_engine(literary_project)
     if not literary_verification.valid:
         raise EvidenceProjectError(
-            "literary project failed verification: " + ",".join(literary_verification.reason_codes)
+            "literary project failed verification: "
+            + ",".join(literary_verification.reason_codes)
         )
-    source_report = _load_object(source_project / "project-report.json", "source project report")
-    literary_report = _load_object(literary_project / "literary-report.json", "literary report")
+
+    source_report = _load_object(
+        source_project / "project-report.json", "source project report"
+    )
+    literary_report = _load_object(
+        literary_project / "literary-report.json", "literary report"
+    )
     source_path = source_project / "source" / "normalized-source.txt"
     if source_path.is_symlink() or not source_path.is_file():
         raise EvidenceProjectError("normalized source is not a safe regular file")
     try:
         source_text = source_path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
-        raise EvidenceProjectError(f"normalized source cannot be read strictly: {exc}") from exc
+        raise EvidenceProjectError(
+            f"normalized source cannot be read strictly: {exc}"
+        ) from exc
 
     source_id = source_report.get("source_id")
     source_sha = source_report.get("normalized_source_sha256")
@@ -250,31 +301,51 @@ def _input_records(
         raise EvidenceProjectError("source report omits source identity")
     if sha256(source_text.encode("utf-8")).hexdigest() != source_sha:
         raise EvidenceProjectError("normalized source hash differs from source report")
-    if literary_report.get("source_id") != source_id or literary_report.get("source_sha256") != source_sha:
-        raise EvidenceProjectError("literary project source binding differs from source project")
+    if (
+        literary_report.get("source_id") != source_id
+        or literary_report.get("source_sha256") != source_sha
+    ):
+        raise EvidenceProjectError(
+            "literary project source binding differs from source project"
+        )
 
-    chapters = [
-        record_from_dict("chapter", row)
-        for row in _load_jsonl(literary_project / "chapters.jsonl", "literary chapters")
-    ]
-    anchors = [
-        record_from_dict("evidence", row)
-        for row in _load_jsonl(literary_project / "evidence-anchors.jsonl", "literary evidence anchors")
-    ]
-    assertions = [
-        record_from_dict("assertion", row)
-        for row in _load_jsonl(literary_project / "assertions.jsonl", "literary assertions")
-    ]
-    if not all(isinstance(item, EvidenceAnchor) for item in anchors):
-        raise EvidenceProjectError("literary evidence artifact contains wrong record type")
-    if not all(isinstance(item, KnowledgeAssertion) for item in assertions):
-        raise EvidenceProjectError("literary assertion artifact contains wrong record type")
+    raw_chapters = _load_jsonl(
+        literary_project / "chapters.jsonl", "literary chapters"
+    )
+    raw_anchors = _load_jsonl(
+        literary_project / "evidence-anchors.jsonl",
+        "literary evidence anchors",
+    )
+    raw_assertions = _load_jsonl(
+        literary_project / "assertions.jsonl", "literary assertions"
+    )
+    chapters: list[ChapterRecord] = []
+    anchors: list[EvidenceAnchor] = []
+    assertions: list[KnowledgeAssertion] = []
+    for row in raw_chapters:
+        item = record_from_dict("chapter", row)
+        if not isinstance(item, ChapterRecord):
+            raise EvidenceProjectError("chapter artifact contains wrong record type")
+        chapters.append(item)
+    for row in raw_anchors:
+        item = record_from_dict("evidence", row)
+        if not isinstance(item, EvidenceAnchor):
+            raise EvidenceProjectError("evidence artifact contains wrong record type")
+        if source_text[item.evidence_start : item.evidence_end] != item.evidence_text:
+            raise EvidenceProjectError("literary Evidence differs from bound source span")
+        anchors.append(item)
+    for row in raw_assertions:
+        item = record_from_dict("assertion", row)
+        if not isinstance(item, KnowledgeAssertion):
+            raise EvidenceProjectError("assertion artifact contains wrong record type")
+        assertions.append(item)
     return source_report, literary_report, source_text, chapters, anchors, assertions
 
 
 def _create_database(
     path: Path,
     units: Sequence[EvidenceUnit],
+    anchors: Sequence[EvidenceAnchor],
     coverage: EvidenceCoverageReport,
     edges: Sequence[ClaimEvidenceEdge],
     graph: ClaimGraphReport,
@@ -312,19 +383,42 @@ def _create_database(
                 content_character_count INTEGER NOT NULL,
                 review_status TEXT NOT NULL
             );
-            CREATE INDEX evidence_chapter_span ON evidence_units(chapter_id,start_char,end_char);
+            CREATE INDEX evidence_chapter_span
+                ON evidence_units(chapter_id,start_char,end_char);
+            CREATE TABLE claim_evidence_anchors(
+                anchor_id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                source_sha256 TEXT NOT NULL,
+                unit_id TEXT NOT NULL,
+                chapter_id TEXT NOT NULL,
+                volume_ordinal INTEGER,
+                chapter_ordinal INTEGER,
+                original_heading TEXT NOT NULL,
+                normalized_heading TEXT NOT NULL,
+                evidence_start INTEGER NOT NULL,
+                evidence_end INTEGER NOT NULL,
+                evidence_text TEXT NOT NULL,
+                evidence_sha256 TEXT NOT NULL,
+                unit_content_sha256 TEXT NOT NULL,
+                evidence_role TEXT NOT NULL,
+                source_status TEXT NOT NULL
+            );
+            CREATE INDEX claim_anchor_chapter_span
+                ON claim_evidence_anchors(chapter_id,evidence_start,evidence_end);
             CREATE TABLE claim_evidence_edges(
                 edge_id TEXT PRIMARY KEY,
                 assertion_id TEXT NOT NULL,
-                evidence_id TEXT NOT NULL,
+                evidence_id TEXT NOT NULL REFERENCES claim_evidence_anchors(anchor_id),
                 relation TEXT NOT NULL,
                 evidence_source_status TEXT NOT NULL,
                 ordinal INTEGER NOT NULL,
                 confidence REAL NOT NULL,
                 review_status TEXT NOT NULL
             );
-            CREATE INDEX claim_edge_claim ON claim_evidence_edges(assertion_id,relation,ordinal);
-            CREATE INDEX claim_edge_evidence ON claim_evidence_edges(evidence_id,relation);
+            CREATE INDEX claim_edge_claim
+                ON claim_evidence_edges(assertion_id,relation,ordinal);
+            CREATE INDEX claim_edge_evidence
+                ON claim_evidence_edges(evidence_id,relation);
             CREATE TABLE coverage_spans(
                 chapter_id TEXT NOT NULL,
                 start_char INTEGER NOT NULL,
@@ -368,6 +462,28 @@ def _create_database(
                     item.review_status,
                 ),
             )
+        for item in anchors:
+            connection.execute(
+                "INSERT INTO claim_evidence_anchors VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    item.anchor_id,
+                    item.source_id,
+                    item.source_sha256,
+                    item.unit_id,
+                    item.chapter_id,
+                    item.volume_ordinal,
+                    item.chapter_ordinal,
+                    item.original_heading,
+                    item.normalized_heading,
+                    item.evidence_start,
+                    item.evidence_end,
+                    item.evidence_text,
+                    item.evidence_sha256,
+                    item.unit_content_sha256,
+                    item.evidence_role,
+                    item.source_status,
+                ),
+            )
         for item in edges:
             connection.execute(
                 "INSERT INTO claim_evidence_edges VALUES(?,?,?,?,?,?,?,?)",
@@ -382,7 +498,11 @@ def _create_database(
                     item.review_status,
                 ),
             )
-        for span in (*coverage.uncovered_spans, *coverage.overlap_spans, *coverage.blocked_spans):
+        for span in (
+            *coverage.uncovered_spans,
+            *coverage.overlap_spans,
+            *coverage.blocked_spans,
+        ):
             connection.execute(
                 "INSERT INTO coverage_spans VALUES(?,?,?,?)",
                 (span.chapter_id, span.start_char, span.end_char, span.reason),
@@ -390,9 +510,17 @@ def _create_database(
         for finding in graph.findings:
             connection.execute(
                 "INSERT INTO claim_graph_findings VALUES(?,?,?,?)",
-                (finding.code, finding.assertion_id, finding.evidence_id, finding.message),
+                (
+                    finding.code,
+                    finding.assertion_id,
+                    finding.evidence_id,
+                    finding.message,
+                ),
             )
         connection.commit()
+        foreign = connection.execute("PRAGMA foreign_key_check").fetchall()
+        if foreign:
+            raise EvidenceProjectError("Evidence SQLite foreign-key check failed")
         connection.execute("VACUUM")
     finally:
         connection.close()
@@ -461,11 +589,27 @@ def build_evidence_project(
     if output.is_symlink():
         raise EvidenceProjectError("output path must not be a symbolic link")
     if output.resolve() in {source_project.resolve(), literary_project.resolve()}:
-        raise EvidenceProjectError("Evidence output must differ from both input projects")
+        raise EvidenceProjectError(
+            "Evidence output must differ from both input projects"
+        )
 
-    source_report, literary_report, source_text, chapters, anchors, assertions = _input_records(
-        source_project,
-        literary_project,
+    (
+        source_report,
+        literary_report,
+        source_text,
+        chapters,
+        anchors,
+        assertions,
+    ) = _input_records(source_project, literary_project)
+    ordered_anchors = tuple(
+        sorted(
+            anchors,
+            key=lambda item: (
+                item.evidence_start,
+                item.evidence_end,
+                item.anchor_id,
+            ),
+        )
     )
     extraction = extract_evidence_units(
         source_text,
@@ -475,7 +619,9 @@ def build_evidence_project(
     )
     if not extraction.coverage.complete:
         raise EvidenceProjectError("trusted source coverage is incomplete")
-    evidence_status = {item.anchor_id: item.source_status for item in anchors}
+    evidence_status = {
+        item.anchor_id: item.source_status for item in ordered_anchors
+    }
     claim_graph = build_claim_evidence_edges(assertions, evidence_status)
     if not claim_graph.report.valid:
         raise EvidenceProjectError("Claim-Evidence graph is invalid")
@@ -485,11 +631,20 @@ def build_evidence_project(
     source_id = str(source_report.get("source_id", ""))
     source_sha = str(source_report.get("normalized_source_sha256", ""))
     literary_logical = str(literary_report.get("logical_sha256", ""))
-    if not all((source_project_id, literary_project_id, source_id, source_sha, literary_logical)):
+    if not all(
+        (
+            source_project_id,
+            literary_project_id,
+            source_id,
+            source_sha,
+            literary_logical,
+        )
+    ):
         raise EvidenceProjectError("input reports omit required project identities")
 
     payloads: dict[str, bytes] = {
         "evidence-units.jsonl": _jsonl_bytes(extraction.units),
+        "claim-evidence-anchors.jsonl": _jsonl_bytes(ordered_anchors),
         "claim-evidence-edges.jsonl": _jsonl_bytes(claim_graph.edges),
         "evidence-coverage.json": _json_bytes(extraction.coverage.to_dict()),
         "claim-graph-report.json": _json_bytes(claim_graph.report.to_dict()),
@@ -502,7 +657,9 @@ def build_evidence_project(
     )
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=f".{output.name}.tmp-", dir=output.parent))
+    temporary = Path(
+        tempfile.mkdtemp(prefix=f".{output.name}.tmp-", dir=output.parent)
+    )
     try:
         for name, data in payloads.items():
             _write_atomic(temporary / name, data)
@@ -522,6 +679,7 @@ def build_evidence_project(
         _create_database(
             database_path,
             extraction.units,
+            ordered_anchors,
             extraction.coverage,
             claim_graph.edges,
             claim_graph.report,
@@ -542,6 +700,7 @@ def build_evidence_project(
             extraction.coverage.eligible_chapter_count,
             extraction.coverage.blocked_chapter_count,
             len(extraction.units),
+            len(ordered_anchors),
             extraction.coverage.coverage_rate,
             extraction.coverage.complete,
             len(assertions),
@@ -552,13 +711,19 @@ def build_evidence_project(
         )
         report = {
             **result.to_dict(),
-            "source_project_manifest_sha256": sha256_file(source_project / "project-manifest.json"),
-            "literary_manifest_sha256": sha256_file(literary_project / "artifact-manifest.json"),
+            "source_project_manifest_sha256": sha256_file(
+                source_project / "project-manifest.json"
+            ),
+            "literary_manifest_sha256": sha256_file(
+                literary_project / "artifact-manifest.json"
+            ),
             "literary_logical_sha256": literary_logical,
             "target_chars": target_chars,
             "max_chars": max_chars,
         }
-        _write_atomic(temporary / "evidence-project-report.json", _json_bytes(report))
+        _write_atomic(
+            temporary / "evidence-project-report.json", _json_bytes(report)
+        )
 
         entries = []
         for path in sorted(temporary.iterdir()):
@@ -588,7 +753,9 @@ def build_evidence_project(
             "may_release": False,
             "may_freeze": False,
         }
-        _write_atomic(temporary / "artifact-manifest.json", _json_bytes(manifest))
+        _write_atomic(
+            temporary / "artifact-manifest.json", _json_bytes(manifest)
+        )
         _install(temporary, output, replace_existing)
         return result
     except Exception:
@@ -608,7 +775,11 @@ def verify_evidence_project(
     root = Path(evidence_project_directory)
     reasons: list[str] = []
     checked = 0
-    source_project_id = literary_project_id = source_id = logical_hash = database_hash = ""
+    source_project_id = ""
+    literary_project_id = ""
+    source_id = ""
+    logical_hash = ""
+    database_hash = ""
     try:
         _safe_directory(source_project, "source project")
         _safe_directory(literary_project, "literary project")
@@ -620,8 +791,12 @@ def verify_evidence_project(
         if not literary_verification.valid:
             reasons.append("EVIDENCE_LITERARY_PROJECT_INVALID")
 
-        manifest = _load_object(root / "artifact-manifest.json", "Evidence manifest")
-        report = _load_object(root / "evidence-project-report.json", "Evidence report")
+        manifest = _load_object(
+            root / "artifact-manifest.json", "Evidence manifest"
+        )
+        report = _load_object(
+            root / "evidence-project-report.json", "Evidence report"
+        )
         source_project_id = str(manifest.get("source_project_id", ""))
         literary_project_id = str(manifest.get("literary_project_id", ""))
         source_id = str(manifest.get("source_id", ""))
@@ -637,7 +812,12 @@ def verify_evidence_project(
             reasons.append("EVIDENCE_CLAIM_GRAPH_VERSION_MISMATCH")
         if any(
             bool(manifest.get(key)) or bool(report.get(key))
-            for key in ("project_acceptance_performed", "may_accept_project", "may_release", "may_freeze")
+            for key in (
+                "project_acceptance_performed",
+                "may_accept_project",
+                "may_release",
+                "may_freeze",
+            )
         ):
             reasons.append("EVIDENCE_AUTHORITY_BOUNDARY_VIOLATION")
 
@@ -654,7 +834,11 @@ def verify_evidence_project(
                 reasons.append("EVIDENCE_MANIFEST_ENTRY_INVALID")
                 continue
             relative = _safe_relative(entry.get("path"))
-            if relative is None or relative in registered or relative == "artifact-manifest.json":
+            if (
+                relative is None
+                or relative in registered
+                or relative == "artifact-manifest.json"
+            ):
                 reasons.append("EVIDENCE_MANIFEST_PATH_INVALID")
                 continue
             registered.add(relative)
@@ -670,28 +854,58 @@ def verify_evidence_project(
         if registered != (_ALLOWED_FILES - {"artifact-manifest.json"}):
             reasons.append("EVIDENCE_MANIFEST_MEMBERSHIP_MISMATCH")
 
-        source_report, literary_report, source_text, chapters, anchors, assertions = _input_records(
-            source_project,
-            literary_project,
-        )
+        (
+            source_report,
+            literary_report,
+            source_text,
+            chapters,
+            literary_anchors,
+            assertions,
+        ) = _input_records(source_project, literary_project)
         if source_project_id != source_report.get("project_id"):
             reasons.append("EVIDENCE_SOURCE_PROJECT_BINDING_MISMATCH")
         if literary_project_id != literary_report.get("project_id"):
             reasons.append("EVIDENCE_LITERARY_PROJECT_BINDING_MISMATCH")
         if source_id != source_report.get("source_id"):
             reasons.append("EVIDENCE_SOURCE_ID_MISMATCH")
-        if manifest.get("source_sha256") != source_report.get("normalized_source_sha256"):
+        if (
+            manifest.get("source_sha256")
+            != source_report.get("normalized_source_sha256")
+        ):
             reasons.append("EVIDENCE_SOURCE_HASH_BINDING_MISMATCH")
-        if manifest.get("literary_logical_sha256") != literary_report.get("logical_sha256"):
+        if (
+            manifest.get("literary_logical_sha256")
+            != literary_report.get("logical_sha256")
+        ):
             reasons.append("EVIDENCE_LITERARY_LOGICAL_BINDING_MISMATCH")
 
         units = [
             evidence_unit_from_dict(row)
-            for row in _load_jsonl(root / "evidence-units.jsonl", "Evidence units")
+            for row in _load_jsonl(
+                root / "evidence-units.jsonl", "Evidence units"
+            )
         ]
+        exported_anchors: list[EvidenceAnchor] = []
+        for row in _load_jsonl(
+            root / "claim-evidence-anchors.jsonl",
+            "Claim Evidence anchors",
+        ):
+            item = record_from_dict("evidence", row)
+            if not isinstance(item, EvidenceAnchor):
+                raise EvidenceProjectError(
+                    "Claim Evidence artifact contains wrong record type"
+                )
+            if source_text[item.evidence_start : item.evidence_end] != item.evidence_text:
+                raise EvidenceProjectError(
+                    "exported Claim Evidence differs from source span"
+                )
+            exported_anchors.append(item)
         edges = [
             edge_from_dict(row)
-            for row in _load_jsonl(root / "claim-evidence-edges.jsonl", "Claim-Evidence edges")
+            for row in _load_jsonl(
+                root / "claim-evidence-edges.jsonl",
+                "Claim-Evidence edges",
+            )
         ]
         coverage = coverage_report_from_dict(
             _load_object(root / "evidence-coverage.json", "Evidence coverage")
@@ -699,19 +913,46 @@ def verify_evidence_project(
         graph = graph_report_from_dict(
             _load_object(root / "claim-graph-report.json", "Claim graph report")
         )
+
+        target_chars = int(report.get("target_chars", 900))
+        max_chars = int(report.get("max_chars", 1500))
+        recomputed_extraction = extract_evidence_units(
+            source_text,
+            chapters,
+            target_chars=target_chars,
+            max_chars=max_chars,
+        )
         unit_verification = verify_evidence_units(source_text, chapters, units)
         if not unit_verification.valid:
             reasons.extend(unit_verification.reason_codes)
-        if coverage.to_dict() != extract_evidence_units(
-            source_text,
-            chapters,
-            target_chars=int(report.get("target_chars", 900)),
-            max_chars=int(report.get("max_chars", 1500)),
-        ).coverage.to_dict():
+        if [item.to_dict() for item in units] != [
+            item.to_dict() for item in recomputed_extraction.units
+        ]:
+            reasons.append("EVIDENCE_UNIT_RECOMPUTE_MISMATCH")
+        if coverage.to_dict() != recomputed_extraction.coverage.to_dict():
             reasons.append("EVIDENCE_COVERAGE_RECOMPUTE_MISMATCH")
-        evidence_status = {item.anchor_id: item.source_status for item in anchors}
-        recomputed_graph = build_claim_evidence_edges(assertions, evidence_status)
-        if [item.to_dict() for item in edges] != [item.to_dict() for item in recomputed_graph.edges]:
+
+        expected_anchors = sorted(
+            literary_anchors,
+            key=lambda item: (
+                item.evidence_start,
+                item.evidence_end,
+                item.anchor_id,
+            ),
+        )
+        if [item.to_dict() for item in exported_anchors] != [
+            item.to_dict() for item in expected_anchors
+        ]:
+            reasons.append("EVIDENCE_ANCHOR_RECOMPUTE_MISMATCH")
+        evidence_status = {
+            item.anchor_id: item.source_status for item in exported_anchors
+        }
+        recomputed_graph = build_claim_evidence_edges(
+            assertions, evidence_status
+        )
+        if [item.to_dict() for item in edges] != [
+            item.to_dict() for item in recomputed_graph.edges
+        ]:
             reasons.append("EVIDENCE_CLAIM_EDGE_RECOMPUTE_MISMATCH")
         if graph.to_dict() != recomputed_graph.report.to_dict():
             reasons.append("EVIDENCE_CLAIM_GRAPH_RECOMPUTE_MISMATCH")
@@ -726,17 +967,34 @@ def verify_evidence_project(
             literary_project_id,
             str(literary_report.get("logical_sha256", "")),
         )
-        if logical_hash != expected_logical or report.get("logical_sha256") != expected_logical:
+        if (
+            logical_hash != expected_logical
+            or report.get("logical_sha256") != expected_logical
+        ):
             reasons.append("EVIDENCE_LOGICAL_HASH_MISMATCH")
         actual_database_hash = sha256_file(root / "evidence.sqlite")
-        if database_hash != actual_database_hash or report.get("database_sha256") != actual_database_hash:
+        if (
+            database_hash != actual_database_hash
+            or report.get("database_sha256") != actual_database_hash
+        ):
             reasons.append("EVIDENCE_DATABASE_HASH_MISMATCH")
 
-        connection = sqlite3.connect(f"file:{root / 'evidence.sqlite'}?mode=ro", uri=True)
+        if report.get("evidence_unit_count") != len(units):
+            reasons.append("EVIDENCE_REPORT_UNIT_COUNT_MISMATCH")
+        if report.get("claim_evidence_anchor_count") != len(exported_anchors):
+            reasons.append("EVIDENCE_REPORT_ANCHOR_COUNT_MISMATCH")
+        if report.get("claim_edge_count") != len(edges):
+            reasons.append("EVIDENCE_REPORT_EDGE_COUNT_MISMATCH")
+
+        connection = sqlite3.connect(
+            f"file:{root / 'evidence.sqlite'}?mode=ro", uri=True
+        )
         try:
             metadata = {
                 str(key): str(value)
-                for key, value in connection.execute("SELECT key,value FROM metadata")
+                for key, value in connection.execute(
+                    "SELECT key,value FROM metadata"
+                )
             }
             if metadata.get("logical_sha256") != expected_logical:
                 reasons.append("EVIDENCE_DATABASE_LOGICAL_MISMATCH")
@@ -745,16 +1003,33 @@ def verify_evidence_project(
             quick = connection.execute("PRAGMA quick_check").fetchone()
             if quick is None or quick[0] != "ok":
                 reasons.append("EVIDENCE_SQLITE_QUICK_CHECK_FAILED")
+            foreign = connection.execute("PRAGMA foreign_key_check").fetchall()
+            if foreign:
+                reasons.append("EVIDENCE_SQLITE_FOREIGN_KEY_FAILED")
             database_unit_ids = [
                 str(row[0])
-                for row in connection.execute("SELECT evidence_id FROM evidence_units ORDER BY evidence_id")
+                for row in connection.execute(
+                    "SELECT evidence_id FROM evidence_units ORDER BY evidence_id"
+                )
+            ]
+            database_anchor_ids = [
+                str(row[0])
+                for row in connection.execute(
+                    "SELECT anchor_id FROM claim_evidence_anchors ORDER BY anchor_id"
+                )
             ]
             database_edge_ids = [
                 str(row[0])
-                for row in connection.execute("SELECT edge_id FROM claim_evidence_edges ORDER BY edge_id")
+                for row in connection.execute(
+                    "SELECT edge_id FROM claim_evidence_edges ORDER BY edge_id"
+                )
             ]
             if database_unit_ids != sorted(item.evidence_id for item in units):
                 reasons.append("EVIDENCE_JSON_SQLITE_UNIT_MISMATCH")
+            if database_anchor_ids != sorted(
+                item.anchor_id for item in exported_anchors
+            ):
+                reasons.append("EVIDENCE_JSON_SQLITE_ANCHOR_MISMATCH")
             if database_edge_ids != sorted(item.edge_id for item in edges):
                 reasons.append("EVIDENCE_JSON_SQLITE_EDGE_MISMATCH")
         finally:
