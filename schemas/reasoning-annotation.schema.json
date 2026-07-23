@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-annotation.schema.json",
+  "title": "Reviewed Reasoning Annotation Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_type", "record"],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-annotation-v1"},
+    "record_type": {"enum": ["node", "edge"]},
+    "record": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"record_type": {"const": "node"}}},
+      "then": {"properties": {"record": {"$ref": "reasoning-node.schema.json"}}}
+    },
+    {
+      "if": {"properties": {"record_type": {"const": "edge"}}},
+      "then": {"properties": {"record": {"$ref": "reasoning-edge.schema.json"}}}
+    }
+  ]
+}
