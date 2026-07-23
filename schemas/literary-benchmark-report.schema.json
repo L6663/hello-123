@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/literary-benchmark-report.schema.json",
+  "title": "Literary Regression Benchmark Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "evaluator_version", "policy_profile", "policy",
+    "cases_file_sha256", "cases_logical_sha256", "observations_file_sha256",
+    "observations_logical_sha256", "case_count", "coverage", "metrics",
+    "domain_results", "blockers", "cases", "passed",
+    "project_acceptance_performed", "may_accept_project", "may_release",
+    "may_freeze", "report_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-benchmark-report-v1"},
+    "evaluator_version": {"type": "string", "minLength": 1},
+    "policy_profile": {"enum": ["smoke", "release"]},
+    "policy": {"type": "object"},
+    "cases_file_sha256": {"$ref": "#/$defs/sha256"},
+    "cases_logical_sha256": {"$ref": "#/$defs/sha256"},
+    "observations_file_sha256": {"$ref": "#/$defs/sha256"},
+    "observations_logical_sha256": {"$ref": "#/$defs/sha256"},
+    "case_count": {"type": "integer", "minimum": 1},
+    "coverage": {"type": "object"},
+    "metrics": {"type": "object"},
+    "domain_results": {"type": "object"},
+    "blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "cases": {"type": "array", "items": {"type": "object"}},
+    "passed": {"type": "boolean"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false},
+    "report_id": {"type": "string", "pattern": "^lbr_[0-9a-f]{32}$"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
