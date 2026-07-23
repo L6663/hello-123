@@ -31,6 +31,7 @@ tkr-event = "tkr.event_cli:main"
 tkr-character = "tkr.character_cli:main"
 tkr-reason = "tkr.reasoning_cli:main"
 tkr-notion = "tkr.notion_cli:main"
+tkr-literary-benchmark = "tkr.literary_benchmark_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -115,6 +116,10 @@ include = ["tkr*"]
   "schemas/notion-project-report.schema.json",
   "schemas/notion-project-manifest.schema.json",
   "schemas/notion-project-verification.schema.json",
+  "schemas/literary-benchmark-case.schema.json",
+  "schemas/literary-benchmark-observation.schema.json",
+  "schemas/literary-benchmark-report.schema.json",
+  "schemas/literary-benchmark-verification.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -142,4 +147,5 @@ include = ["tkr*"]
   "docs/STAGE5_LAYERED_REASONING_ENGINE_RESULT.md",
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM.md",
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM_RESULT.md",
+  "docs/STAGE7_LITERARY_REGRESSION_BENCHMARK.md",
 ]

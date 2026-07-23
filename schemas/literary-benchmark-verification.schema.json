@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://text-knowledge-reader.local/schemas/literary-benchmark-verification.schema.json",
+  "title": "Literary Regression Benchmark Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "valid", "reason_codes",
+    "supplied_report_id", "expected_report_id", "project_acceptance_performed",
+    "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-literary-benchmark-verification-v1"},
+    "status": {"enum": ["verified", "rejected"]},
+    "valid": {"type": "boolean"},
+    "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "supplied_report_id": {"type": "string"},
+    "expected_report_id": {"type": "string", "pattern": "^lbr_[0-9a-f]{32}$"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

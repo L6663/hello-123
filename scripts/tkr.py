@@ -13,6 +13,7 @@ from tkr.chapter_cli import main as chapter_main  # noqa: E402
 from tkr.character_cli import main as character_main  # noqa: E402
 from tkr.evidence_cli import main as evidence_main  # noqa: E402
 from tkr.event_cli import main as event_main  # noqa: E402
+from tkr.literary_benchmark_cli import main as literary_benchmark_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.notion_cli import main as notion_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
@@ -56,6 +57,12 @@ NOTION_ALIASES = {
     "notion-verify": "verify",
     "notion-plan": "plan",
 }
+BENCHMARK_ALIASES = {
+    "benchmark-evaluate": "evaluate",
+    "benchmark-verify": "verify",
+    "literary-benchmark-evaluate": "evaluate",
+    "literary-benchmark-verify": "verify",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,7 +79,9 @@ def main(argv: list[str] | None = None) -> int:
             "  character build | character verify | character query\n"
             "  reason build | reason verify | reason query\n"
             "  notion build | notion verify | notion plan\n"
-            "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, reason-*, notion-*\n\n"
+            "  benchmark evaluate | benchmark verify\n"
+            "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, "
+            "reason-*, notion-*, benchmark-*\n\n"
             "Reasoning query modes:\n"
             "  fact_only | fact_and_synthesis | analysis | counterfactual | provenance\n\n"
             "Examples:\n"
@@ -85,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/tkr.py event --help\n"
             "  python scripts/tkr.py character --help\n"
             "  python scripts/tkr.py reason --help\n"
-            "  python scripts/tkr.py notion --help"
+            "  python scripts/tkr.py notion --help\n"
+            "  python scripts/tkr.py benchmark --help"
         )
         return 0
 
@@ -124,6 +134,10 @@ def main(argv: list[str] | None = None) -> int:
         return notion_main(["--help"] if len(args) == 1 else args[1:])
     if command in NOTION_ALIASES:
         return notion_main([NOTION_ALIASES[command], *args[1:]])
+    if command in {"benchmark", "literary-benchmark"}:
+        return literary_benchmark_main(["--help"] if len(args) == 1 else args[1:])
+    if command in BENCHMARK_ALIASES:
+        return literary_benchmark_main([BENCHMARK_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 
