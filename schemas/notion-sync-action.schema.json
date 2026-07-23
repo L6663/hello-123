@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-sync-action.schema.json",
+  "title": "Stage 6 reversible Notion sync action",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "action_id", "target_type", "target_key", "action", "notion_page_id", "content_sha256", "relation_sha256", "dependency_page_keys", "reason_codes"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-sync-action-v1"},
+    "action_id": {"type": "string", "pattern": "^nsa_[0-9a-f]{32}$"},
+    "target_type": {"enum": ["page", "relation_set"]},
+    "target_key": {"type": "string", "minLength": 1},
+    "action": {"enum": ["create", "update", "noop", "review_missing_remote_id", "archive_candidate"]},
+    "notion_page_id": {"type": "string"},
+    "content_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+    "relation_sha256": {"type": "string", "pattern": "^$|^[0-9a-f]{64}$"},
+    "dependency_page_keys": {"type": "array", "items": {"type": "string", "pattern": "^npg_[0-9a-f]{32}$"}, "uniqueItems": true},
+    "reason_codes": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+  }
+}
