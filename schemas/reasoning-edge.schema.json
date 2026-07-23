@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-edge.schema.json",
+  "title": "Layered Reasoning Edge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "edge_id", "source_node_id", "relation", "target_node_id", "confidence", "limitations", "status"],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-edge-v1"},
+    "edge_id": {"type": "string", "pattern": "^rre_[0-9a-f]{32}$"},
+    "source_node_id": {"type": "string", "pattern": "^rrn_[0-9a-f]{32}$"},
+    "relation": {"enum": ["direct_support", "independent_support", "derived_from", "contradicts", "context", "alternative_reading", "counterfactual_premise", "counterfactual_inference"]},
+    "target_node_id": {"type": "string", "pattern": "^rrn_[0-9a-f]{32}$"},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "limitations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "status": {"enum": ["active", "contested", "superseded", "review"]}
+  }
+}
