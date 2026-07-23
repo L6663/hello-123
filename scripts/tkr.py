@@ -9,6 +9,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
+from tkr.chapter_cli import main as chapter_main  # noqa: E402
 from tkr.evidence_cli import main as evidence_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
@@ -26,6 +27,11 @@ EVIDENCE_ALIASES = {
     "evidence-build": "build",
     "evidence-verify": "verify",
 }
+CHAPTER_ALIASES = {
+    "chapter-build": "build",
+    "chapter-verify": "verify",
+    "chapter-query": "query",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -37,8 +43,10 @@ def main(argv: list[str] | None = None) -> int:
             "  build | verify | query | verify-answer\n"
             "  literary build | literary verify | literary query | literary export-notion\n"
             "  evidence build | evidence verify\n"
+            "  chapter build | chapter verify | chapter query\n"
             "  literary-build | literary-verify | literary-query | literary-export-notion\n"
-            "  evidence-build | evidence-verify\n\n"
+            "  evidence-build | evidence-verify\n"
+            "  chapter-build | chapter-verify | chapter-query\n\n"
             "Examples:\n"
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
@@ -48,6 +56,9 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/tkr.py literary query literary '陆川首次出场在哪一章？'\n"
             "  python scripts/tkr.py evidence build project literary --outdir evidence-project\n"
             "  python scripts/tkr.py evidence verify project literary evidence-project\n"
+            "  python scripts/tkr.py chapter build project-a project-b --outdir chapter-project\n"
+            "  python scripts/tkr.py chapter verify chapter-project --source-project project-a --source-project project-b\n"
+            "  python scripts/tkr.py chapter query chapter-project --source-project project-a --source-project project-b --address 2 18\n"
             "  python scripts/tkr.py literary export-notion literary --outdir notion-package"
         )
         return 0
@@ -71,6 +82,12 @@ def main(argv: list[str] | None = None) -> int:
         return evidence_main(args[1:])
     if command in EVIDENCE_ALIASES:
         return evidence_main([EVIDENCE_ALIASES[command], *args[1:]])
+    if command == "chapter":
+        if len(args) == 1:
+            return chapter_main(["--help"])
+        return chapter_main(args[1:])
+    if command in CHAPTER_ALIASES:
+        return chapter_main([CHAPTER_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 
