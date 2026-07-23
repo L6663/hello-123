@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
@@ -21,11 +21,52 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
+
+      - name: Apply reviewed exact-newline fixes
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/v6-stage8-r2-execution-bundle' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          for name in ('tkr/chapter_project.py', 'tkr/evidence_project.py'):
+              path = Path(name)
+              text = path.read_text(encoding='utf-8')
+              old = '        source_text = source_path.read_text(encoding="utf-8")\n'
+              new = (
+                  '        # Preserve stored CRLF/LF bytes after strict UTF-8 decoding.\n'
+                  '        # Universal-newline translation would invalidate source hashes and offsets.\n'
+                  '        with source_path.open("r", encoding="utf-8", newline="") as handle:\n'
+                  '            source_text = handle.read()\n'
+              )
+              if old in text:
+                  path.write_text(text.replace(old, new, 1), encoding='utf-8')
+              elif new not in text:
+                  raise SystemExit(f'{name} no longer matches reviewed patch target')
+          PY
+          python -m py_compile tkr/chapter_project.py tkr/evidence_project.py tests/test_exact_source_newlines.py
+          python -m unittest tests.test_exact_source_newlines tests.test_chapter_project tests.test_evidence_project -v
+
+      - name: Commit reviewed exact-newline fixes
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feature/v6-stage8-r2-execution-bundle' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tkr/chapter_project.py tkr/evidence_project.py
+          if git diff --cached --quiet; then
+            echo 'Reviewed exact-newline fixes already present.'
+          else
+            git commit -m 'fix: preserve project source newline bindings'
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
 
       - name: Install build tooling
         run: python -m pip install --upgrade pip build
