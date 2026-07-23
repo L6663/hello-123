@@ -2,9 +2,9 @@
 
 ## Status
 
-`implementation_complete_ci_pending`
+`remediated_final_exact_head_ci_pending`
 
-Stage 6-R1 repairs the P0 defects found during the whole-project audit. This record is not final acceptance, release approval, or freeze authorization.
+Stage 6-R1 repairs the P0 defects found during the whole-project audit. This record is not final private-corpus acceptance, release approval, or freeze authorization.
 
 ## Delivered remediation
 
@@ -16,6 +16,7 @@ Stage 6-R1 repairs the P0 defects found during the whole-project audit. This rec
 - installed `tkr-notion build|verify|plan` commands are packaged;
 - bundled `python scripts/tkr.py notion ...` commands are available;
 - Stage 6 schemas, project tests, R1 adversarial tests, full repository regression, and CLI smoke checks are included in the concise workflow;
+- tracked Python bytecode was removed from the development line;
 - remote deletion remains forbidden and archive actions remain review-only candidates.
 
 ## Focused R1 regression
@@ -27,6 +28,17 @@ The R1 suite covers:
 3. two real SQLite page foreign keys on the relation table;
 4. field-level SQLite drift detection even when container hashes are recomputed.
 
-## Pending gate
+## Validation before documentation freeze
 
-The final exact-head workflow run must pass before PR #33 may be marked ready or merged.
+Head `928272a7cfa099bd94c58905b8978df48cf32aec` passed workflow run `29988760640`:
+
+- package installation;
+- Stage 6 module and bundled entry-point compilation;
+- nine Stage 6 Schema load checks;
+- Notion engine, Notion Project, and Stage 6-R1 focused tests;
+- complete repository regression;
+- installed and bundled CLI smoke checks.
+
+## Remaining integration gate
+
+The documentation-and-status head must pass the same final exact-head workflow before PR #33 is marked ready and squash merged.
