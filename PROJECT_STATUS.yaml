@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v15
+schema_version: tkr-project-status-v16
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T10:21:00Z
+updated_at_utc: 2026-07-23T10:26:00Z
 
 historical_release:
   version: 5.9.0
@@ -22,13 +22,11 @@ historical_release:
 
 v6_development:
   version: 6.0.0rc1
-  status: release_candidate_engineering
+  status: engineering_integrated_private_acceptance_pending
   mode: focused_high_reliability_literary_knowledge_engine
-  integration_base_branch: develop/v6-literary-engine
-  current_branch: feature/v6-stage8-final-productization-acceptance
-  current_pull_request: 35
+  integration_branch: develop/v6-literary-engine
+  current_branch: develop/v6-literary-engine
   github_sync_policy: one_branch_and_pull_request_per_major_stage
-  delivery_policy: merge_and_report_by_complete_major_stage
   completed_and_integrated_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
@@ -37,8 +35,9 @@ v6_development:
     - Stage 5 Layered Reasoning Engine
     - Stage 6-R1 Notion Knowledge System
     - Stage 7 Literary Regression Benchmark
+    - Stage 8 Final Productization and Acceptance engineering framework
   current_stage: Stage 8 Final Productization and Acceptance
-  current_stage_status: exact_head_ci_passed_integration_pending
+  current_stage_status: engineering_completed_and_integrated_private_acceptance_pending
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
     display_name: Stage 8 Productization CI
@@ -109,10 +108,13 @@ integrations:
     code_validation_head: e5857d0cb294a385385cedf22141a44fe8bf3240
     code_validation_workflow_run_id: 29997880685
     code_validation_workflow_status: passed
-    final_validated_head: 9cd535d64cd23e0804bfeda6caf3b94daf224a89
-    final_workflow_run_id: 29998124893
-    final_workflow_status: passed
-    squash_merge_commit: pending
+    status_validation_head: 9cd535d64cd23e0804bfeda6caf3b94daf224a89
+    status_validation_workflow_run_id: 29998124893
+    status_validation_workflow_status: passed
+    final_auditable_head: 425fc1d44a50b976747ac9423706de0150d193d1
+    final_auditable_workflow_run_id: 29998257061
+    final_auditable_workflow_status: passed
+    squash_merge_commit: 2985b5ba5a07d0026b1b4608da54a5a67abe7e7c
 
 stage_6:
   name: Notion Knowledge System
@@ -160,21 +162,6 @@ stage_7:
     minimum_correctness_score: 9.0
     minimum_safety_score: 9.0
     average_compensation_allowed: false
-  mandatory_gates:
-    answer_generation_inside_evaluator: prohibited
-    model_self_grading: prohibited
-    byte_and_logical_input_binding: passed
-    full_report_recomputation: passed
-    exact_node_evidence_binding: passed
-    malformed_packet_blocking: passed
-    reasoning_graph_review_required_fail_closed: passed
-    annotator_reviewer_separation: passed
-    wrong_answer_blocking: passed
-    overanswer_blocking: passed
-    citation_mismatch_blocking: passed
-    epistemic_layer_leakage_blocking: passed
-    measurable_hallucination_blocking: passed
-    unauthorized_authority_blocking: passed
   authority_boundary:
     private_corpus_final_acceptance_performed: false
     project_acceptance_performed: false
@@ -184,9 +171,9 @@ stage_7:
 
 stage_8:
   name: Final Productization and Acceptance
-  status: exact_head_ci_passed_integration_pending
-  objective: productize_v6_and_create_a_hash_bound_explicitly_approved_final_acceptance_path
-  pull_request: 35
+  status: engineering_completed_and_integrated_private_acceptance_pending
+  engineering_pull_request: 35
+  engineering_merge_commit: 2985b5ba5a07d0026b1b4608da54a5a67abe7e7c
   product_version: 6.0.0rc1
   outputs:
     - tkr/final_acceptance.py
@@ -235,7 +222,7 @@ stage_8:
     release_candidate: true
     may_release: false
     may_freeze: false
-  mandatory_gates:
+  engineering_gates:
     safe_root_confined_artifacts: passed
     complete_artifact_hash_recomputation: passed
     stage_7_release_report_recomputation: passed
@@ -258,7 +245,6 @@ stage_8:
     installed_and_bundled_cli_contracts: passed
     public_schema_contracts: passed
     reproducible_wheel_gate: passed
-    code_validation_ci: passed
     final_exact_head_ci: passed
 
 entity_policy:
@@ -298,4 +284,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: merge_pull_request_35_to_integrate_stage_8_engineering_without_claiming_real_private_acceptance
+next_action: execute_real_private_blind_evaluation_then_prepare_candidate_and_request_explicit_acceptance_approval
