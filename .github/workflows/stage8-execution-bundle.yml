@@ -1,0 +1,106 @@
+name: Stage 8 Execution Bundle
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  SOURCE_DATE_EPOCH: "1700000000"
+
+jobs:
+  build-execution-bundle:
+    name: Build public execution bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Build canonical Wheel
+        run: python -m build --wheel --outdir dist
+
+      - name: Assemble public-only execution bundle
+        env:
+          SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p execution-bundle/source execution-bundle/wheel
+          rsync -a ./ execution-bundle/source/ \
+            --exclude '.git/' \
+            --exclude '.venv/' \
+            --exclude 'venv/' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache/' \
+            --exclude 'build/' \
+            --exclude 'dist/' \
+            --exclude 'execution-bundle/' \
+            --exclude '.tkr-private-acceptance/' \
+            --exclude 'private-acceptance/' \
+            --exclude 'private-corpus/' \
+            --exclude 'private-gold/' \
+            --exclude 'private-observations/' \
+            --exclude '步剑庭*.txt' \
+            --exclude '步剑庭*.zip'
+          cp dist/*.whl execution-bundle/wheel/
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('execution-bundle')
+          wheel = next((root / 'wheel').glob('*.whl'))
+          metadata = {
+              'schema_version': 'tkr-public-execution-bundle-v1',
+              'source_commit': os.environ['SOURCE_COMMIT'],
+              'source_date_epoch': int(os.environ['SOURCE_DATE_EPOCH']),
+              'wheel_name': wheel.name,
+              'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(),
+              'contains_private_artifacts': False,
+              'project_acceptance_performed': False,
+              'release_candidate': False,
+              'may_release': False,
+              'may_freeze': False,
+          }
+          (root / 'execution-bundle.json').write_text(
+              json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Verify private artifacts are absent
+        run: |
+          python tkr/private_artifact_guard.py --root execution-bundle/source --output execution-bundle/private-artifact-guard.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('execution-bundle/private-artifact-guard.json').read_text(encoding='utf-8'))
+          assert report['passed'] is True
+          assert report['finding_count'] == 0
+          assert report['project_acceptance_performed'] is False
+          assert report['may_release'] is False
+          assert report['may_freeze'] is False
+          PY
+
+      - name: Upload public execution bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage8-public-execution-bundle
+          path: execution-bundle/
+          if-no-files-found: error
+          retention-days: 7
