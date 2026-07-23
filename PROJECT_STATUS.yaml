@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v16
+schema_version: tkr-project-status-v17
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T10:26:00Z
+updated_at_utc: 2026-07-23T10:54:00Z
 
 historical_release:
   version: 5.9.0
@@ -22,11 +22,12 @@ historical_release:
 
 v6_development:
   version: 6.0.0rc1
-  status: engineering_integrated_private_acceptance_pending
+  status: acceptance_operations_integrated_private_source_bytes_pending
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
   current_branch: develop/v6-literary-engine
   github_sync_policy: one_branch_and_pull_request_per_major_stage
+  stewardship_issue: 37
   completed_and_integrated_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
@@ -36,15 +37,19 @@ v6_development:
     - Stage 6-R1 Notion Knowledge System
     - Stage 7 Literary Regression Benchmark
     - Stage 8 Final Productization and Acceptance engineering framework
-  current_stage: Stage 8 Final Productization and Acceptance
-  current_stage_status: engineering_completed_and_integrated_private_acceptance_pending
+    - Stage 8-R1 private acceptance operations guard
+  current_stage: Stage 8-R1 Real Private Blind Acceptance
+  current_stage_status: operations_integrated_private_source_bytes_pending
   workflow_policy:
-    file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 8 Productization CI
+    productization_file: .github/workflows/stage1-evidence.yml
+    productization_display_name: Stage 8 Productization CI
+    private_guard_file: .github/workflows/private-artifact-guard.yml
+    private_guard_display_name: Private Artifact Guard
     triggers: [pull_request, workflow_dispatch]
     jobs:
       - package_matrix
       - reproducible_wheel
+      - private_artifact_guard
     python_versions: ["3.10", "3.11", "3.12"]
     full_repository_regression_per_python: true
     clean_wheel_install_per_python: true
@@ -52,6 +57,8 @@ v6_development:
     fixed_source_date_epoch: 1700000000
     byte_identical_wheel_gate: true
     private_artifact_uploads_allowed: false
+    private_artifact_path_guard_enabled: true
+    private_artifact_content_scanning_enabled: false
     release_or_freeze_workflows_enabled: false
 
 integrations:
@@ -115,6 +122,21 @@ integrations:
     final_auditable_workflow_run_id: 29998257061
     final_auditable_workflow_status: passed
     squash_merge_commit: 2985b5ba5a07d0026b1b4608da54a5a67abe7e7c
+  stage_8_r1_operations:
+    stewardship_issue: 37
+    pull_request: 38
+    branch: feature/v6-stage8-r1-private-acceptance-operations
+    focused_test_count: 6
+    final_pr_head: be2f708e3a4cd799d68158bda5ea9e7de7e02ec0
+    private_artifact_guard_workflow_run_id: 30000736755
+    private_artifact_guard_workflow_status: passed
+    productization_workflow_run_id: 30000736728
+    productization_workflow_status: passed
+    python_3_10_status: passed
+    python_3_11_status: passed
+    python_3_12_status: passed
+    reproducible_wheel_status: passed
+    squash_merge_commit: a8005d04cb0cf75aaf5fb3dbc8c8230b3adab278
 
 stage_6:
   name: Notion Knowledge System
@@ -247,6 +269,49 @@ stage_8:
     reproducible_wheel_gate: passed
     final_exact_head_ci: passed
 
+stage_8_r1:
+  name: Real Private Blind Acceptance Operations
+  status: operations_integrated_private_source_bytes_pending
+  stewardship_issue: 37
+  operations_pull_request: 38
+  operations_merge_commit: a8005d04cb0cf75aaf5fb3dbc8c8230b3adab278
+  runbook: docs/STAGE8_R1_PRIVATE_ACCEPTANCE_OPERATIONS.md
+  private_artifact_guard:
+    module: tkr/private_artifact_guard.py
+    test_file: tests/test_private_artifact_guard.py
+    workflow: .github/workflows/private-artifact-guard.yml
+    focused_tests: six_tests_passed
+    tracked_path_identity_scan: passed
+    private_content_opened_or_echoed: false
+    private_runtime_must_be_outside_repository: true
+  recovered_inventory:
+    private_question_bank_count: 3
+    private_question_count: 130
+    stage_7_minimum_case_count: 120
+    count_floor_available: true
+    original_private_corpus_files_discoverable_in_file_library: true
+    exact_private_source_bytes_mounted_in_acceptance_runtime: false
+  required_role_separation:
+    gold_custodian_distinct: required
+    answer_system_operator_distinct: required
+    evaluator_distinct: required
+    independent_reviewer_count: 2
+    role_separation_attested: false
+  remaining_gates:
+    exact_private_source_byte_recovery: pending
+    corpus_sha256_recomputation: pending
+    release_profile_gold_lock: pending
+    blind_observation_generation: pending
+    two_reviewer_evaluation_and_adjudication: pending
+    stage_7_release_report: pending
+    stage_7_exact_verification: pending
+    private_blind_attestation: pending
+    stage_8_technical_candidate: pending
+    explicit_product_acceptance_approval: pending
+    acceptance_seal: pending
+    separate_public_release_approval: pending
+    separate_repository_freeze_approval: pending
+
 entity_policy:
   core_characters: deep_model
   important_characters: role_and_major_event_model
@@ -284,4 +349,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: execute_real_private_blind_evaluation_then_prepare_candidate_and_request_explicit_acceptance_approval
+next_action: recover_exact_private_source_bytes_into_isolated_runtime_then_lock_gold_and_execute_stage_7_release_blind_run
