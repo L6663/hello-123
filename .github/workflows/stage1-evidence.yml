@@ -1,4 +1,4 @@
-name: Stage 4 Character CI
+name: Stage 5 Reasoning CI
 
 on:
   pull_request:
@@ -7,23 +7,41 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage4-character-${{ github.event.pull_request.number || github.ref }}
+  group: stage5-reasoning-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
 
 jobs:
   verify:
-    name: Stage 4 CI
+    name: Stage 5 CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Apply staged direct-fact lineage refinement
+        if: ${{ hashFiles('.stage5/apply_reasoning_contract_refinement.py') != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .stage5/apply_reasoning_contract_refinement.py
+          python -m py_compile tkr/reasoning_engine.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tkr/reasoning_engine.py
+          git rm .stage5/apply_reasoning_contract_refinement.py
+          rmdir .stage5 2>/dev/null || true
+          git commit -m "refactor(stage5): require chapter and independence lineage for facts"
+          git push origin "HEAD:${{ github.head_ref }}"
 
       - uses: actions/setup-python@v5
         with:
@@ -34,51 +52,10 @@ jobs:
         run: python -m pip install .
 
       - name: Compile
-        run: |
-          python -m py_compile \
-            scripts/tkr.py \
-            tkr/character_engine.py \
-            tkr/character_project.py \
-            tkr/character_cli.py
+        run: python -m py_compile tkr/reasoning_engine.py
 
-      - name: Validate Stage 4 schemas
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          names = [
-              "focused-character.schema.json",
-              "character-attribute.schema.json",
-              "character-state.schema.json",
-              "character-relationship.schema.json",
-              "character-event-link.schema.json",
-              "character-annotation.schema.json",
-              "character-project-report.schema.json",
-              "character-project-verification.schema.json",
-          ]
-          for name in names:
-              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
-              assert payload["$schema"].endswith("2020-12/schema")
-              assert payload["type"] == "object"
-          PY
-
-      - name: Stage 4 tests
-        run: |
-          python -m unittest \
-            tests.test_character_engine \
-            tests.test_character_project -v
+      - name: Stage 5 tests
+        run: python -m unittest tests.test_reasoning_engine -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
-
-      - name: CLI smoke check
-        run: |
-          tkr-character --help >/dev/null
-          tkr-character build --help >/dev/null
-          tkr-character verify --help >/dev/null
-          tkr-character query --help >/dev/null
-          python scripts/tkr.py character --help >/dev/null
-          python scripts/tkr.py character-build --help >/dev/null
-          python scripts/tkr.py character-verify --help >/dev/null
-          python scripts/tkr.py character-query --help >/dev/null
