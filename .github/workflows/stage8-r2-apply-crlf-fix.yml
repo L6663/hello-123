@@ -1,0 +1,61 @@
+name: Stage 8-R2 Apply CRLF Fix
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fixed-patch:
+    if: github.event.pull_request.head.ref == 'feature/v6-stage8-r2-execution-bundle' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply deterministic CRLF source-binding fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          engine = Path('tkr/literary_engine.py')
+          source = engine.read_text(encoding='utf-8')
+          old = '''    try:\n        source_text = source_path.read_text(encoding="utf-8")\n    except (OSError, UnicodeError) as exc:\n'''
+          new = '''    try:\n        # Preserve the exact decoded newline sequence because source-project\n        # offsets and normalized_source_sha256 are bound to the stored text.\n        # Path.read_text() uses universal-newline translation and silently\n        # rewrites CRLF to LF, invalidating both the hash and every character\n        # offset for Windows-origin corpora.\n        with source_path.open("r", encoding="utf-8", newline="") as handle:\n            source_text = handle.read()\n    except (OSError, UnicodeError) as exc:\n'''
+          if old in source:
+              engine.write_text(source.replace(old, new, 1), encoding='utf-8')
+          elif 'with source_path.open("r", encoding="utf-8", newline="") as handle:' not in source:
+              raise SystemExit('literary engine source no longer matches the reviewed patch target')
+
+          test = Path('tests/test_literary_crlf.py')
+          test.write_text('''from __future__ import annotations\n\nfrom hashlib import sha256\nimport json\nfrom pathlib import Path\nfrom tempfile import TemporaryDirectory\nimport unittest\nfrom unittest.mock import patch\n\nfrom tkr import literary_engine\n\n\ndef _jsonl(path: Path, rows: list[dict[str, object]]) -> None:\n    path.parent.mkdir(parents=True, exist_ok=True)\n    path.write_text(\n        "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\\n" for row in rows),\n        encoding="utf-8",\n        newline="\\n",\n    )\n\n\nclass LiteraryCRLFSourceBindingTests(unittest.TestCase):\n    def test_project_inputs_preserve_crlf_for_hash_and_offsets(self) -> None:\n        with TemporaryDirectory() as directory:\n            root = Path(directory) / "project"\n            source_text = "第一行\\r\\n第二行\\r\\n"\n            source_path = root / "source" / "normalized-source.txt"\n            source_path.parent.mkdir(parents=True)\n            source_path.write_bytes(source_text.encode("utf-8"))\n            (root / "project-report.json").write_text(\n                json.dumps(\n                    {\n                        "project_id": "kpr_crlf_fixture",\n                        "source_id": "src_crlf_fixture",\n                        "normalized_source_sha256": sha256(source_text.encode("utf-8")).hexdigest(),\n                    }\n                ),\n                encoding="utf-8",\n            )\n            _jsonl(root / "stage2-structure" / "unit-index.jsonl", [{}])\n            _jsonl(root / "stage2-structure" / "heading-candidates.jsonl", [])\n            _jsonl(root / "stage1-anomaly" / "anomaly-candidates.jsonl", [])\n            _jsonl(root / "bridge" / "entity" / "mentions.jsonl", [])\n            _jsonl(root / "bridge" / "entity" / "entities.jsonl", [])\n            _jsonl(root / "bridge" / "entity" / "facts.jsonl", [{}])\n\n            verification = type("Verification", (), {"valid": True, "reason_codes": ()})()\n            with patch(\n                "tkr.literary_engine.verify_secure_knowledge_project",\n                return_value=verification,\n            ):\n                _, loaded, *_ = literary_engine._project_inputs(root)\n\n            self.assertEqual(loaded, source_text)\n            self.assertEqual(\n                sha256(loaded.encode("utf-8")).hexdigest(),\n                sha256(source_path.read_bytes()).hexdigest(),\n            )\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+
+      - name: Validate fixed regression
+        run: |
+          python -m py_compile tkr/literary_engine.py tests/test_literary_crlf.py
+          python -m unittest tests.test_literary_crlf tests.test_literary_engine -v
+
+      - name: Commit reviewed fix to pull-request branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tkr/literary_engine.py tests/test_literary_crlf.py
+          if git diff --cached --quiet; then
+            echo 'Reviewed CRLF fix already present.'
+            exit 0
+          fi
+          git commit -m 'fix: preserve CRLF literary source bindings'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
