@@ -1,34 +1,39 @@
 ---
 name: text-knowledge-reader
-description: Build an evidence-bound long-text knowledge project and an optional chapter-addressable literary knowledge engine. Preserve source identity, detect contamination and structural defects, separate explicit facts from cross-evidence synthesis and model interpretation, retrieve exact evidence, export a Notion-ready package, and refuse unsupported conclusions. Use for novels, historical corpora, technical documents, notes, and other long text where traceability matters.
+description: Build auditable long-text knowledge projects with strict source identity, contamination isolation, exact Evidence Units, multi-file chapter catalogs, A/B/C epistemic separation, evidence-first literary queries, and Notion-ready exports. Use for novels, historical corpora, technical documents, notes, and other long text where source traceability and refusal are required.
 ---
 
 # Text Knowledge Reader
 
 **Development version:** 6.0.0-alpha1  
 **Historical release:** 5.9.0 at `archive/v5.9.0-final`  
-**Current status:** Stage 7 literary-engine development; no v6 final acceptance or freeze
+**Current development:** Stage 1 Evidence Engine integrated; Stage 2 Chapter Structure Engine under final integration  
+**Authority:** no v6 final acceptance, release, or freeze
 
 ## Purpose
 
-Use this Skill to transform uploaded long text into an auditable knowledge system without silently repairing, deleting, or inventing source content.
+Use this Skill to convert uploaded long text into a source-bound, reviewable knowledge system without silently repairing, deleting, renumbering, reordering, or inventing source content.
 
-The Skill has two compatible layers:
+The v6 system has four compatible layers:
 
-1. **Base evidence project** — source identity, decoding, anomaly isolation, Unit/chapter structure, six deterministic fact predicates, entity normalization, retrieval, citations, and strict refusal.
-2. **Literary knowledge sidecar** — chapter addresses, exact evidence anchors, broader literary entities, time-bounded relationships, causal event components, revision history, A/B/C epistemic separation, and a Notion-ready export.
+1. **Base source project** — strict decoding, source identity, anomaly isolation, Unit structure, deterministic fact predicates, entity normalization, retrieval, citations, and refusal.
+2. **Evidence Project** — complete trusted-body Evidence Units, exact Claim evidence anchors, Claim→Evidence edges, coverage accounting, SQLite integrity, and deterministic rebuild verification.
+3. **Chapter Project** — one or more verified source projects mapped into an immutable physical chapter order plus a separate reviewable canonical-order candidate.
+4. **Literary sidecar** — A/B/C assertions, selected entities, temporal relationships, event components, revisions, evidence-first queries, and Notion-ready projection.
 
-The literary sidecar extends the base project. It does not bypass base-project verification.
+Later layers never bypass verification of earlier inputs.
 
 ## Inputs
 
-Primary inputs:
+Supported inputs include:
 
 - one uploaded `.txt` or `.md` file;
-- several uploaded text files when the user explicitly authorizes a combination order;
+- several uploaded text files when their input order is explicitly supplied;
 - an existing verified Text Knowledge Reader project;
+- multiple verified source projects for one Chapter Project;
+- a verified literary sidecar;
 - optional reviewed literary annotation JSONL;
-- a factual, structural, relational, event, evidence, or literary-analysis question.
+- factual, structural, relational, event, evidence, chapter-location, or literary-analysis questions.
 
 Supported strict decoding:
 
@@ -37,86 +42,116 @@ Supported strict decoding:
 - UTF-16 LE with BOM;
 - UTF-16 BE with BOM.
 
-Never use replacement decoding. Never modify, overwrite, delete, or normalize the user's original file in place.
+Never use replacement decoding. Never modify the user's original file in place.
 
 ## Epistemic contract
 
-Every literary conclusion must be classified.
+Every literary conclusion must retain its level.
 
 ### A — explicit source fact
 
-A records are facts directly supported by exact source evidence. Every A record must bind:
+A records require exact clean evidence bound to:
 
-- source ID and source SHA-256;
-- Unit and literary chapter ID;
-- volume/chapter ordinal when recoverable;
-- original and normalized heading;
-- exact start/end character offsets;
-- exact evidence text and evidence SHA-256;
-- Unit content SHA-256;
-- source contamination/review status.
+- source ID and SHA-256;
+- Unit and chapter ID;
+- original source span;
+- exact evidence text and SHA-256;
+- contamination and review state.
 
-A records cannot be synthesis or literary interpretation.
+A records cannot be synthesis or interpretation.
 
 ### B — cross-evidence synthesis
 
-B records summarize a pattern, long-term causal connection, character arc, faction strategy, or other conclusion supported by at least two independent A supports.
-
-A B record is not an original sentence from the source. Present it as **high-confidence synthesis**, not as an explicit authorial statement.
+B records summarize patterns or causal structure supported by multiple independent A records. Present them as synthesis, not as a sentence explicitly stated by the source.
 
 ### C — model literary interpretation
 
-C records may discuss theme, symbolism, narrative strategy, ethics, political meaning, or one plausible reading. Every C record must:
-
-- be explicitly labeled model interpretation;
-- cite A or B support;
-- disclose limitations or competing readings;
-- never claim definitive author intent without direct evidence;
-- never be placed into an A-grade fact property in Notion.
+C records may discuss theme, symbolism, narrative strategy, ethics, politics, or one plausible reading. They must be labeled model interpretation, cite A/B support, disclose limitations, and never enter A-grade fact properties.
 
 Do not silently promote C to B or B to A.
 
 ## Workflow
 
-### 1. Locate the Skill and inputs
-
 Treat the directory containing this `SKILL.md` as `SKILL_DIR`.
 
-Use only files actually available in the current conversation or sandbox. Do not infer a sandbox path from a filename alone. Do not use model memory to fill missing chapters, polluted suffixes, or absent source passages.
-
-### 2. Check the bundled Skill
+### 1. Check the bundled Skill
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" doctor
 python "${SKILL_DIR}/scripts/tkr.py" audit
 ```
 
-### 3. Build the base evidence project
+### 2. Build and verify each base source project
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" build INPUT.txt \
   --outdir BASE_PROJECT \
   --state-dir BUILD_STATE \
   --profile balanced
+
+python "${SKILL_DIR}/scripts/tkr.py" verify BASE_PROJECT
 ```
 
 Profiles:
 
-- `balanced` — ordinary build with conservative review findings;
-- `strict` — canonical indexing only when the user explicitly requests it;
-- `high-recall` — irregular corpora where additional review candidates are acceptable.
+- `balanced` — ordinary conservative build;
+- `strict` — canonical indexing only when explicitly requested;
+- `high-recall` — irregular corpora with additional review candidates.
 
-Verify before any query or literary build:
+### 3. Build the Chapter Project for one or more files
+
+The source-project argument order is the immutable input and physical file order. A numbering-derived canonical order is stored separately as a candidate and never rewrites physical order.
 
 ```bash
-python "${SKILL_DIR}/scripts/tkr.py" verify BASE_PROJECT
+python "${SKILL_DIR}/scripts/tkr.py" chapter build \
+  PROJECT_A PROJECT_B PROJECT_C \
+  --outdir CHAPTER_PROJECT
 ```
 
-### 4. Build the literary sidecar
+Verify using the same project order:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" chapter verify CHAPTER_PROJECT \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --source-project PROJECT_C
+```
+
+Query an exact address:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" chapter query CHAPTER_PROJECT \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --source-project PROJECT_C \
+  --address 8 138
+```
+
+Query one chapter and its physical or canonical neighbors:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" chapter query CHAPTER_PROJECT \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --chapter-id CHAPTER_ID \
+  --neighbors physical
+
+python "${SKILL_DIR}/scripts/tkr.py" chapter query CHAPTER_PROJECT \
+  --source-project PROJECT_A \
+  --source-project PROJECT_B \
+  --chapter-id CHAPTER_ID \
+  --neighbors canonical
+```
+
+`physical` means original input order. `canonical` means the numbering-derived candidate. Never describe the candidate as a source rewrite.
+
+### 4. Build and verify the literary sidecar
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary build BASE_PROJECT \
   --outdir LITERARY_PROJECT
+
+python "${SKILL_DIR}/scripts/tkr.py" literary verify LITERARY_PROJECT
 ```
 
 Optional reviewed annotations:
@@ -127,131 +162,121 @@ python "${SKILL_DIR}/scripts/tkr.py" literary build BASE_PROJECT \
   --annotations REVIEWED_ANNOTATIONS.jsonl
 ```
 
-Annotations do not receive automatic authority. They must satisfy the A/B/C contracts and exact evidence checks.
+Annotations receive no automatic authority. They must pass exact evidence and A/B/C validation.
 
-Verify the sidecar:
+### 5. Build and verify the Evidence Project
 
 ```bash
-python "${SKILL_DIR}/scripts/tkr.py" literary verify LITERARY_PROJECT
+python "${SKILL_DIR}/scripts/tkr.py" evidence build \
+  BASE_PROJECT LITERARY_PROJECT \
+  --outdir EVIDENCE_PROJECT
+
+python "${SKILL_DIR}/scripts/tkr.py" evidence verify \
+  BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT
 ```
 
-### 5. Query the correct layer
+### 6. Query the appropriate layer
 
-Use the base layer for the deterministic six predicates:
+Use the base layer for deterministic typed predicates:
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" query BASE_PROJECT "陆川击败了谁？"
 ```
 
-Use the literary layer for chapter, relationship, event, evidence, entity-profile, and explicitly separated analysis questions:
+Use the Chapter Project for exact source location, numbering anomalies, file order, missing chapters, duplicate chapters, and neighbor queries.
+
+Use the literary layer for relationships, events, evidence-linked profiles, and explicitly separated analysis:
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary query LITERARY_PROJECT \
-  "林舟首次出场在哪一章？"
-
-python "${SKILL_DIR}/scripts/tkr.py" literary query LITERARY_PROJECT \
   "林舟与赵衡在第1卷第1章时是什么关系？"
-
-python "${SKILL_DIR}/scripts/tkr.py" literary query LITERARY_PROJECT \
-  "这一结论是原文事实、跨证据归纳还是模型解释？"
 ```
 
-A literary answer packet must return the tier of every item. Do not rewrite an A/B/C-separated response into one undifferentiated narrative.
+Do not rewrite an A/B/C-separated response into one undifferentiated narrative.
 
-### 6. Export a Notion-ready package
+### 7. Export a Notion-ready package
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary export-notion LITERARY_PROJECT \
   --outdir NOTION_PACKAGE
 ```
 
-The deterministic package separates:
+Preserve page IDs and relation IDs so later revisions update existing records rather than create duplicates.
 
-- chapter index;
-- entity knowledge graph;
-- A/B/C assertions;
-- event timeline;
-- source evidence and hashes;
-- CSV review ledgers.
+## Chapter Structure contract
 
-An external Notion connector may upload these records. Before writing, preserve page IDs and relation IDs so later revisions update existing records rather than create uncontrolled duplicates.
+A Chapter Project records both:
+
+- **physical order** — immutable user-supplied project order and source-local position;
+- **canonical-order candidate** — volume/chapter numbering order for review and retrieval.
+
+Volume ordinals may be derived from:
+
+1. a combined volume/chapter heading;
+2. an explicit parent volume Unit;
+3. conservative preceding-volume context;
+4. unresolved state.
+
+The derivation basis must always be retained.
+
+Required structural findings include:
+
+- duplicate canonical chapter keys;
+- duplicate chapter content;
+- chapter gaps and inversions;
+- missing volume or chapter ordinal;
+- missing, detached, or titleless headings;
+- empty bodies;
+- contaminated or review-only spans;
+- overlapping source numbering ranges;
+- input order that differs from numbering order.
+
+Findings are review records. They do not authorize source mutation.
 
 ## Base deterministic predicates
 
-The existing fact engine supports:
+The base fact engine supports:
 
-- `alias` — names and aliases;
-- `defeats` — who defeated whom;
-- `located_in` — where an entity is located;
-- `permission` — who may or may not perform an action;
-- `count` — explicit quantities;
-- `date` — explicit dates.
+- `alias`;
+- `defeats`;
+- `located_in`;
+- `permission`;
+- `count`;
+- `date`.
 
-These predicates form an A-grade deterministic foundation. They are not a claim that every literary fact is already extracted.
-
-## Literary records
-
-The Stage 7 sidecar can store:
-
-- chapters and volume/chapter addresses;
-- evidence anchors;
-- people, factions, abilities, places, items, events, concepts, and species;
-- aliases and identity basis;
-- first and last trusted appearance;
-- A/B/C assertions;
-- time-bounded relationships;
-- event causes, process, outcome, consequences, and foreshadowing;
-- revisions and supersession links.
-
-Current Stage 7.1 provides these contracts and storage/query/export foundations. Full-text dialogue indexing, conservative minor-entity discovery, canonical cross-file chapter mapping, automatic relationship/event extraction, and final cold-detail evaluation remain later Stage 7 work.
-
-## Factual-status handling
-
-Keep direct assertions separate from:
-
-- negation;
-- belief;
-- suspicion;
-- rumor;
-- accusation;
-- hypothetical statements;
-- questions;
-- future intent.
-
-Only direct assertions that pass source, structure, anomaly, evidence, validation, entity, conflict, and integrity gates may enter A facts.
+These form an A-grade deterministic foundation, not a claim that every literary fact is already extracted.
 
 ## Refusal rules
 
 Refuse rather than improvise when:
 
-- the requested chapter is missing;
-- the relevant source span is polluted or review-only;
-- the entity name maps to multiple unresolved entities;
+- a requested chapter address is absent;
+- multiple chapters share one unresolved address;
+- the file order or volume context is ambiguous;
+- the relevant span is polluted or review-only;
+- project, Chapter Project, Evidence Project, literary sidecar, SQLite, report, manifest, source, or answer verification fails;
+- evidence exists but no validated conclusion supports the requested answer;
 - a relationship has no interval covering the requested chapter;
-- lexical text exists but no validated conclusion supports the answer;
-- the user asks for a post-gap ending not present in trusted source material;
-- evidence, database, report, manifest, or source verification fails;
-- a requested interpretation lacks A/B support;
-- a B or C conclusion is being requested as an explicit source fact.
+- an interpretation lacks A/B support;
+- the user requests missing post-gap content as established fact.
 
-A refusal is a correct result. Do not turn it into speculation to appear helpful.
+A refusal is a correct result.
 
 ## Safety boundaries
 
-Always enforce these rules:
-
 1. Preserve original source bytes and SHA-256 identity.
 2. Never decode with replacement characters.
-3. Never auto-delete pollution, paratext, anomalies, or duplicate-looking text.
-4. Never accept evidence whose offsets, text, and hashes do not exactly match its source binding.
-5. Never treat rumor, suspicion, accusation, question, hypothetical, or future intent as established fact.
-6. Never answer from model memory when project evidence is absent.
-7. Stop when project, literary sidecar, SQLite, report, manifest, source, or answer verification fails.
-8. Do not combine files without explicit authorization and a documented order.
-9. Keep mutable state, journals, locks, and caches outside immutable project directories.
-10. Never present model interpretation as authorial fact.
-11. Never claim all capabilities exceed 9.0 until final private blind evaluation measures every target domain independently.
-12. Never claim v6 acceptance, release, or freeze from Stage 7 development checks.
+3. Never auto-delete pollution, paratext, anomalies, or duplicates.
+4. Never rewrite chapter numbers, titles, file order, or source text.
+5. Keep physical and canonical candidate order separate.
+6. Never accept evidence whose offsets, text, and hashes do not match its source.
+7. Never treat rumor, suspicion, accusation, questions, hypotheticals, or future intent as fact.
+8. Never answer from model memory when verified evidence is absent.
+9. Stop on any project, SQLite, report, manifest, source, or answer verification failure.
+10. Do not combine files without explicit order.
+11. Never present model interpretation as authorial fact.
+12. Never claim all capabilities exceed 9.0 before final private blind evaluation.
+13. Never claim v6 release or freeze from an engineering-stage check.
 
 ## Standard artifacts
 
@@ -266,6 +291,31 @@ bridge/
 index/
 project-report.json
 project-manifest.json
+```
+
+Evidence Project:
+
+```text
+evidence-units.jsonl
+claim-evidence-anchors.jsonl
+claim-evidence-edges.jsonl
+evidence-coverage.json
+claim-graph-report.json
+evidence.sqlite
+evidence-project-report.json
+artifact-manifest.json
+```
+
+Chapter Project:
+
+```text
+source-bindings.jsonl
+chapters.jsonl
+canonical-order.jsonl
+chapter-findings.jsonl
+chapter.sqlite
+chapter-project-report.json
+artifact-manifest.json
 ```
 
 Literary sidecar:
@@ -300,7 +350,7 @@ artifact-manifest.json
 
 ## Commands
 
-The bundled entry point exposes the base and literary command surfaces:
+Bundled command surface:
 
 ```text
 doctor
@@ -311,23 +361,30 @@ build
 verify
 query
 verify-answer
+chapter build
+chapter verify
+chapter query
+evidence build
+evidence verify
 literary build
 literary verify
 literary query
 literary export-notion
 ```
 
-Equivalent literary aliases are available for automation:
+Automation aliases:
 
 ```text
+chapter-build
+chapter-verify
+chapter-query
+evidence-build
+evidence-verify
 literary-build
 literary-verify
 literary-query
 literary-export-notion
 ```
-
-Use the bundled script so source checkouts and directly uploaded Skill packages
-follow the same command contract:
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" --help
@@ -335,49 +392,40 @@ python "${SKILL_DIR}/scripts/tkr.py" --help
 
 ## Output requirements
 
-For a build, report:
+For a Chapter Project, report:
 
-- source name and SHA-256;
-- selected encoding;
-- project and sidecar status;
-- chapter/Unit count;
-- clean, polluted, review, and missing-address findings;
-- entity and assertion counts by A/B/C tier;
-- evidence traceability and chapter-address coverage;
-- blockers and files requiring review.
+- ordered source filenames, IDs, hashes, and project IDs;
+- physical and canonical candidate order distinction;
+- numbered chapter coverage;
+- duplicate, gap, inversion, missing ordinal/title/body, contamination, and source-order findings;
+- exact source offsets and content hashes;
+- logical and database hashes;
+- files requiring review.
 
 For an answer, report:
 
 - answer or refusal;
-- A/B/C classification for every conclusion;
-- exact evidence excerpts and character offsets when available;
-- volume/chapter and original heading;
-- source ID, Unit ID, and evidence hash;
-- limitations, conflicts, or alternative readings.
-
-For a Notion export, report:
-
-- page counts by database;
-- A/B/C counts;
-- manifest and hash verification;
-- whether any record remains review-only;
-- whether an incremental update or a fresh import is intended.
+- physical or canonical order basis;
+- source file, Unit, original heading, volume/chapter, and offsets;
+- evidence tier for conclusions;
+- limitations, conflicts, contamination, or alternative readings.
 
 ## Final checks
 
 Before responding:
 
-1. Verify the base project.
-2. Verify the literary sidecar when used.
-3. Confirm every A claim has exact source evidence.
-4. Confirm every B claim has at least two independent A supports.
-5. Confirm every C claim is explicitly attributed and limited.
-6. Confirm cited offsets and text match the bound evidence anchor.
-7. Confirm no unresolved conflict, ambiguity, or contamination invalidates the answer.
-8. Confirm Notion properties preserve A/B/C separation.
-9. Confirm downloadable files exist at the exact linked path.
-10. State clearly that v6 remains under development until final integrated acceptance.
+1. Verify every base project used.
+2. Verify the Chapter Project when chapter/order information is used.
+3. Verify the Evidence Project when claim support is used.
+4. Verify the literary sidecar when literary records are used.
+5. Confirm exact offsets, text, hashes, and source identity.
+6. Confirm physical order was not rewritten.
+7. Confirm canonical order is labeled candidate.
+8. Confirm A/B/C separation remains intact.
+9. Confirm unresolved conflict, ambiguity, or contamination is disclosed or causes refusal.
+10. Confirm downloadable files exist at the exact linked path.
+11. State that v6 remains under development until final integrated acceptance.
 
 ## Acceptance boundary
 
-The historical v5.9 release remains archived and unchanged. The v6 literary engine is an active development line created in response to real-use gaps. Stage 7 unit and regression checks are engineering evidence only; they do not establish that every literary capability has reached 9.0, and they do not authorize a final release or repository freeze.
+The historical v5.9 release remains archived and unchanged. Stage 1 and Stage 2 checks are engineering evidence for the v6 development line. They do not establish that every final literary capability has reached 9.0, do not create a release candidate, and do not authorize repository freeze.

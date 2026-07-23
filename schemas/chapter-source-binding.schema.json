@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/chapter-source-binding.schema.json",
+  "title": "Stage 2 chapter source binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "source_binding_id", "project_id", "source_id",
+    "source_filename", "source_sha256", "input_order", "chapter_count",
+    "first_known_volume", "first_known_chapter", "last_known_volume",
+    "last_known_chapter", "numbering_coverage"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-chapter-source-binding-v1"},
+    "source_binding_id": {"type": "string", "pattern": "^csb_[0-9a-f]{32}$"},
+    "project_id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_filename": {"type": "string", "minLength": 1},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "input_order": {"type": "integer", "minimum": 0},
+    "chapter_count": {"type": "integer", "minimum": 0},
+    "first_known_volume": {"type": ["integer", "null"], "minimum": 1},
+    "first_known_chapter": {"type": ["integer", "null"], "minimum": 1},
+    "last_known_volume": {"type": ["integer", "null"], "minimum": 1},
+    "last_known_chapter": {"type": ["integer", "null"], "minimum": 1},
+    "numbering_coverage": {"type": "number", "minimum": 0, "maximum": 1}
+  }
+}

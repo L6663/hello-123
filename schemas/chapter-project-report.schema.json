@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/chapter-project-report.schema.json",
+  "title": "Stage 2 Chapter Structure project report",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version", "status", "chapter_engine_version",
+    "chapter_sqlite_schema_version", "source_project_ids", "source_bindings",
+    "source_count", "chapter_count", "numbered_chapter_count",
+    "special_unit_count", "finding_count", "duplicate_key_count",
+    "duplicate_content_count", "gap_count", "inversion_count",
+    "unresolved_volume_count", "unresolved_chapter_count",
+    "contaminated_or_review_count", "numbering_coverage",
+    "physical_order_preserved", "canonical_order_is_candidate",
+    "logical_sha256", "database_sha256", "project_acceptance_performed",
+    "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-chapter-project-report-v1"},
+    "status": {"const": "completed"},
+    "chapter_engine_version": {"const": "tkr-chapter-engine-v1"},
+    "chapter_sqlite_schema_version": {"const": "tkr-chapter-sqlite-v1"},
+    "source_project_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "source_bindings": {"type": "array", "minItems": 1},
+    "source_count": {"type": "integer", "minimum": 1},
+    "chapter_count": {"type": "integer", "minimum": 0},
+    "numbered_chapter_count": {"type": "integer", "minimum": 0},
+    "special_unit_count": {"type": "integer", "minimum": 0},
+    "finding_count": {"type": "integer", "minimum": 0},
+    "duplicate_key_count": {"type": "integer", "minimum": 0},
+    "duplicate_content_count": {"type": "integer", "minimum": 0},
+    "gap_count": {"type": "integer", "minimum": 0},
+    "inversion_count": {"type": "integer", "minimum": 0},
+    "unresolved_volume_count": {"type": "integer", "minimum": 0},
+    "unresolved_chapter_count": {"type": "integer", "minimum": 0},
+    "contaminated_or_review_count": {"type": "integer", "minimum": 0},
+    "numbering_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+    "physical_order_preserved": {"const": true},
+    "canonical_order_is_candidate": {"const": true},
+    "logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}

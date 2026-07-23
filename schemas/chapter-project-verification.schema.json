@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/chapter-project-verification.schema.json",
+  "title": "Stage 2 Chapter Structure project verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "valid", "reason_codes", "checked_file_count",
+    "source_project_ids", "chapter_count", "logical_sha256", "database_sha256",
+    "project_acceptance_performed", "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-chapter-project-verification-v1"},
+    "status": {"enum": ["verified", "rejected"]},
+    "valid": {"type": "boolean"},
+    "reason_codes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "checked_file_count": {"type": "integer", "minimum": 0},
+    "source_project_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "chapter_count": {"type": "integer", "minimum": 0},
+    "logical_sha256": {"type": "string"},
+    "database_sha256": {"type": "string"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"valid": {"const": true}}},
+      "then": {
+        "properties": {
+          "status": {"const": "verified"},
+          "reason_codes": {"maxItems": 0},
+          "logical_sha256": {"pattern": "^[0-9a-f]{64}$"},
+          "database_sha256": {"pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"valid": {"const": false}}},
+      "then": {
+        "properties": {
+          "status": {"const": "rejected"},
+          "reason_codes": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}
