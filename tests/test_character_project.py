@@ -332,7 +332,7 @@ class CharacterProjectFixture:
             CHARACTER_EVENT_LINK_SCHEMA_VERSION,
             "cel_important_event",
             important.character_id,
-            self.events[2].event_id,
+            self.events[-1].event_id,
             "participant",
             "A",
             (self.assertions[2],),
