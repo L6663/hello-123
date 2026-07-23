@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/notion-workspace-schema.schema.json",
+  "title": "Stage 6 Notion workspace definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "notion_engine_version", "databases", "epistemic_database_map", "sync_phases", "archive_requires_explicit_approval", "project_acceptance_performed", "may_accept_project", "may_release", "may_freeze"],
+  "properties": {
+    "schema_version": {"const": "tkr-notion-workspace-schema-v1"},
+    "notion_engine_version": {"type": "string", "minLength": 1},
+    "databases": {
+      "type": "array",
+      "minItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["database_key", "title", "stable_identity_property", "content_hash_property", "relation_hash_property", "automatic_deletion_allowed"],
+        "properties": {
+          "database_key": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "stable_identity_property": {"const": "page_key"},
+          "content_hash_property": {"const": "content_sha256"},
+          "relation_hash_property": {"const": "relation_sha256"},
+          "automatic_deletion_allowed": {"const": false}
+        }
+      }
+    },
+    "epistemic_database_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B", "C", "H"],
+      "properties": {
+        "A": {"const": "facts_a"},
+        "B": {"const": "synthesis_b"},
+        "C": {"const": "interpretations_c"},
+        "H": {"const": "counterfactuals_h"}
+      }
+    },
+    "sync_phases": {"const": ["upsert_pages", "resolve_page_ids", "apply_relations"]},
+    "archive_requires_explicit_approval": {"const": true},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
