@@ -61,7 +61,7 @@ class ChapterCliTests(unittest.TestCase):
             self.assertIsInstance(chapter["start_char"], int)
             self.assertIsInstance(chapter["content_sha256"], str)
 
-    def test_physical_and_canonical_neighbors_are_distinct(self) -> None:
+    def test_physical_and_canonical_neighbor_directions_are_separate(self) -> None:
         with TemporaryDirectory() as directory:
             projects, output = self._fixture(Path(directory))
             chapters = [
@@ -87,6 +87,7 @@ class ChapterCliTests(unittest.TestCase):
                 physical_code, physical = self._run([*common, "--neighbors", "physical"])
                 canonical_code, canonical = self._run([*common, "--neighbors", "canonical"])
             self.assertEqual((physical_code, canonical_code), (0, 0))
+            self.assertIsNone(physical["neighbors"]["previous"])
             self.assertEqual(
                 physical["neighbors"]["next"]["chapter_ordinal"],
                 1,
@@ -95,9 +96,16 @@ class ChapterCliTests(unittest.TestCase):
                 canonical["neighbors"]["previous"]["chapter_ordinal"],
                 1,
             )
-            self.assertNotEqual(
+            self.assertEqual(
                 physical["neighbors"]["next"]["chapter_id"],
                 canonical["neighbors"]["previous"]["chapter_id"],
+            )
+            self.assertEqual(
+                (
+                    canonical["neighbors"]["next"]["volume_ordinal"],
+                    canonical["neighbors"]["next"]["chapter_ordinal"],
+                ),
+                (3, 1),
             )
 
     def test_missing_address_refuses_instead_of_guessing(self) -> None:
