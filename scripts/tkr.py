@@ -13,6 +13,7 @@ from tkr.chapter_cli import main as chapter_main  # noqa: E402
 from tkr.character_cli import main as character_main  # noqa: E402
 from tkr.evidence_cli import main as evidence_main  # noqa: E402
 from tkr.event_cli import main as event_main  # noqa: E402
+from tkr.final_acceptance_cli import main as final_acceptance_main  # noqa: E402
 from tkr.literary_benchmark_cli import main as literary_benchmark_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.notion_cli import main as notion_main  # noqa: E402
@@ -63,6 +64,16 @@ BENCHMARK_ALIASES = {
     "literary-benchmark-evaluate": "evaluate",
     "literary-benchmark-verify": "verify",
 }
+ACCEPTANCE_ALIASES = {
+    "acceptance-prepare": "prepare",
+    "acceptance-verify": "verify",
+    "acceptance-seal": "seal",
+    "acceptance-verify-seal": "verify-seal",
+    "final-acceptance-prepare": "prepare",
+    "final-acceptance-verify": "verify",
+    "final-acceptance-seal": "seal",
+    "final-acceptance-verify-seal": "verify-seal",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -80,22 +91,20 @@ def main(argv: list[str] | None = None) -> int:
             "  reason build | reason verify | reason query\n"
             "  notion build | notion verify | notion plan\n"
             "  benchmark evaluate | benchmark verify\n"
+            "  acceptance prepare | acceptance verify | acceptance seal | acceptance verify-seal\n"
             "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, "
-            "reason-*, notion-*, benchmark-*\n\n"
+            "reason-*, notion-*, benchmark-*, acceptance-*\n\n"
             "Reasoning query modes:\n"
             "  fact_only | fact_and_synthesis | analysis | counterfactual | provenance\n\n"
             "Examples:\n"
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
-            "  python scripts/tkr.py verify project\n"
             "  python scripts/tkr.py literary build project --outdir literary\n"
-            "  python scripts/tkr.py evidence build project literary --outdir evidence-project\n"
             "  python scripts/tkr.py chapter build project-a project-b --outdir chapter-project\n"
-            "  python scripts/tkr.py event --help\n"
-            "  python scripts/tkr.py character --help\n"
             "  python scripts/tkr.py reason --help\n"
             "  python scripts/tkr.py notion --help\n"
-            "  python scripts/tkr.py benchmark --help"
+            "  python scripts/tkr.py benchmark --help\n"
+            "  python scripts/tkr.py acceptance --help"
         )
         return 0
 
@@ -138,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
         return literary_benchmark_main(["--help"] if len(args) == 1 else args[1:])
     if command in BENCHMARK_ALIASES:
         return literary_benchmark_main([BENCHMARK_ALIASES[command], *args[1:]])
+    if command in {"acceptance", "final-acceptance"}:
+        return final_acceptance_main(["--help"] if len(args) == 1 else args[1:])
+    if command in ACCEPTANCE_ALIASES:
+        return final_acceptance_main([ACCEPTANCE_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 
