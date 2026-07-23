@@ -62,9 +62,9 @@ Release Gold must contain at least 120 cases, at least eight per domain, at leas
 
 ### Observations
 
-`literary-benchmark-observations.jsonl` contains one already-produced answer packet per Gold case. The benchmark never invokes an answer model and never accepts a scalar self-score. Observations must retain the exact layered-answer packet schema, A/B/C/H sections, provenance, query mode, decision, refusal reasons, and explicit false authority flags.
+`literary-benchmark-observations.jsonl` contains one already-produced answer packet per Gold case. The benchmark never invokes an answer model and never accepts a scalar self-score. Observations must retain the exact layered-answer packet schema, A/B/C/H sections, provenance, query mode, graph status, conflict list, decision, refusal reasons, and explicit false authority flags.
 
-Malformed sections, invalid node or layer values, duplicate nodes, invalid evidence arrays, missing authority flags, and answer-packet schema mismatches are measured failures rather than silently ignored data.
+Malformed sections, invalid node or layer values, duplicate nodes, invalid evidence arrays, missing authority flags, and answer-packet schema mismatches are measured failures rather than silently ignored data. A `review_required` graph must refuse in every mode except the explicitly provenance-only mode.
 
 ## Metrics and blockers
 
@@ -143,7 +143,7 @@ python scripts/tkr.py benchmark verify CASES OBSERVATIONS REPORT
 
 The report binds both byte SHA-256 and canonical logical SHA-256 for Gold cases and observations. Verification recomputes every field and rejects any mismatch, including a changed score, blocker, case result, authority flag, or report ID.
 
-The focused regression suite covers twelve-domain success, layer leakage, authority escalation, report tampering, release-policy undercoverage, duplicate case identities, wrong-node evidence, malformed answer packets, and annotator/reviewer conflicts.
+The focused regression suite covers twelve-domain success, layer leakage, authority escalation, report tampering, release-policy undercoverage, duplicate case identities, wrong-node evidence, malformed answer packets, graph-review refusal, and annotator/reviewer conflicts.
 
 ## Authority boundary
 
