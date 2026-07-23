@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v18
+schema_version: tkr-project-status-v19
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T12:40:00Z
+updated_at_utc: 2026-07-23T12:55:00Z
 
 historical_release:
   version: 5.9.0
@@ -22,7 +22,7 @@ historical_release:
 
 v6_development:
   version: 6.0.0rc1
-  status: semantic_precision_remediation_integration_pending
+  status: semantic_precision_integrated_untouched_final_corpus_pending
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
   current_branch: develop/v6-literary-engine
@@ -39,8 +39,9 @@ v6_development:
     - Stage 8 Final Productization and Acceptance engineering framework
     - Stage 8-R1 private acceptance operations guard
     - Stage 8-R2 real-corpus execution and source-binding hardening
-  current_stage: Stage 8-R3 Semantic Precision Remediation
-  current_stage_status: exact_real_corpus_regression_passed_integration_pending
+    - Stage 8-R3 semantic precision and ambiguity blocking
+  current_stage: Stage 8 Final Private Blind Acceptance
+  current_stage_status: r3_integrated_untouched_final_corpus_pending
   workflow_policy:
     productization_file: .github/workflows/stage1-evidence.yml
     productization_display_name: Stage 8 Productization CI
@@ -164,8 +165,18 @@ integrations:
     cross_file_chapter_count: 863
     evidence_unit_count: 1926
     evidence_coverage_rate: 1.0
-    exact_head_ci: pending
-    squash_merge_commit: pending
+    final_pr_head: afc4eb732dfc749662697d3e472cce0689239ae9
+    productization_workflow_run_id: 30008764189
+    private_artifact_guard_workflow_run_id: 30008764182
+    execution_bundle_workflow_run_id: 30008764248
+    python_3_10_status: passed
+    python_3_11_status: passed
+    python_3_12_status: passed
+    reproducible_wheel_status: passed
+    private_artifact_guard_status: passed
+    execution_bundle_status: passed
+    exact_head_ci: passed
+    squash_merge_commit: 9e4e8e830ba05ba4a3693b6d427d30f85132f4e9
 
 stage_6:
   name: Notion Knowledge System
@@ -385,4 +396,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: integrate_stage_8_r3_then_recover_untouched_final_private_corpus_lock_gold_and_execute_stage_7_release_blind_run
+next_action: recover_untouched_final_private_corpus_then_lock_gold_and_execute_stage_7_release_blind_run
