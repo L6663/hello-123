@@ -569,7 +569,19 @@ class CharacterCliTests(unittest.TestCase):
                 (0, 0, 0, 0, 0),
             )
             self.assertEqual(profile["character"]["scope"], "core")
-            self.assertTrue(profile["attributes"][0]["support"]["evidence"])
+            self.assertTrue(
+                any(
+                    item["tier"] == "A" and item["support"]["evidence"]
+                    for item in profile["attributes"]
+                )
+            )
+            self.assertTrue(
+                all(
+                    item["supporting_attribute_ids"]
+                    for item in profile["attributes"]
+                    if item["tier"] in {"B", "C"}
+                )
+            )
             self.assertEqual(state["states"][0]["state_value"], "alive")
             self.assertTrue(relationship["relationships"][0]["support"]["evidence"])
             self.assertEqual(events["event_links"][0]["event"]["canonical_name"], "秘密公开")
