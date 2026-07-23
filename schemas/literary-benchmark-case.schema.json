@@ -7,8 +7,8 @@
   "required": [
     "schema_version", "case_id", "domain", "question", "mode",
     "expected_decision", "expected_layers", "expected_node_ids",
-    "required_evidence_anchor_ids", "forbidden_node_ids",
-    "expected_reason_codes", "source_sha256s", "tags",
+    "required_evidence_anchor_ids", "expected_evidence_by_node",
+    "forbidden_node_ids", "expected_reason_codes", "source_sha256s", "tags",
     "allow_additional_nodes", "annotation_status", "annotator_id",
     "reviewer_ids", "rationale"
   ],
@@ -32,6 +32,11 @@
     },
     "expected_node_ids": {"$ref": "#/$defs/uniqueStrings"},
     "required_evidence_anchor_ids": {"$ref": "#/$defs/uniqueStrings"},
+    "expected_evidence_by_node": {
+      "type": "object",
+      "propertyNames": {"type": "string", "minLength": 1},
+      "additionalProperties": {"$ref": "#/$defs/nonEmptyUniqueStrings"}
+    },
     "forbidden_node_ids": {"$ref": "#/$defs/uniqueStrings"},
     "expected_reason_codes": {"$ref": "#/$defs/uniqueStrings"},
     "source_sha256s": {
@@ -45,9 +50,27 @@
     "reviewer_ids": {"$ref": "#/$defs/uniqueStrings"},
     "rationale": {"type": "string", "minLength": 1}
   },
+  "allOf": [
+    {
+      "if": {"properties": {"expected_decision": {"const": "refused"}}},
+      "then": {
+        "properties": {
+          "expected_layers": {"maxItems": 0},
+          "expected_node_ids": {"maxItems": 0},
+          "required_evidence_anchor_ids": {"maxItems": 0},
+          "expected_evidence_by_node": {"maxProperties": 0}
+        }
+      },
+      "else": {"properties": {"expected_node_ids": {"minItems": 1}}}
+    }
+  ],
   "$defs": {
     "uniqueStrings": {
       "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "nonEmptyUniqueStrings": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
       "items": {"type": "string", "minLength": 1}
     }
   }
