@@ -71,6 +71,8 @@ include = ["tkr*"]
   "schemas/literary-event.schema.json",
   "schemas/evidence-unit.schema.json",
   "schemas/evidence-coverage.schema.json",
+  "schemas/claim-evidence-edge.schema.json",
+  "schemas/claim-graph-report.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
