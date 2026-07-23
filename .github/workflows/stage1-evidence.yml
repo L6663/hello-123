@@ -73,7 +73,22 @@ jobs:
             tests.test_notion_stage6_r1 -v
 
       - name: Repository regression
-        run: python -m unittest discover -s tests -p 'test_*.py'
+        id: regression
+        shell: bash
+        run: |
+          set +e
+          python -m unittest discover -s tests -p 'test_*.py' -v > regression.log 2>&1
+          status=$?
+          tail -n 160 regression.log
+          exit $status
+
+      - name: Upload regression diagnostics
+        if: failure() && steps.regression.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage6-r1-regression-failure
+          path: regression.log
+          retention-days: 1
 
       - name: CLI smoke check
         run: |
