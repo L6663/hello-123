@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v13
+schema_version: tkr-project-status-v14
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T08:09:00Z
+updated_at_utc: 2026-07-23T08:43:00Z
 
 historical_release:
   version: 5.9.0
@@ -25,7 +25,8 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
+  current_branch: feature/v6-stage7-literary-regression-benchmark
+  current_pull_request: 34
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   completed_and_integrated_stages:
@@ -35,12 +36,13 @@ v6_development:
     - Stage 4 Focused Character Engine
     - Stage 5 Layered Reasoning Engine
     - Stage 6-R1 Notion Knowledge System
-  current_stage_status: stage_6_completed_and_integrated
-  next_stage: Stage 7 Literary Regression Benchmark
+  current_stage: Stage 7 Literary Regression Benchmark
+  current_stage_status: stage_7_engineering_complete_exact_head_ci_pending
+  next_stage_after_merge: Stage 8 Final Productization and Acceptance
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 6 Notion CI
+    display_name: Stage 7 Literary Benchmark CI
     triggers: [pull_request, workflow_dispatch]
     jobs: 1
     python_versions: ["3.12"]
@@ -85,6 +87,13 @@ integrations:
     final_workflow_run_id: 29990180725
     final_workflow_status: passed
     squash_merge_commit: 07f10cf8552c730c29afd01197108441e126e3f3
+  stage_7:
+    pull_request: 34
+    branch: feature/v6-stage7-literary-regression-benchmark
+    focused_test_count: 5
+    exact_head_workflow_run_id: pending
+    exact_head_workflow_status: pending
+    squash_merge_commit: pending
 
 stage_6:
   name: Notion Knowledge System
@@ -162,6 +171,72 @@ stage_6:
     relation_application_performed: false
     remote_readback_verification_performed: false
 
+stage_7:
+  name: Literary Regression Benchmark
+  status: engineering_complete_exact_head_ci_pending
+  objective: independently_measure_literary_answer_correctness_safety_and_epistemic_separation_without_model_self_grading
+  pull_request: 34
+  domains:
+    - chapter_traceability
+    - evidence_traceability
+    - entity_identity
+    - temporal_relationships
+    - event_causality
+    - cold_detail_recall
+    - dialogue_recall
+    - motive_reasoning
+    - foreshadowing_resolution
+    - theme_interpretation
+    - epistemic_separation
+    - refusal_safety
+  outputs:
+    - tkr/literary_benchmark.py
+    - tkr/literary_benchmark_cli.py
+    - schemas/literary-benchmark-case.schema.json
+    - schemas/literary-benchmark-observation.schema.json
+    - schemas/literary-benchmark-report.schema.json
+    - schemas/literary-benchmark-verification.schema.json
+    - tests/test_literary_benchmark.py
+    - docs/STAGE7_LITERARY_REGRESSION_BENCHMARK.md
+  public_commands:
+    - tkr-literary-benchmark evaluate
+    - tkr-literary-benchmark verify
+    - python scripts/tkr.py benchmark evaluate
+    - python scripts/tkr.py benchmark verify
+  release_profile:
+    minimum_case_count: 120
+    minimum_cases_per_domain: 8
+    minimum_refusal_case_count: 24
+    minimum_independent_reviewers_per_case: 2
+    approved_or_adjudicated_annotations_required: true
+    minimum_domain_score: 9.0
+    minimum_correctness_score: 9.0
+    minimum_safety_score: 9.0
+    average_compensation_allowed: false
+  mandatory_gates:
+    answer_generation_inside_evaluator: prohibited
+    model_self_grading: prohibited
+    byte_and_logical_input_binding: implemented
+    full_report_recomputation: implemented
+    twelve_domain_non_compensating_scoring: implemented
+    wrong_answer_blocking: implemented
+    overanswer_blocking: implemented
+    citation_mismatch_blocking: implemented
+    epistemic_layer_leakage_blocking: implemented
+    measurable_hallucination_blocking: implemented
+    unauthorized_authority_blocking: implemented
+    focused_regression: passed_locally
+    full_repository_regression: pending_ci
+    installed_and_bundled_CLI_contracts: pending_ci
+    final_exact_head_CI: pending
+  authority_boundary:
+    private_corpus_final_acceptance_performed: false
+    release_candidate_created: false
+    project_acceptance_performed: false
+    may_accept_project: false
+    may_release: false
+    may_freeze: false
+
 entity_policy:
   core_characters: deep_model
   important_characters: role_and_major_event_model
@@ -170,7 +245,6 @@ entity_policy:
   goal: prevent_low_value_entity_expansion_from_diluting_mainline_knowledge
 
 remaining_major_stages:
-  - Stage 7 Literary Regression Benchmark
   - Stage 8 Final Productization and Acceptance
 
 final_acceptance_rule:
@@ -196,4 +270,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: create_stage_7_literary_regression_benchmark_branch_and_pull_request
+next_action: pass_stage_7_exact_head_ci_then_integrate_without_claiming_final_acceptance
