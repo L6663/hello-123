@@ -1,0 +1,21 @@
+{
+  "$id": "https://text-knowledge-reader.local/schemas/final-acceptance-approval.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approved_at_utc": {"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", "type": "string"},
+    "approver": {"minLength": 1, "type": "string"},
+    "candidate_id": {"pattern": "^final_acceptance_candidate_[0-9a-f]{24}$", "type": "string"},
+    "decision": {"const": "approve_final_product_acceptance"},
+    "release_version": {"pattern": "^6\\.\\d+\\.\\d+(?:rc\\d+)?$", "type": "string"},
+    "schema_version": {"const": "tkr-final-acceptance-approval-v1"},
+    "source_commit": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "statement": {"pattern": "^I explicitly approve final product acceptance for final_acceptance_candidate_[0-9a-f]{24}\\.$", "type": "string"}
+  },
+  "required": [
+    "schema_version", "candidate_id", "release_version", "source_commit",
+    "approver", "decision", "statement", "approved_at_utc"
+  ],
+  "title": "Final Product Acceptance Approval",
+  "type": "object"
+}
