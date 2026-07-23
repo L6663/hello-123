@@ -1,0 +1,32 @@
+{
+  "$id": "https://text-knowledge-reader.local/schemas/final-acceptance-seal.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "approved_at_utc": {"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$", "type": "string"},
+    "approver": {"minLength": 1, "type": "string"},
+    "candidate_id": {"pattern": "^final_acceptance_candidate_[0-9a-f]{24}$", "type": "string"},
+    "candidate_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "may_accept_project": {"const": true},
+    "may_freeze": {"const": false},
+    "may_release": {"const": false},
+    "project_acceptance_performed": {"const": true},
+    "release_candidate": {"const": true},
+    "release_version": {"pattern": "^6\\.\\d+\\.\\d+(?:rc\\d+)?$", "type": "string"},
+    "schema_version": {"const": "tkr-final-acceptance-seal-v1"},
+    "seal_id": {"pattern": "^final_acceptance_seal_[0-9a-f]{24}$", "type": "string"},
+    "source_commit": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "status": {"const": "accepted"},
+    "verification_reason_codes": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+  },
+  "required": [
+    "schema_version", "candidate_id", "release_version", "source_commit",
+    "candidate_sha256", "approval_sha256", "approver", "approved_at_utc",
+    "verification_reason_codes", "project_acceptance_performed",
+    "may_accept_project", "release_candidate", "may_release", "may_freeze",
+    "status", "seal_id"
+  ],
+  "title": "Final Product Acceptance Seal",
+  "type": "object"
+}
