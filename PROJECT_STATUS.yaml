@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v14
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T08:58:00Z
+updated_at_utc: 2026-07-23T09:12:00Z
 
 historical_release:
   version: 5.9.0
@@ -90,7 +90,7 @@ integrations:
   stage_7:
     pull_request: 34
     branch: feature/v6-stage7-literary-regression-benchmark
-    focused_test_count: 8
+    focused_test_count: 9
     exact_head_workflow_run_id: pending
     exact_head_workflow_status: pending
     squash_merge_commit: pending
@@ -221,6 +221,7 @@ stage_7:
     twelve_domain_non_compensating_scoring: implemented
     exact_node_evidence_binding: implemented
     answer_packet_schema_and_integrity_blocking: implemented
+    reasoning_graph_review_required_fail_closed: implemented
     annotator_reviewer_separation: enforced
     wrong_answer_blocking: implemented
     overanswer_blocking: implemented
@@ -228,7 +229,7 @@ stage_7:
     epistemic_layer_leakage_blocking: implemented
     measurable_hallucination_blocking: implemented
     unauthorized_authority_blocking: implemented
-    focused_regression: eight_tests_passed_locally
+    focused_regression: nine_tests_passed_locally
     full_repository_regression: pending_ci
     installed_and_bundled_CLI_contracts: pending_ci
     final_exact_head_CI: pending
