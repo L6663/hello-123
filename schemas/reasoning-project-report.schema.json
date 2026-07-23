@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/reasoning-project-report.schema.json",
+  "title": "Reasoning Project Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "reasoning_engine_version", "output_directory",
+    "node_count", "edge_count", "finding_count", "blocking_finding_count",
+    "layer_counts", "graph_valid", "chapter_project_logical_sha256",
+    "literary_project_ids", "literary_logical_sha256s",
+    "evidence_project_logical_sha256s", "event_project_logical_sha256",
+    "character_project_logical_sha256", "annotation_sha256", "logical_sha256",
+    "database_sha256", "project_acceptance_performed", "may_accept_project",
+    "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-reasoning-project-report-v1"},
+    "status": {"enum": ["completed", "review_required"]},
+    "reasoning_engine_version": {"const": "6.0.0-stage5-alpha1"},
+    "output_directory": {"type": "string", "minLength": 1},
+    "node_count": {"type": "integer", "minimum": 1},
+    "edge_count": {"type": "integer", "minimum": 0},
+    "finding_count": {"type": "integer", "minimum": 0},
+    "blocking_finding_count": {"type": "integer", "minimum": 0},
+    "layer_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B", "C", "H"],
+      "properties": {
+        "A": {"type": "integer", "minimum": 0},
+        "B": {"type": "integer", "minimum": 0},
+        "C": {"type": "integer", "minimum": 0},
+        "H": {"type": "integer", "minimum": 0}
+      }
+    },
+    "graph_valid": {"type": "boolean"},
+    "chapter_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "literary_project_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "literary_logical_sha256s": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "evidence_project_logical_sha256s": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "event_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "character_project_logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "annotation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "logical_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "database_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  }
+}
