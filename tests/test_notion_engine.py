@@ -74,8 +74,11 @@ class NotionPageContractTests(unittest.TestCase):
 
     def test_content_hash_rejects_manual_tampering(self) -> None:
         page = _page("chapters", "chapter", "chapter-1", "标题")
+        payload = page.to_dict()
+        payload["source_lineage"] = page.source_lineage
+        payload["content_sha256"] = "0" * 64
         with self.assertRaises(NotionEngineError):
-            type(page)(**{**page.to_dict(), "source_lineage": page.source_lineage, "title": "被篡改"})
+            type(page)(**payload)
 
 
 class NotionProjectionTests(unittest.TestCase):
