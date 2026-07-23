@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-knowledge-reader-core"
-version = "6.0.0-alpha1"
-description = "Auditable long-text ingestion, source-bound evidence, canonical chapter structure, focused event and character models, layered A/B/C/H reasoning, strict QA, and recoverable builds"
+version = "6.0.0rc1"
+description = "Auditable literary knowledge systems with source-bound evidence, chapter structure, causal events, focused characters, layered A/B/C/H reasoning, Notion projection, regression benchmarking, and explicit final acceptance"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -32,6 +32,7 @@ tkr-character = "tkr.character_cli:main"
 tkr-reason = "tkr.reasoning_cli:main"
 tkr-notion = "tkr.notion_cli:main"
 tkr-literary-benchmark = "tkr.literary_benchmark_cli:main"
+tkr-final-acceptance = "tkr.final_acceptance_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["tkr*"]
@@ -120,6 +121,14 @@ include = ["tkr*"]
   "schemas/literary-benchmark-observation.schema.json",
   "schemas/literary-benchmark-report.schema.json",
   "schemas/literary-benchmark-verification.schema.json",
+  "schemas/private-blind-attestation.schema.json",
+  "schemas/package-acceptance-v2.schema.json",
+  "schemas/engineering-validation.schema.json",
+  "schemas/reproducible-build-v2.schema.json",
+  "schemas/final-acceptance-candidate.schema.json",
+  "schemas/final-acceptance-approval.schema.json",
+  "schemas/final-acceptance-seal.schema.json",
+  "schemas/final-acceptance-verification.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -148,4 +157,5 @@ include = ["tkr*"]
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM.md",
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM_RESULT.md",
   "docs/STAGE7_LITERARY_REGRESSION_BENCHMARK.md",
+  "docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md",
 ]

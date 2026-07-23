@@ -1,0 +1,62 @@
+{
+  "$id": "https://text-knowledge-reader.local/schemas/package-acceptance-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted": {
+      "const": true
+    },
+    "failures": {
+      "maxItems": 0,
+      "type": "array"
+    },
+    "installed_cli": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 11,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "python": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "tkr-package-acceptance-v2"
+    },
+    "skill_audit_passed": {
+      "const": true
+    },
+    "skill_doctor_passed": {
+      "const": true
+    },
+    "version": {
+      "pattern": "^6\\.\\d+\\.\\d+(?:rc\\d+)?$",
+      "type": "string"
+    },
+    "wheel_name": {
+      "pattern": "\\.whl$",
+      "type": "string"
+    },
+    "wheel_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "accepted",
+    "failures",
+    "python",
+    "version",
+    "wheel_name",
+    "wheel_sha256",
+    "installed_cli",
+    "skill_audit_passed",
+    "skill_doctor_passed"
+  ],
+  "title": "Stage 8 Package Acceptance",
+  "type": "object"
+}

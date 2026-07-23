@@ -1,24 +1,25 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://text-knowledge-reader.invalid/schemas/skill-doctor-report.schema.json",
+  "$id": "https://text-knowledge-reader.local/schemas/skill-doctor-report.schema.json",
   "title": "Text Knowledge Reader Skill Doctor Report",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "audit_version", "status", "passed", "python_version", "sqlite_version",
-    "check_count", "checks", "project_acceptance_performed", "may_accept_project",
-    "release_candidate", "may_freeze"
+    "schema_version", "audit_version", "status", "passed", "python_version",
+    "sqlite_version", "check_count", "checks", "project_acceptance_performed",
+    "may_accept_project", "release_candidate", "may_freeze"
   ],
   "properties": {
     "schema_version": {"const": "tkr-skill-doctor-v1"},
-    "audit_version": {"const": "5.9.0-stage5"},
+    "audit_version": {"const": "6.0.0-stage8"},
     "status": {"enum": ["passed", "failed"]},
     "passed": {"type": "boolean"},
     "python_version": {"type": "string", "minLength": 1},
     "sqlite_version": {"type": "string", "minLength": 1},
-    "check_count": {"type": "integer", "minimum": 0},
+    "check_count": {"type": "integer", "minimum": 1},
     "checks": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,

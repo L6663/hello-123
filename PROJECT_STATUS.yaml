@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v14
+schema_version: tkr-project-status-v15
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T09:17:00Z
+updated_at_utc: 2026-07-23T10:21:00Z
 
 historical_release:
   version: 5.9.0
@@ -21,12 +21,12 @@ historical_release:
   historical_release_mutated: false
 
 v6_development:
-  version: 6.0.0-alpha1
-  status: active_development
+  version: 6.0.0rc1
+  status: release_candidate_engineering
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: feature/v6-stage7-literary-regression-benchmark
-  current_pull_request: 34
+  current_branch: feature/v6-stage8-final-productization-acceptance
+  current_pull_request: 35
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   completed_and_integrated_stages:
@@ -36,18 +36,23 @@ v6_development:
     - Stage 4 Focused Character Engine
     - Stage 5 Layered Reasoning Engine
     - Stage 6-R1 Notion Knowledge System
-  current_stage: Stage 7 Literary Regression Benchmark
-  current_stage_status: stage_7_exact_head_ci_passed_integration_pending
-  next_stage_after_merge: Stage 8 Final Productization and Acceptance
-  workflows_enabled: true
+    - Stage 7 Literary Regression Benchmark
+  current_stage: Stage 8 Final Productization and Acceptance
+  current_stage_status: exact_head_ci_passed_integration_pending
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 7 Literary Benchmark CI
+    display_name: Stage 8 Productization CI
     triggers: [pull_request, workflow_dispatch]
-    jobs: 1
-    python_versions: ["3.12"]
-    cancel_obsolete_runs: true
-    routine_artifact_uploads: false
+    jobs:
+      - package_matrix
+      - reproducible_wheel
+    python_versions: ["3.10", "3.11", "3.12"]
+    full_repository_regression_per_python: true
+    clean_wheel_install_per_python: true
+    installed_skill_audit_and_doctor: true
+    fixed_source_date_epoch: 1700000000
+    byte_identical_wheel_gate: true
+    private_artifact_uploads_allowed: false
     release_or_freeze_workflows_enabled: false
 
 integrations:
@@ -91,92 +96,47 @@ integrations:
     pull_request: 34
     branch: feature/v6-stage7-literary-regression-benchmark
     focused_test_count: 9
-    validated_head: 51a56907e718ce8c23317b0c0696dc5fe063bca9
-    exact_head_workflow_run_id: 29994512142
-    exact_head_workflow_status: passed
+    code_validation_head: 51a56907e718ce8c23317b0c0696dc5fe063bca9
+    code_validation_workflow_run_id: 29994512142
+    final_validated_head: f1280a2c6e5e01783d8b98dcc309eef0e8173116
+    final_workflow_run_id: 29994694726
+    final_workflow_status: passed
+    squash_merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224
+  stage_8:
+    pull_request: 35
+    branch: feature/v6-stage8-final-productization-acceptance
+    focused_test_count: 12
+    code_validation_head: e5857d0cb294a385385cedf22141a44fe8bf3240
+    code_validation_workflow_run_id: 29997880685
+    code_validation_workflow_status: passed
+    final_validated_head: 9cd535d64cd23e0804bfeda6caf3b94daf224a89
+    final_workflow_run_id: 29998124893
+    final_workflow_status: passed
     squash_merge_commit: pending
 
 stage_6:
   name: Notion Knowledge System
   status: completed_and_integrated
-  objective: project_verified_stage_1_to_5_knowledge_into_a_deterministic_incremental_notion_workspace
-  outputs:
-    - tkr/notion_engine.py
-    - tkr/notion_project.py
-    - tkr/notion_cli.py
-    - tkr/stage6_notion_r1.py
-    - schemas/notion-page.schema.json
-    - schemas/notion-relation.schema.json
-    - schemas/notion-review-item.schema.json
-    - schemas/notion-sync-ledger.schema.json
-    - schemas/notion-sync-action.schema.json
-    - schemas/notion-workspace-schema.schema.json
-    - schemas/notion-project-report.schema.json
-    - schemas/notion-project-manifest.schema.json
-    - schemas/notion-project-verification.schema.json
-    - tests/test_notion_engine.py
-    - tests/test_notion_project.py
-    - tests/test_notion_stage6_r1.py
-  artifacts:
-    - notion-workspace-schema.json
-    - notion-pages.jsonl
-    - notion-relations.jsonl
-    - notion-review-items.jsonl
-    - notion-sync-plan.jsonl
-    - notion.sqlite
-    - notion-project-report.json
-    - artifact-manifest.json
-  public_commands:
-    - tkr-notion build
-    - tkr-notion verify
-    - tkr-notion plan
-    - python scripts/tkr.py notion build
-    - python scripts/tkr.py notion verify
-    - python scripts/tkr.py notion plan
-  database_policy:
-    physical_databases:
-      - sources
-      - chapters
-      - evidence
-      - facts_a
-      - synthesis_b
-      - interpretations_c
-      - counterfactuals_h
-      - events
-      - characters
-      - review_queue
-    epistemic_layers_may_mix: false
-    automatic_remote_deletion_allowed: false
-    archive_requires_explicit_approval: true
-  mandatory_gates:
-    assertion_support_input_order_independence: passed
-    report_location_independence: passed
-    stable_page_keys_and_incremental_updates: passed
-    A_B_C_H_database_isolation: passed
-    exact_referenced_evidence_projection: passed
-    relation_source_and_target_foreign_keys: passed
-    JSONL_SQLite_full_field_equality: passed
-    missing_remote_ids_require_review: passed
-    missing_local_pages_are_archive_candidates: passed
-    remote_page_id_reuse_is_blocked: passed
-    unresolved_relation_endpoints_require_review: passed
-    deterministic_rebuild: passed
-    Notion_schemas_packaged: passed
-    installed_and_bundled_CLI_contracts: passed
-    focused_and_full_repository_regression: passed
-    final_exact_head_CI: passed
-  remote_execution_boundary:
-    actual_Notion_API_write_performed: false
-    database_creation_performed: false
-    page_upsert_performed: false
-    relation_application_performed: false
-    remote_readback_verification_performed: false
+  physical_databases:
+    - sources
+    - chapters
+    - evidence
+    - facts_a
+    - synthesis_b
+    - interpretations_c
+    - counterfactuals_h
+    - events
+    - characters
+    - review_queue
+  epistemic_layers_may_mix: false
+  automatic_remote_deletion_allowed: false
+  remote_execution_performed_during_engineering: false
 
 stage_7:
   name: Literary Regression Benchmark
-  status: exact_head_ci_passed_integration_pending
-  objective: independently_measure_literary_answer_correctness_safety_and_epistemic_separation_without_model_self_grading
+  status: completed_and_integrated
   pull_request: 34
+  squash_merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224
   domains:
     - chapter_traceability
     - evidence_traceability
@@ -190,20 +150,6 @@ stage_7:
     - theme_interpretation
     - epistemic_separation
     - refusal_safety
-  outputs:
-    - tkr/literary_benchmark.py
-    - tkr/literary_benchmark_cli.py
-    - schemas/literary-benchmark-case.schema.json
-    - schemas/literary-benchmark-observation.schema.json
-    - schemas/literary-benchmark-report.schema.json
-    - schemas/literary-benchmark-verification.schema.json
-    - tests/test_literary_benchmark.py
-    - docs/STAGE7_LITERARY_REGRESSION_BENCHMARK.md
-  public_commands:
-    - tkr-literary-benchmark evaluate
-    - tkr-literary-benchmark verify
-    - python scripts/tkr.py benchmark evaluate
-    - python scripts/tkr.py benchmark verify
   release_profile:
     minimum_case_count: 120
     minimum_cases_per_domain: 8
@@ -219,9 +165,8 @@ stage_7:
     model_self_grading: prohibited
     byte_and_logical_input_binding: passed
     full_report_recomputation: passed
-    twelve_domain_non_compensating_scoring: passed
     exact_node_evidence_binding: passed
-    answer_packet_schema_and_integrity_blocking: passed
+    malformed_packet_blocking: passed
     reasoning_graph_review_required_fail_closed: passed
     annotator_reviewer_separation: passed
     wrong_answer_blocking: passed
@@ -230,17 +175,91 @@ stage_7:
     epistemic_layer_leakage_blocking: passed
     measurable_hallucination_blocking: passed
     unauthorized_authority_blocking: passed
-    focused_regression: nine_tests_passed
-    full_repository_regression: passed
-    installed_and_bundled_CLI_contracts: passed
-    final_exact_head_CI: passed
   authority_boundary:
     private_corpus_final_acceptance_performed: false
-    release_candidate_created: false
     project_acceptance_performed: false
     may_accept_project: false
     may_release: false
     may_freeze: false
+
+stage_8:
+  name: Final Productization and Acceptance
+  status: exact_head_ci_passed_integration_pending
+  objective: productize_v6_and_create_a_hash_bound_explicitly_approved_final_acceptance_path
+  pull_request: 35
+  product_version: 6.0.0rc1
+  outputs:
+    - tkr/final_acceptance.py
+    - tkr/final_acceptance_cli.py
+    - tests/test_final_acceptance.py
+    - schemas/private-blind-attestation.schema.json
+    - schemas/package-acceptance-v2.schema.json
+    - schemas/engineering-validation.schema.json
+    - schemas/reproducible-build-v2.schema.json
+    - schemas/final-acceptance-candidate.schema.json
+    - schemas/final-acceptance-approval.schema.json
+    - schemas/final-acceptance-seal.schema.json
+    - schemas/final-acceptance-verification.schema.json
+    - docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md
+  public_commands:
+    - tkr-final-acceptance prepare
+    - tkr-final-acceptance verify
+    - tkr-final-acceptance seal
+    - tkr-final-acceptance verify-seal
+    - python scripts/tkr.py acceptance prepare
+    - python scripts/tkr.py acceptance verify
+    - python scripts/tkr.py acceptance seal
+    - python scripts/tkr.py acceptance verify-seal
+  technical_candidate_contract:
+    stage_7_release_benchmark_required: true
+    private_blind_attestation_required: true
+    exact_python_matrix: ["3.10", "3.11", "3.12"]
+    at_least_two_byte_identical_wheels: true
+    source_provenance_required: true
+    zero_finding_skill_audit_required: true
+    passing_skill_doctor_required: true
+    exact_successful_engineering_commit_required: true
+    documentation_hashes_bound: true
+    requires_explicit_approval: true
+    project_acceptance_performed: false
+    may_accept_project: false
+    release_candidate: false
+    may_release: false
+    may_freeze: false
+  explicit_acceptance_seal_contract:
+    approval_created_by_cli: false
+    approval_must_name_exact_candidate_id: true
+    approval_must_bind_release_version_and_source_commit: true
+    project_acceptance_performed: true
+    may_accept_project: true
+    release_candidate: true
+    may_release: false
+    may_freeze: false
+  mandatory_gates:
+    safe_root_confined_artifacts: passed
+    complete_artifact_hash_recomputation: passed
+    stage_7_release_report_recomputation: passed
+    private_blind_hash_and_role_binding: passed
+    package_matrix_binding: passed
+    reproducible_wheel_binding: passed
+    source_provenance_binding: passed
+    engineering_ci_binding: passed
+    skill_audit_and_doctor_binding: passed
+    explicit_approval_separation: passed
+    release_and_freeze_authority_separation: passed
+    focused_adversarial_regression: twelve_tests_passed
+    full_repository_regression_python_3_10: passed
+    full_repository_regression_python_3_11: passed
+    full_repository_regression_python_3_12: passed
+    clean_install_python_3_10: passed
+    clean_install_python_3_11: passed
+    clean_install_python_3_12: passed
+    installed_skill_audit_and_doctor: passed
+    installed_and_bundled_cli_contracts: passed
+    public_schema_contracts: passed
+    reproducible_wheel_gate: passed
+    code_validation_ci: passed
+    final_exact_head_ci: passed
 
 entity_policy:
   core_characters: deep_model
@@ -248,9 +267,6 @@ entity_policy:
   minor_placeholders: minimal_or_chapter_only
   no_impact_mentions: no_canonical_entity_required
   goal: prevent_low_value_entity_expansion_from_diluting_mainline_knowledge
-
-remaining_major_stages:
-  - Stage 8 Final Productization and Acceptance
 
 final_acceptance_rule:
   all_core_domains_must_score_at_least_9_0: true
@@ -262,17 +278,24 @@ final_acceptance_rule:
   unsupported_fact_promotion_allowed: 0
   interpretation_presented_as_source_fact_allowed: 0
   counterfactual_presented_as_canon_allowed: 0
-  final_acceptance_requires_private_blind_evaluation: true
-  final_release_requires_explicit_user_approval: true
+  real_private_blind_evaluation_required: true
+  explicit_product_acceptance_approval_required: true
+  public_release_requires_separate_explicit_approval: true
+  repository_freeze_requires_separate_explicit_approval: true
 
-private_corpus_used_for_v6: false
+private_corpus_used_for_v6_development: false
+private_blind_acceptance_performed: false
 real_corpus_acceptance_deferred: true
+technical_acceptance_candidate_created: false
+explicit_acceptance_approval_received: false
+final_acceptance_seal_created: false
 project_acceptance_performed: false
 final_score_assigned: false
 release_candidate: false
+release_approved: false
 freeze_approved: false
 may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: merge_pull_request_34_into_develop_v6_literary_engine
+next_action: merge_pull_request_35_to_integrate_stage_8_engineering_without_claiming_real_private_acceptance

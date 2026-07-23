@@ -1,73 +1,74 @@
 # Text Knowledge Reader
 
-Text Knowledge Reader is an auditable Skill for turning long text corpora into source-bound, typed knowledge projects with deterministic structure, evidence-grounded Claims, SQLite retrieval, strict answers, exact citations, and refusal when evidence is insufficient.
+Text Knowledge Reader is an auditable long-text literary knowledge system. It preserves source identity, isolates contamination, indexes exact Evidence, models chapter structure, events and focused characters, separates A/B/C/H epistemic layers, projects verified knowledge into Notion, and refuses when support is insufficient.
 
 ## Current status
 
 ```yaml
-version: 5.9.0
-canonical_branch: main
-integrated_stage_6_r1_commit: 715fd64804d7a4ceffed8f08caa79e3c6045810a
-accepted_runtime_head_commit: 62565a2b28cb14f65912f39b605ab10084364a07
-completed_large_stages:
-  - Stage 1
-  - Stage 2
-  - Stage 3
-  - Stage 4
-  - Stage 5
-  - Stage 6
-project_acceptance: passed
-capability_domains_passed: 18_of_18
-overall_weighted_score: 9.63
-minimum_domain_score: 9.34
-release_status: final
-release_candidate_eligible: true
-release_candidate_created: true
-freeze_approved: true
+v6_version: 6.0.0rc1
+v6_branch: develop/v6-literary-engine
+current_stage: Stage 8 Final Productization and Acceptance
+integrated_engineering_stages: 1_to_7
+stage_8_engineering: active
+private_blind_acceptance_performed: false
+project_acceptance_performed: false
+release_candidate_created: false
+may_release: false
+may_freeze: false
+
+historical_stable_release: 5.9.0
+historical_stable_branch: main
+historical_archive_branch: archive/v5.9.0-final
+historical_release_mutated: false
 ```
 
-Final acceptance details:
+Version `6.0.0rc1` is a productized release-candidate engineering line. It is not a final public release. The historical v5.9.0 release remains frozen and unchanged.
 
-- `docs/stage-6-r1-final-acceptance.md`
-- `acceptance/stage6-r1-acceptance-summary.json`
-
-Project acceptance, final release approval, and repository freeze are complete. The repository is sealed at version 5.9.0.
-
-## Processing chain
+## v6 processing chain
 
 ```text
-raw source bytes
-→ strict source identity and decoding
-→ anomaly, contamination, and paratext candidates
-→ deterministic source-covering Unit Index
-→ evidence-bound typed Claim candidates
-→ factual-status and polarity separation
-→ entity, alias, timeline, conflict, and ambiguity normalization
-→ hash-verified SQLite typed knowledge index
-→ strict QA, exact citations, and deterministic refusal
-→ recoverable engineering build, cache, audit, and package verification
+strict source bytes and SHA-256
+→ anomaly, contamination, and paratext isolation
+→ deterministic source-covering Units
+→ canonical chapter catalog without rewriting physical order
+→ exact Evidence Units and Claim→Evidence edges
+→ material event and causal-path graph
+→ focused character identities, states, relations, and arcs
+→ A facts / B synthesis / C interpretation / H counterfactual reasoning
+→ reversible Notion workspace package and sync plan
+→ twelve-domain literary regression benchmark
+→ Stage 8 product candidate and explicit acceptance boundary
 ```
 
-## Supported typed Claims
+No layer bypasses verification of its inputs.
 
-```text
-alias
-defeats
-located_in
-permission
-count
-date
-```
+## Epistemic layers
 
-Belief, suspicion, rumor, accusation, hypothetical statements, questions, future intent, and negated propositions remain separately represented and cannot silently become positive canonical facts.
+### A — source fact
+
+A records require exact clean evidence, source identity, chapter identity, original offsets, text hashes, and contamination state.
+
+### B — cross-evidence synthesis
+
+B records require at least two independent A-support branches. Repeated wording from one lineage does not count as independent support.
+
+### C — interpretation
+
+C records are explicitly attributed interpretations. They retain evidence, limitations, and alternative readings and never become source facts.
+
+### H — hypothetical or counterfactual
+
+H records are explicitly non-canon. They bind the changed premise, retained facts, inference rule, uncertainty, and alternatives.
+
+The system never silently promotes H→C, C→B, or B→A.
 
 ## Install
 
 ```bash
-python -m pip install text_knowledge_reader_core-5.9.0-py3-none-any.whl
+python -m pip install text_knowledge_reader_core-6.0.0rc1-py3-none-any.whl
 ```
 
-Check the installed Skill:
+Check the installed product:
 
 ```bash
 tkr-skill doctor
@@ -76,192 +77,239 @@ tkr-skill profiles
 tkr-skill show-profile balanced
 ```
 
-Built-in profiles:
-
-```text
-balanced
-strict
-high-recall
-```
-
-## Build a project
+## Main project commands
 
 ```bash
 tkr-project build corpus.txt \
-  --outdir project \
-  --state-dir .tkr-state/project \
+  --outdir base-project \
+  --state-dir .tkr-state/base-project \
   --profile balanced
+
+tkr-project verify base-project
 ```
 
-A build key binds:
+The mutable lock, journal, and cache remain outside immutable project artifacts.
+
+## v6 subsystem commands
 
 ```text
-raw source SHA-256
-+ engineering profile SHA-256
-+ engineering runtime version
-+ knowledge-system version
+tkr-literary
+tkr-evidence
+tkr-chapter
+tkr-event
+tkr-character
+tkr-reason
+tkr-notion
+tkr-literary-benchmark
+tkr-final-acceptance
 ```
 
-The mutable lock, journal, and cache stay outside the immutable project.
-
-Disable cache for a measurement run:
+The directly uploadable Skill entry point is:
 
 ```bash
-tkr-project build corpus.txt \
-  --outdir project \
-  --state-dir .tkr-state/project \
-  --profile balanced \
-  --no-cache
+python scripts/tkr.py --help
 ```
 
-Reuse or atomically replace an existing project only through explicit actions:
+## Stage 1 — Evidence Engine
 
-```bash
-tkr-project build corpus.txt --outdir project --reuse
-tkr-project build corpus.txt --outdir project --force
-```
+Builds clean Evidence Units and exact Claim→Evidence edges. Every published assertion must retain source, Unit, chapter, offset, text, hash, and contamination lineage.
 
-## Verify and query
+## Stage 2 — Chapter Structure Engine
 
-```bash
-tkr-project verify project
-tkr-project query project "陆川击败了谁？"
-tkr-project query project "陆川击败了谁？" --output answer.json
-tkr-project verify-answer project answer.json
-```
+Separates immutable physical source order from a reviewable canonical-order candidate. Missing, duplicated, ambiguous, or conflicting chapter addresses remain visible findings.
 
-Every query verifies project provenance, Manifest membership, source hashes, SQLite identity, and index report before answering.
+## Stage 3 — Event Causality Engine
 
-Unsupported literary interpretation questions and supported predicates without sufficient typed evidence are refused.
+Models only materially significant events. Cause, process, outcome, consequence, foreshadowing, recovery, and causal paths require explicit support.
 
-## Stage commands
+## Stage 4 — Focused Character Engine
 
-```bash
-tkr-anomaly-scan corpus.txt --outdir stage1-anomaly
-tkr-structure-index corpus.txt --outdir stage2-structure
-tkr-semantic-extract corpus.txt --outdir stage3-semantics
-```
+Uses three depth levels:
 
-Additional commands:
+- `core` — deep evidence-bound model;
+- `important` — role, major relations, states, and major events;
+- `placeholder` — minimal identity and necessary participation only.
+
+Mention frequency alone cannot promote a person.
+
+## Stage 5 — Layered Reasoning Engine
+
+Builds deterministic A/B/C/H answer packets with query ceilings:
 
 ```text
-tkr-chunk
-tkr-claim-validate
-tkr-entity-normalize
-tkr-retrieval
-tkr-strict-qa
-tkr-gold-benchmark
-tkr-release-freeze
-tkr-anomaly-scan
-tkr-structure-index
-tkr-semantic-extract
-tkr-project
-tkr-skill
+fact_only
+fact_and_synthesis
+analysis
+counterfactual
+provenance
 ```
 
-## Final acceptance evidence
+A graph marked `review_required` refuses outside provenance-only inspection.
 
-### Cross-work contamination
+## Stage 6 — Notion Knowledge System
+
+Generates ten physically separated logical databases:
+
+```text
+Sources
+Chapters
+Evidence
+Facts A
+Synthesis B
+Interpretations C
+Counterfactuals H
+Events
+Characters
+Review Queue
+```
+
+The sync plan is reversible. Missing remote IDs and unresolved relation endpoints enter review. Automatic deletion is forbidden.
+
+## Stage 7 — Literary Regression Benchmark
+
+The release profile evaluates twelve non-compensating domains:
+
+```text
+chapter_traceability
+evidence_traceability
+entity_identity
+temporal_relationships
+event_causality
+cold_detail_recall
+dialogue_recall
+motive_reasoning
+foreshadowing_resolution
+theme_interpretation
+epistemic_separation
+refusal_safety
+```
+
+Release policy requires:
+
+- at least 120 Gold cases;
+- at least eight cases per domain;
+- at least 24 refusal cases;
+- approved/adjudicated Gold only;
+- two independent reviewers per case;
+- every domain, correctness score, and safety score at least 9.0;
+- zero wrong answers, overanswers, citation mismatches, malformed packets, layer leakage, measurable hallucinations, or unauthorized authority flags.
+
+Evidence is bound to the exact reasoning node. An anchor attached to the wrong conclusion cannot satisfy a case.
+
+## Stage 8 — Final Productization and Acceptance
+
+Stage 8 binds the complete product as one technical candidate:
+
+- Stage 7 release-profile cases, observations, report, and recomputation;
+- private blind protocol attestation;
+- Python 3.10, 3.11, and 3.12 package acceptance;
+- canonical and reproducibly built Wheels;
+- source bundle and source-provenance verification;
+- zero-finding Skill audit and passing doctor report;
+- exact successful engineering CI commit;
+- `README.md`, `SKILL.md`, and `PROJECT_STATUS.yaml` identities.
+
+A technical candidate is not acceptance:
 
 ```yaml
-gold_blocks: 34
-candidates: 34
-candidate_precision: 1.0
-block_recall: 1.0
-character_precision: 0.970189304207459
-character_recall: 0.9823395809895779
-boundary_mae_characters: 45.705882352941174
+technical_gate_passed: true
+requires_explicit_approval: true
+project_acceptance_performed: false
+may_accept_project: false
+release_candidate: false
+may_release: false
+may_freeze: false
 ```
 
-### Structure
+### Private blind boundary
+
+The private blind attestation must confirm that Gold was locked before the run, hidden from the answer system, and unavailable while observations were produced. The evaluator, Gold custodian, and at least two reviewers must be distinct.
+
+Stage 8 verifies hashes, role separation, declared protocol flags, and report recomputation. It cannot prove that a human attestation is truthful; the attestation remains explicit review evidence.
+
+### Explicit approval boundary
+
+Only a separate approval record that names the exact candidate ID can create a final acceptance Seal. The CLI does not generate this approval.
+
+A valid Seal means:
 
 ```yaml
-decoded_characters: 3192465
-heading_candidates: 877
-combined_volume_chapter_headings: 546
-combined_correct_as_chapter: 546
-source_coverage_ratio: 1.0
+project_acceptance_performed: true
+may_accept_project: true
+release_candidate: true
+may_release: false
+may_freeze: false
 ```
 
-### Held-out semantics
+Product acceptance does not authorize publication or repository freeze. Those require a later explicit decision.
 
-```yaml
-expected_samples: 204
-exact_type_status_polarity: 204
-direct_assertions_indexable: 144_of_144
-nonassertive_propositions_blocked: 60_of_60
-extra_candidates: 0
+## Final acceptance commands
+
+```bash
+tkr-final-acceptance prepare --help
+tkr-final-acceptance verify --help
+tkr-final-acceptance seal --help
+tkr-final-acceptance verify-seal --help
 ```
 
-### Long-corpus performance
+Bundled aliases:
 
-```yaml
-files: 5
-decoded_characters: 3192465
-total_elapsed_seconds: 73.13
-throughput_decoded_characters_per_second: 43654.66
-peak_rss_kb: 68888
-verified_projects: 5_of_5
-secure_query_p95_ms: 721.13
+```bash
+python scripts/tkr.py acceptance prepare --help
+python scripts/tkr.py acceptance verify --help
+python scripts/tkr.py acceptance seal --help
+python scripts/tkr.py acceptance verify-seal --help
 ```
 
-Performance was accepted from isolated per-source processes. Two multi-source shell batches exceeded their outer timeout; that transient harness behavior is disclosed in the final report rather than omitted.
-
-### Strict QA and release Gold
-
-```yaml
-cases: 108
-passed: 108
-decision_accuracy: 1.0
-answer_claim_accuracy: 1.0
-refusal_precision: 1.0
-refusal_recall: 1.0
-citation_entailment_rate: 1.0
-wrong_answers: 0
-overanswers: 0
-citation_mismatches: 0
-measured_hallucinations: 0
-```
+See `docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md` for artifact roles and the exact approval statement.
 
 ## Security and integrity
 
-The Skill rejects:
+The product rejects:
 
-- symbolic links in source, project, state, cache, or package authority paths;
-- absolute, duplicate, parent-traversal, or non-normalized Manifest paths;
-- undeclared, missing, or non-regular project files;
-- changed source, project, database, citation, or answer identities;
-- source mutation during scanning;
+- symbolic links in source, project, state, cache, package, or acceptance authority paths;
+- absolute, parent-traversal, duplicate, or non-normalized artifact paths;
+- undeclared, missing, changed, or non-regular files;
+- changed source, project, database, evidence, report, citation, Wheel, or Seal identities;
 - replacement decoding and unsupported silent recovery;
+- contaminated evidence promoted as clean evidence;
 - nonassertive propositions promoted as facts;
-- unverified projects or changed answer packets.
+- unsupported A/B/C/H promotion;
+- `review_required` graphs presented as ordinary answers;
+- benchmark or candidate files that attempt to grant themselves authority.
 
 No source text is automatically deleted or rewritten.
 
 ## Package contents
 
-The Wheel contains:
+The v6 Wheel includes:
 
 ```text
 SKILL.md
 README.md
 PROJECT_STATUS.yaml
-Python modules
-21 JSON Schemas
-3 engineering Profiles
-executable Examples
-installation, security, and migration Docs
-all console entry points
+Python runtime modules
+75+ public JSON Schemas
+3 engineering profiles
+executable examples
+Stage 1–8 documentation
+all installed console entry points
 ```
 
-## Release boundary
+## Historical v5 boundary
+
+The v5.9.0 release on `main` remains a valid historical fact-oriented release and is preserved at `archive/v5.9.0-final`. Stage 8 does not mutate, reinterpret, or unfreeze it.
+
+## Current acceptance boundary
+
+The Stage 8 engineering implementation can be merged after CI validates the package, schemas, commands, adversarial regressions, and reproducible-build workflow.
+
+Real final project acceptance still requires actual private blind artifacts and an explicit approval record. Until then:
 
 ```yaml
-project_acceptance: passed
-release_status: final
-release_candidate_eligible: true
-release_candidate_created: true
-freeze_approved: true
+private_blind_acceptance_performed: false
+project_acceptance_performed: false
+release_candidate: false
+may_release: false
+may_freeze: false
 ```
-
-This release is final and frozen. Any future modification requires an explicit unfreeze decision and a new version line.

@@ -1,0 +1,34 @@
+{
+  "$id": "https://text-knowledge-reader.local/schemas/engineering-validation.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cli_contracts": {"const": true},
+    "conclusion": {"const": "success"},
+    "focused_test_count": {"minimum": 1, "type": "integer"},
+    "full_repository_regression": {"const": true},
+    "may_freeze": {"const": false},
+    "may_release": {"const": false},
+    "package_matrix": {
+      "items": {"enum": ["3.10", "3.11", "3.12"]},
+      "maxItems": 3,
+      "minItems": 3,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "project_acceptance_performed": {"const": false},
+    "schema_contracts": {"const": true},
+    "schema_version": {"const": "tkr-engineering-validation-v1"},
+    "source_commit": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "wheel_reproducible": {"const": true},
+    "workflow_run_id": {"minimum": 1, "type": "integer"}
+  },
+  "required": [
+    "schema_version", "source_commit", "workflow_run_id", "conclusion",
+    "focused_test_count", "full_repository_regression", "schema_contracts",
+    "cli_contracts", "package_matrix", "wheel_reproducible",
+    "project_acceptance_performed", "may_release", "may_freeze"
+  ],
+  "title": "Stage 8 Engineering Validation",
+  "type": "object"
+}

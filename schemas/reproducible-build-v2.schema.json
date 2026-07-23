@@ -1,0 +1,25 @@
+{
+  "$id": "https://text-knowledge-reader.local/schemas/reproducible-build-v2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "accepted": {"const": true},
+    "build_count": {"minimum": 2, "type": "integer"},
+    "build_sha256": {
+      "items": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+      "minItems": 2,
+      "type": "array"
+    },
+    "schema_version": {"const": "tkr-reproducible-build-v2"},
+    "source_date_epoch": {"minimum": 0, "type": "integer"},
+    "version": {"pattern": "^6\\.\\d+\\.\\d+(?:rc\\d+)?$", "type": "string"},
+    "wheel_name": {"pattern": "\\.whl$", "type": "string"},
+    "wheel_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": [
+    "schema_version", "accepted", "version", "source_date_epoch",
+    "build_count", "wheel_name", "wheel_sha256", "build_sha256"
+  ],
+  "title": "Stage 8 Reproducible Build",
+  "type": "object"
+}
