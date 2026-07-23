@@ -1,10 +1,10 @@
-schema_version: tkr-project-status-v11
+schema_version: tkr-project-status-v12
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T04:51:00Z
+updated_at_utc: 2026-07-23T07:40:00Z
 
 historical_release:
   version: 5.9.0
-  branch: main
+  stable_branch: main
   archive_branch: archive/v5.9.0-final
   final_commit: 7b382ded233e5b3177f859c2f239b9d08308bf22
   status: frozen_historical_release
@@ -14,215 +14,141 @@ historical_release:
     passed_domains: 18
     overall_weighted_average: 9.63
     minimum_domain_score: 9.34
-    blocker_count: 0
-  user_goal_reassessment:
-    performed: true
+  literary_goal_reassessment:
     result: insufficient_for_requested_literary_knowledge_engine
     reported_overall_reliability: 8.8
     reported_knowledge_regression: 8.6
-    historical_release_mutated: false
+  historical_release_mutated: false
 
 v6_development:
   version: 6.0.0-alpha1
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
-  completed_stages:
+  current_branch: feature/v6-stage6-notion-knowledge-system
+  current_pull_request: 33
+  github_sync_policy: one_branch_and_pull_request_per_major_stage
+  delivery_policy: merge_and_report_by_complete_major_stage
+  completed_and_integrated_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
     - Stage 4 Focused Character Engine
     - Stage 5 Layered Reasoning Engine
-  next_stage: Stage 6 Notion Knowledge System
-  current_stage_status: stage_5_completed_and_integrated
-  github_sync_policy: one_branch_and_pull_request_per_major_stage
-  delivery_policy: merge_and_report_by_complete_major_stage
+  current_stage: Stage 6 Notion Knowledge System
+  current_stage_status: stage_6_r1_remediated_final_exact_head_ci_pending
+  next_stage_after_merge: Stage 7 Literary Regression Benchmark
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 5 Reasoning CI
-    mode: concise_pull_request_and_manual_only
+    display_name: Stage 6 Notion CI
+    triggers: [pull_request, workflow_dispatch]
     jobs: 1
     python_versions: ["3.12"]
     cancel_obsolete_runs: true
     routine_artifact_uploads: false
     release_or_freeze_workflows_enabled: false
-  integrations:
-    stage_1:
-      pull_request: 28
-      final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
-      final_workflow_run_id: 29971391164
-      squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
-    stage_2:
-      pull_request: 29
-      focused_test_count: 17
-      final_pr_head: 564e9282632390ccb39987be4964d903009c7394
-      final_workflow_run_id: 29973788342
-      squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
-    stage_3:
-      pull_request: 30
-      focused_test_count: 16
-      final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
-      final_workflow_run_id: 29975176620
-      squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
-    stage_4:
-      pull_request: 31
-      focused_test_count: 19
-      final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
-      final_workflow_run_id: 29978838494
-      squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
-    stage_5:
-      pull_request: 32
-      focused_test_count: 28
-      final_pr_head: 55e958a8c30f45ed9a3f5b35f2b15cfe109972d6
-      final_workflow_run_id: 29980429897
-      final_workflow_status: passed
-      squash_merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
-  private_corpus_used: false
-  real_corpus_acceptance_deferred: true
-  project_acceptance_performed: false
-  final_score_assigned: false
-  release_candidate: false
-  freeze_approved: false
-  may_accept_project: false
-  may_release: false
-  may_freeze: false
 
-stage_1:
-  name: Evidence Engine
-  status: completed_and_integrated
-  pull_request: 28
-  squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
-  mandatory_gates:
-    source_bound_evidence: passed
-    A_B_C_support_contracts: passed
-    pollution_blocking: passed
-    JSONL_SQLite_integrity: passed
-    deterministic_rebuild: passed
-    focused_and_full_repository_regression: passed
+integrations:
+  stage_1:
+    pull_request: 28
+    final_pr_head: 322ec12aacacaf0d123a28641c933d0e60e4e37b
+    final_workflow_run_id: 29971391164
+    squash_merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
+  stage_2:
+    pull_request: 29
+    focused_test_count: 17
+    final_pr_head: 564e9282632390ccb39987be4964d903009c7394
+    final_workflow_run_id: 29973788342
+    squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
+  stage_3:
+    pull_request: 30
+    focused_test_count: 16
+    final_pr_head: 4b7a3f194e6d4843169a0ed6684bce950aff67f5
+    final_workflow_run_id: 29975176620
+    squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
+  stage_4:
+    pull_request: 31
+    focused_test_count: 19
+    final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
+    final_workflow_run_id: 29978838494
+    squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
+  stage_5:
+    pull_request: 32
+    focused_test_count: 28
+    final_pr_head: 55e958a8c30f45ed9a3f5b35f2b15cfe109972d6
+    final_workflow_run_id: 29980429897
+    squash_merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
+  stage_6:
+    pull_request: 33
+    remediation: Stage 6-R1
+    pre_documentation_validated_head: 928272a7cfa099bd94c58905b8978df48cf32aec
+    pre_documentation_workflow_run_id: 29988760640
+    pre_documentation_workflow_status: passed
+    final_exact_head_workflow_run_id: pending
+    squash_merge_commit: pending
 
-stage_2:
-  name: Chapter Structure Engine
-  status: completed_and_integrated
-  pull_request: 29
-  focused_test_count: 17
-  squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
-  mandatory_gates:
-    source_spans_and_hashes_recompute: passed
-    parent_volume_mappings_are_auditable: passed
-    physical_order_is_immutable: passed
-    canonical_order_is_candidate_only: passed
-    structural_anomalies_are_explicit: passed
-    cross_source_order_findings_are_explicit: passed
-    JSONL_SQLite_integrity: passed
-    deterministic_rebuild: passed
-    absent_addresses_refuse: passed
-    focused_and_full_repository_regression: passed
-
-stage_3:
-  name: Event Causality Engine
-  status: completed_and_integrated
-  pull_request: 30
-  focused_test_count: 16
-  squash_merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
-  mandatory_gates:
-    active_events_are_chapter_and_evidence_bound: passed
-    active_edges_have_verified_endpoints_and_support: passed
-    A_B_C_components_and_edges_do_not_leak: passed
-    temporal_direction_is_valid: passed
-    cycles_and_unsupported_references_are_explicit: passed
-    review_required_graphs_refuse_causal_answers: passed
-    query_paths_return_edge_and_evidence_support: passed
-    JSONL_SQLite_integrity: passed
-    deterministic_rebuild: passed
-    unsupported_paths_refuse: passed
-    focused_and_full_repository_regression: passed
-
-stage_4:
-  name: Focused Character Engine
-  status: completed_and_integrated
-  objective: deeply_model_core_characters_moderately_model_material_characters_and_keep_minor_people_minimal
-  pull_request: 31
-  focused_test_count: 19
-  squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
-  mandatory_gates:
-    core_and_important_require_material_impact: passed
-    placeholders_cannot_receive_invented_depth: passed
-    mention_only_names_are_not_canonical_entities: passed
-    character_records_are_chapter_assertion_and_evidence_bound: passed
-    event_links_require_verified_Event_Project: passed
-    review_required_event_graphs_block_active_character_conclusions: passed
-    A_B_C_character_arcs_do_not_leak: passed
-    temporal_states_and_relationships_are_queryable: passed
-    alias_and_state_conflicts_are_explicit: passed
-    JSONL_SQLite_integrity: passed
-    deterministic_rebuild: passed
-    unsupported_deep_queries_refuse: passed
-    focused_and_full_repository_regression: passed
-
-stage_5:
-  name: Layered Reasoning Engine
-  status: completed_and_integrated
-  objective: preserve_fact_synthesis_interpretation_and_counterfactual_boundaries_with_exact_provenance
-  pull_request: 32
-  focused_test_count: 28
-  final_pr_head: 55e958a8c30f45ed9a3f5b35f2b15cfe109972d6
-  final_workflow_run_id: 29980429897
-  squash_merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
-  query_modes:
-    - fact_only
-    - fact_and_synthesis
-    - analysis
-    - counterfactual
-    - provenance
+stage_6:
+  name: Notion Knowledge System
+  status: remediated_awaiting_final_exact_head_ci_and_merge
+  objective: project_verified_stage_1_to_5_knowledge_into_a_deterministic_incremental_notion_workspace
   outputs:
-    - tkr/reasoning_engine.py
-    - tkr/reasoning_project.py
-    - tkr/reasoning_cli.py
-    - schemas/reasoning-node.schema.json
-    - schemas/reasoning-edge.schema.json
-    - schemas/reasoning-finding.schema.json
-    - schemas/reasoning-annotation.schema.json
-    - schemas/reasoning-project-report.schema.json
-    - schemas/reasoning-project-verification.schema.json
-    - schemas/layered-answer-packet.schema.json
-    - tests/test_reasoning_engine.py
-    - tests/test_reasoning_project.py
-  artifacts:
-    - reasoning-nodes.jsonl
-    - reasoning-edges.jsonl
-    - reasoning-findings.jsonl
-    - reasoning.sqlite
-    - reasoning-project-report.json
+    - tkr/notion_engine.py
+    - tkr/notion_project.py
+    - tkr/notion_cli.py
+    - tkr/stage6_notion_r1.py
+    - notion-workspace-schema.json
+    - notion-pages.jsonl
+    - notion-relations.jsonl
+    - notion-review-items.jsonl
+    - notion-sync-plan.jsonl
+    - notion.sqlite
+    - notion-project-report.json
     - artifact-manifest.json
-  mandatory_gates:
-    A_items_resolve_to_exact_upstream_bound_evidence: passed
-    B_items_have_two_independent_A_branches: passed
-    C_items_have_support_attribution_limitations_and_alternatives: passed
-    H_items_have_premise_inference_uncertainty_and_noncanon_status: passed
-    support_declarations_equal_active_support_edges: passed
-    conflicts_cycles_and_review_findings_are_explicit: passed
-    mode_forbidden_and_unsupported_layers_refuse: passed
-    answer_packets_preserve_A_B_C_H_sections: passed
-    provenance_expands_upstream_records_and_evidence: passed
-    JSONL_SQLite_integrity: passed
+  public_commands:
+    - tkr-notion build
+    - tkr-notion verify
+    - tkr-notion plan
+    - python scripts/tkr.py notion build
+    - python scripts/tkr.py notion verify
+    - python scripts/tkr.py notion plan
+  database_policy:
+    physical_databases:
+      - sources
+      - chapters
+      - evidence
+      - facts_a
+      - synthesis_b
+      - interpretations_c
+      - counterfactuals_h
+      - events
+      - characters
+      - review_queue
+    epistemic_layers_may_mix: false
+    automatic_remote_deletion_allowed: false
+    archive_requires_explicit_approval: true
+  stage_6_r1_gates:
+    assertion_support_input_order_independence: passed
+    report_location_independence: passed
+    stable_page_keys_and_incremental_updates: passed
+    A_B_C_H_database_isolation: passed
+    exact_referenced_evidence_projection: passed
+    relation_source_and_target_foreign_keys: passed
+    JSONL_SQLite_full_field_equality: passed
+    missing_remote_ids_require_review: passed
+    missing_local_pages_are_archive_candidates: passed
+    remote_page_id_reuse_is_blocked: passed
+    unresolved_relation_endpoints_require_review: passed
     deterministic_rebuild: passed
+    Notion_schemas_packaged: passed
+    installed_and_bundled_CLI_contracts: passed
     focused_and_full_repository_regression: passed
-  stage_validation_performed: true
-  stage_validation_status: passed
-  stage_merge_approved_by_user_continuation: true
-  stage_merged: true
-
-replanned_major_stages:
-  - Stage 1: Evidence Engine
-  - Stage 2: Chapter Structure Engine
-  - Stage 3: Event Causality Engine
-  - Stage 4: Focused Character Engine
-  - Stage 5: Layered Reasoning Engine
-  - Stage 6: Notion Knowledge System
-  - Stage 7: Literary Regression Benchmark
-  - Stage 8: Final Productization and Acceptance
+  remote_execution_boundary:
+    actual_Notion_API_write_performed: false
+    database_creation_performed: false
+    page_upsert_performed: false
+    relation_application_performed: false
+    remote_readback_verification_performed: false
 
 entity_policy:
   core_characters: deep_model
@@ -230,6 +156,10 @@ entity_policy:
   minor_placeholders: minimal_or_chapter_only
   no_impact_mentions: no_canonical_entity_required
   goal: prevent_low_value_entity_expansion_from_diluting_mainline_knowledge
+
+remaining_major_stages:
+  - Stage 7 Literary Regression Benchmark
+  - Stage 8 Final Productization and Acceptance
 
 final_acceptance_rule:
   all_core_domains_must_score_at_least_9_0: true
@@ -244,4 +174,14 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: create_stage_6_notion_knowledge_system_branch_and_pull_request
+private_corpus_used_for_v6: false
+real_corpus_acceptance_deferred: true
+project_acceptance_performed: false
+final_score_assigned: false
+release_candidate: false
+freeze_approved: false
+may_accept_project: false
+may_release: false
+may_freeze: false
+
+next_action: freeze_stage_6_pr_head_run_final_exact_head_ci_and_squash_merge_pr_33
