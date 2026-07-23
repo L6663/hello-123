@@ -1,4 +1,4 @@
-name: Stage 7 Literary Benchmark CI
+name: Stage 8 Productization CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage7-literary-benchmark-${{ github.event.pull_request.number || github.ref }}
+  group: stage8-productization-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -15,32 +15,39 @@ permissions:
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
+  SOURCE_DATE_EPOCH: "1700000000"
 
 jobs:
-  verify:
-    name: Stage 7 CI
+  package-matrix:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install
-        run: python -m pip install .
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
 
-      - name: Compile
+      - name: Compile Stage 8 runtime
         run: |
           python -m py_compile \
             scripts/tkr.py \
+            tkr/final_acceptance.py \
+            tkr/final_acceptance_cli.py \
             tkr/literary_benchmark.py \
-            tkr/literary_benchmark_cli.py
+            tkr/skill_audit.py
 
-      - name: Validate Stage 7 schemas
+      - name: Validate public schemas
         run: |
           python - <<'PY'
           import json
@@ -51,6 +58,14 @@ jobs:
               "literary-benchmark-observation.schema.json",
               "literary-benchmark-report.schema.json",
               "literary-benchmark-verification.schema.json",
+              "private-blind-attestation.schema.json",
+              "package-acceptance-v2.schema.json",
+              "engineering-validation.schema.json",
+              "reproducible-build-v2.schema.json",
+              "final-acceptance-candidate.schema.json",
+              "final-acceptance-approval.schema.json",
+              "final-acceptance-seal.schema.json",
+              "final-acceptance-verification.schema.json",
           ]
           for name in names:
               payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
@@ -58,17 +73,126 @@ jobs:
               assert payload["type"] == "object"
           PY
 
-      - name: Stage 7 tests
-        run: python -m unittest tests.test_literary_benchmark -v
+      - name: Stage 8 focused regressions
+        run: python -m unittest tests.test_final_acceptance -v
 
-      - name: Repository regression
+      - name: Complete repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
 
-      - name: CLI smoke check
+      - name: Source Skill audit and doctor
         run: |
-          tkr-literary-benchmark --help >/dev/null
-          tkr-literary-benchmark evaluate --help >/dev/null
-          tkr-literary-benchmark verify --help >/dev/null
-          python scripts/tkr.py benchmark --help >/dev/null
-          python scripts/tkr.py benchmark-evaluate --help >/dev/null
-          python scripts/tkr.py benchmark-verify --help >/dev/null
+          python scripts/tkr.py audit --root . --output skill-audit-source.json
+          python scripts/tkr.py doctor --root . --output skill-doctor-source.json
+          python - <<'PY'
+          import json
+          for name in ("skill-audit-source.json", "skill-doctor-source.json"):
+              payload = json.load(open(name, encoding="utf-8"))
+              assert payload["passed"] is True
+              assert payload["audit_version"] == "6.0.0-stage8"
+          PY
+
+      - name: Build canonical Wheel
+        run: python -m build --wheel --outdir dist
+
+      - name: Clean Wheel installation
+        run: |
+          python -m venv .venv-wheel
+          .venv-wheel/bin/python -m pip install --upgrade pip
+          .venv-wheel/bin/python -m pip install dist/*.whl
+          .venv-wheel/bin/python - <<'PY'
+          import tkr
+          assert tkr.__version__ == "6.0.0rc1"
+          PY
+
+      - name: Installed Skill audit and command contract
+        run: |
+          .venv-wheel/bin/tkr-skill audit --output skill-audit-installed.json
+          .venv-wheel/bin/tkr-skill doctor --output skill-doctor-installed.json
+          .venv-wheel/bin/tkr-project --help >/dev/null
+          .venv-wheel/bin/tkr-literary --help >/dev/null
+          .venv-wheel/bin/tkr-evidence --help >/dev/null
+          .venv-wheel/bin/tkr-chapter --help >/dev/null
+          .venv-wheel/bin/tkr-event --help >/dev/null
+          .venv-wheel/bin/tkr-character --help >/dev/null
+          .venv-wheel/bin/tkr-reason --help >/dev/null
+          .venv-wheel/bin/tkr-notion --help >/dev/null
+          .venv-wheel/bin/tkr-literary-benchmark --help >/dev/null
+          .venv-wheel/bin/tkr-final-acceptance --help >/dev/null
+          .venv-wheel/bin/tkr-final-acceptance prepare --help >/dev/null
+          .venv-wheel/bin/tkr-final-acceptance verify --help >/dev/null
+          .venv-wheel/bin/tkr-final-acceptance seal --help >/dev/null
+          .venv-wheel/bin/tkr-final-acceptance verify-seal --help >/dev/null
+          python - <<'PY'
+          import json
+          for name in ("skill-audit-installed.json", "skill-doctor-installed.json"):
+              payload = json.load(open(name, encoding="utf-8"))
+              assert payload["passed"] is True
+              assert payload["audit_version"] == "6.0.0-stage8"
+              assert payload["project_acceptance_performed"] is False
+              assert payload["release_candidate"] is False
+              assert payload["may_freeze"] is False
+          PY
+
+      - name: Bundled Skill command contract
+        run: |
+          python scripts/tkr.py acceptance --help >/dev/null
+          python scripts/tkr.py acceptance-prepare --help >/dev/null
+          python scripts/tkr.py acceptance-verify --help >/dev/null
+          python scripts/tkr.py acceptance-seal --help >/dev/null
+          python scripts/tkr.py acceptance-verify-seal --help >/dev/null
+
+  reproducible-wheel:
+    name: Reproducible Wheel
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Build twice from the same source epoch
+        run: |
+          python -m build --wheel --outdir dist-a
+          rm -rf build text_knowledge_reader_core.egg-info
+          python -m build --wheel --outdir dist-b
+
+      - name: Require byte-identical Wheels
+        run: |
+          WHEEL_A=$(find dist-a -maxdepth 1 -name '*.whl' -print -quit)
+          WHEEL_B=$(find dist-b -maxdepth 1 -name '*.whl' -print -quit)
+          test -n "$WHEEL_A"
+          test -n "$WHEEL_B"
+          test "$(basename "$WHEEL_A")" = "$(basename "$WHEEL_B")"
+          cmp --silent "$WHEEL_A" "$WHEEL_B"
+          sha256sum "$WHEEL_A" "$WHEEL_B"
+
+      - name: Require packaged Stage 8 assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          wheel = next(Path("dist-a").glob("*.whl"))
+          with ZipFile(wheel) as archive:
+              names = set(archive.namelist())
+          required_suffixes = {
+              "share/text-knowledge-reader/SKILL.md",
+              "share/text-knowledge-reader/README.md",
+              "share/text-knowledge-reader/PROJECT_STATUS.yaml",
+              "share/text-knowledge-reader/schemas/final-acceptance-candidate.schema.json",
+              "share/text-knowledge-reader/schemas/private-blind-attestation.schema.json",
+              "share/text-knowledge-reader/docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md",
+          }
+          missing = sorted(
+              suffix for suffix in required_suffixes
+              if not any(name.endswith(suffix) for name in names)
+          )
+          assert not missing, missing
+          PY
