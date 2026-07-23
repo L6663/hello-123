@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/causal-event.schema.json",
+  "title": "Stage 3 focused causal event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_id", "canonical_name", "event_type", "significance",
+    "start_chapter_id", "end_chapter_id", "start_position", "end_position",
+    "participant_entity_ids", "place_entity_ids", "evidence_anchor_ids",
+    "limitations", "review_status"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-causal-event-v1"},
+    "event_id": {"type": "string", "pattern": "^cev_[0-9a-f]{32}$"},
+    "canonical_name": {"type": "string", "minLength": 1},
+    "event_type": {"type": "string", "minLength": 1},
+    "significance": {"enum": ["core", "major", "review_candidate"]},
+    "start_chapter_id": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+    "end_chapter_id": {"type": "string", "pattern": "^cch_[0-9a-f]{32}$"},
+    "start_position": {"type": "integer", "minimum": 0},
+    "end_position": {"type": "integer", "minimum": 0},
+    "participant_entity_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "place_entity_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "evidence_anchor_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "review_status": {"enum": ["active", "contested", "review_only", "superseded"]}
+  }
+}
