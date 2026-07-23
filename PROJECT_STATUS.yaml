@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v12
+schema_version: tkr-project-status-v13
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T07:40:00Z
+updated_at_utc: 2026-07-23T08:09:00Z
 
 historical_release:
   version: 5.9.0
@@ -25,8 +25,7 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: feature/v6-stage6-notion-knowledge-system
-  current_pull_request: 33
+  current_branch: develop/v6-literary-engine
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   completed_and_integrated_stages:
@@ -35,9 +34,9 @@ v6_development:
     - Stage 3 Event Causality Engine
     - Stage 4 Focused Character Engine
     - Stage 5 Layered Reasoning Engine
-  current_stage: Stage 6 Notion Knowledge System
-  current_stage_status: stage_6_r1_remediated_final_exact_head_ci_pending
-  next_stage_after_merge: Stage 7 Literary Regression Benchmark
+    - Stage 6-R1 Notion Knowledge System
+  current_stage_status: stage_6_completed_and_integrated
+  next_stage: Stage 7 Literary Regression Benchmark
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
@@ -82,21 +81,33 @@ integrations:
   stage_6:
     pull_request: 33
     remediation: Stage 6-R1
-    pre_documentation_validated_head: 928272a7cfa099bd94c58905b8978df48cf32aec
-    pre_documentation_workflow_run_id: 29988760640
-    pre_documentation_workflow_status: passed
-    final_exact_head_workflow_run_id: pending
-    squash_merge_commit: pending
+    final_pr_head: 31ec0223fc0a64cb389a5ee737a2bcd60c4e5bb3
+    final_workflow_run_id: 29990180725
+    final_workflow_status: passed
+    squash_merge_commit: 07f10cf8552c730c29afd01197108441e126e3f3
 
 stage_6:
   name: Notion Knowledge System
-  status: remediated_awaiting_final_exact_head_ci_and_merge
+  status: completed_and_integrated
   objective: project_verified_stage_1_to_5_knowledge_into_a_deterministic_incremental_notion_workspace
   outputs:
     - tkr/notion_engine.py
     - tkr/notion_project.py
     - tkr/notion_cli.py
     - tkr/stage6_notion_r1.py
+    - schemas/notion-page.schema.json
+    - schemas/notion-relation.schema.json
+    - schemas/notion-review-item.schema.json
+    - schemas/notion-sync-ledger.schema.json
+    - schemas/notion-sync-action.schema.json
+    - schemas/notion-workspace-schema.schema.json
+    - schemas/notion-project-report.schema.json
+    - schemas/notion-project-manifest.schema.json
+    - schemas/notion-project-verification.schema.json
+    - tests/test_notion_engine.py
+    - tests/test_notion_project.py
+    - tests/test_notion_stage6_r1.py
+  artifacts:
     - notion-workspace-schema.json
     - notion-pages.jsonl
     - notion-relations.jsonl
@@ -127,7 +138,7 @@ stage_6:
     epistemic_layers_may_mix: false
     automatic_remote_deletion_allowed: false
     archive_requires_explicit_approval: true
-  stage_6_r1_gates:
+  mandatory_gates:
     assertion_support_input_order_independence: passed
     report_location_independence: passed
     stable_page_keys_and_incremental_updates: passed
@@ -143,6 +154,7 @@ stage_6:
     Notion_schemas_packaged: passed
     installed_and_bundled_CLI_contracts: passed
     focused_and_full_repository_regression: passed
+    final_exact_head_CI: passed
   remote_execution_boundary:
     actual_Notion_API_write_performed: false
     database_creation_performed: false
@@ -184,4 +196,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: freeze_stage_6_pr_head_run_final_exact_head_ci_and_squash_merge_pr_33
+next_action: create_stage_7_literary_regression_benchmark_branch_and_pull_request
