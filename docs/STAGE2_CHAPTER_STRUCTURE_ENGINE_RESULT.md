@@ -2,9 +2,19 @@
 
 ## Decision
 
-Stage 2 engineering validation: **PASSED — ready for final exact-head CI and integration into `develop/v6-literary-engine`**.
+Stage 2 engineering validation: **PASSED — completed and integrated into `develop/v6-literary-engine`**.
 
 This decision covers the Chapter Structure Engine only. It is not final project acceptance, a release candidate, a production release, a final capability score, or repository freeze approval.
+
+## Integration record
+
+- pull request: `#29`;
+- final PR head: `564e9282632390ccb39987be4964d903009c7394`;
+- final workflow: `Stage 2 Chapter CI`;
+- final workflow run: `29973788342`;
+- final workflow conclusion: success;
+- squash merge commit: `b09e6695a487fd12fa8285314914a93c7336d07f`;
+- integration branch: `develop/v6-literary-engine`.
 
 ## Delivered scope
 
@@ -47,26 +57,15 @@ The Stage 2 focused suite contains **17 tests** across:
 - exact address and neighbor queries;
 - refusal for absent chapter addresses.
 
-## Validation
+## Final validation
 
-Latest completed implementation validation before final documentation:
-
-- workflow: `Stage 2 Chapter CI`;
-- head: `f40a88f294953a2890d02bad0c83331a21915597`;
-- run: `29973526463`;
 - runtime: Python 3.12 on Ubuntu;
-- conclusion: success.
-
-Successful checks:
-
-1. package installation;
-2. Python compilation;
-3. Stage 2 JSON Schema loading;
-4. all 17 Stage 2 focused tests;
-5. complete repository regression;
-6. installed and bundled CLI smoke checks.
-
-The final PR head must pass the same workflow before merge.
+- package installation: passed;
+- Python compilation: passed;
+- Stage 2 JSON Schema loading: passed;
+- all 17 Stage 2 focused tests: passed;
+- complete repository regression: passed;
+- installed and bundled CLI smoke checks: passed.
 
 ## Gate result
 
@@ -88,7 +87,7 @@ The final PR head must pass the same workflow before merge.
 
 GitHub Actions remain in reduced-noise mode:
 
-- one Stage 2 workflow;
+- one current-stage workflow;
 - one Python runtime;
 - one job;
 - pull request and manual triggers only;
