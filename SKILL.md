@@ -28,6 +28,21 @@ The v6 project chain is:
 
 No layer bypasses verification of its inputs.
 
+## Inputs
+
+Supported authoritative inputs are:
+
+- one or more uploaded `.txt` or `.md` source files in explicit input order;
+- verified Base Source Projects;
+- a verified Chapter Project;
+- verified Literary Sidecars and Evidence Projects;
+- reviewed Event, Character, and Reasoning annotation JSONL;
+- verified Event, Character, and Reasoning Projects;
+- an optional Notion synchronization Ledger;
+- factual, structural, causal, character, analysis, provenance, or counterfactual questions.
+
+Supported strict encodings are UTF-8, UTF-8 with BOM, UTF-16 LE with BOM, and UTF-16 BE with BOM. Never decode with replacement characters and never modify original source files in place.
+
 ## Epistemic contract
 
 ### A — explicit source fact
@@ -57,9 +72,9 @@ Never silently promote H→C, C→B, or B→A.
 
 Mention frequency alone cannot promote a person. Low-impact people must not dilute mainline knowledge.
 
-## Directly uploadable Skill commands
+## Workflow
 
-Treat the directory containing this file as `SKILL_DIR`.
+Treat the directory containing this file as `SKILL_DIR`. Run every build and verification stage in order; stop immediately on verification failure.
 
 ### Check the Skill
 
@@ -79,8 +94,6 @@ python "${SKILL_DIR}/scripts/tkr.py" build INPUT.txt \
 python "${SKILL_DIR}/scripts/tkr.py" verify BASE_PROJECT
 ```
 
-Supported strict encodings: UTF-8, UTF-8 BOM, UTF-16 LE BOM, UTF-16 BE BOM. Never decode with replacement characters.
-
 ### 2. Build and verify the Chapter Project
 
 Argument order is immutable physical input order.
@@ -96,7 +109,7 @@ python "${SKILL_DIR}/scripts/tkr.py" chapter verify CHAPTER_PROJECT \
 
 Physical order is source authority. Canonical order is a numbering-derived candidate only.
 
-### 3. Build literary sidecars and Evidence Projects
+### 3. Build Literary Sidecars and Evidence Projects
 
 ```bash
 python "${SKILL_DIR}/scripts/tkr.py" literary build BASE_PROJECT \
@@ -168,7 +181,7 @@ python "${SKILL_DIR}/scripts/tkr.py" reason verify \
   --evidence-binding BASE_PROJECT LITERARY_PROJECT EVIDENCE_PROJECT
 ```
 
-Query ceilings: `fact_only`, `fact_and_synthesis`, `analysis`, `counterfactual`, and `provenance`.
+Query ceilings are `fact_only`, `fact_and_synthesis`, `analysis`, `counterfactual`, and `provenance`.
 
 ### 7. Build and verify the Notion Project
 
@@ -230,7 +243,9 @@ Synchronization is two-phase:
 1. create/update pages and resolve stable `page_key` values to remote page IDs;
 2. apply relations only after both endpoints resolve.
 
-## Standard Notion Project artifacts
+## Standard artifacts
+
+A verified Stage 6 Notion Project contains:
 
 ```text
 notion-workspace-schema.json
@@ -243,7 +258,37 @@ notion-project-report.json
 artifact-manifest.json
 ```
 
-Every package verifies source lineage, Manifest membership, content hashes, relation hashes, SQLite integrity, SQLite foreign keys, and full JSONL↔SQLite field equality.
+Earlier layers additionally retain their source, chapter, evidence, event, character, reasoning, report, database, and Manifest artifacts. Every package verifies source lineage, Manifest membership, content hashes, relation hashes, SQLite integrity, SQLite foreign keys, and full JSONL↔SQLite field equality.
+
+## Commands
+
+Installed console commands include:
+
+```text
+tkr-skill
+tkr-project
+tkr-literary
+tkr-evidence
+tkr-chapter
+tkr-event
+tkr-character
+tkr-reason
+tkr-notion
+```
+
+The directly uploadable entry point is:
+
+```bash
+python "${SKILL_DIR}/scripts/tkr.py" --help
+```
+
+Stage 6 installed and bundled commands are:
+
+```text
+tkr-notion build | verify | plan
+python scripts/tkr.py notion build | verify | plan
+python scripts/tkr.py notion-build | notion-verify | notion-plan
+```
 
 ## Refusal rules
 
@@ -283,3 +328,9 @@ A refusal is a correct result.
 13. Stop on any verification failure.
 14. Never claim all v6 capabilities exceed 9.0 before Stage 7–8 private blind acceptance.
 15. Never claim v6 release or freeze from an engineering-stage check.
+
+## Acceptance boundary
+
+Stage 6 engineering validation may prove deterministic projection, stable identity, database integrity, reversible sync planning, and command/package correctness. It does not perform private-corpus literary acceptance, execute irreversible Notion deletion, assign final v6 capability scores, create a Release Candidate, approve release, or freeze the repository.
+
+Final v6 acceptance requires Stage 7–8 blind evaluation in which every core correctness and safety domain independently reaches at least 9.0, with zero citation mismatches, measured hallucinations, unsupported fact promotions, interpretation-as-fact errors, and counterfactual-as-canon errors. Average scores cannot compensate for a failed domain, and final release still requires explicit user approval.
