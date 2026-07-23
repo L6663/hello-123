@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {"minLength": 1, "type": "string"},
+        "role": {"minLength": 1, "type": "string"},
+        "sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "size_bytes": {"minimum": 0, "type": "integer"}
+      },
+      "required": ["role", "path", "sha256", "size_bytes"],
+      "type": "object"
+    }
+  },
+  "$id": "https://text-knowledge-reader.local/schemas/final-acceptance-candidate.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "acceptance_version": {"const": "6.0.0-stage8-rc1"},
+    "artifacts": {"items": {"$ref": "#/$defs/artifact"}, "minItems": 1, "type": "array"},
+    "candidate_id": {"pattern": "^final_acceptance_candidate_[0-9a-f]{24}$", "type": "string"},
+    "evidence": {"type": "object"},
+    "may_accept_project": {"const": false},
+    "may_freeze": {"const": false},
+    "may_release": {"const": false},
+    "project_acceptance_performed": {"const": false},
+    "release_candidate": {"const": false},
+    "release_version": {"pattern": "^6\\.\\d+\\.\\d+(?:rc\\d+)?$", "type": "string"},
+    "requires_explicit_approval": {"const": true},
+    "schema_version": {"const": "tkr-final-acceptance-candidate-v1"},
+    "source_commit": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "source_date_epoch": {"minimum": 0, "type": "integer"},
+    "status": {"const": "candidate"},
+    "technical_gate_passed": {"const": true}
+  },
+  "required": [
+    "schema_version", "acceptance_version", "release_version", "source_commit",
+    "source_date_epoch", "artifacts", "evidence", "technical_gate_passed",
+    "requires_explicit_approval", "project_acceptance_performed",
+    "may_accept_project", "release_candidate", "may_release", "may_freeze",
+    "status", "candidate_id"
+  ],
+  "title": "Final Product Acceptance Candidate",
+  "type": "object"
+}
