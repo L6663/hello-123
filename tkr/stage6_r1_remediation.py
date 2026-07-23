@@ -265,7 +265,7 @@ def apply_stage6_r1_remediation() -> None:
     _anomaly.ANOMALY_DETECTOR_VERSION = "5.9.0-phase9.4-final"
     _heading.detect_heading = _detect_heading
     _claim._validate_count = _validate_count
-    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v1-final"
+    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v2-r3"
     _APPLIED = True
 
 
