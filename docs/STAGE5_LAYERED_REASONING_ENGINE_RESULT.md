@@ -2,7 +2,9 @@
 
 ## Decision
 
-Stage 5 engineering validation: **PASSED — ready for final exact-head CI and integration into `develop/v6-literary-engine`**.
+Stage 5 engineering validation and integration: **PASSED**.
+
+PR #32 was squash merged into `develop/v6-literary-engine` as commit `00d835b7680bdbcbc1c2384647d7f47603585657`.
 
 This decision covers the Layered Reasoning Engine only. It is not final project acceptance, a release candidate, a production release, a final capability score, or repository freeze approval.
 
@@ -62,17 +64,15 @@ The Stage 5 focused suite contains **28 tests** covering:
 - fact-only CLI leakage prevention;
 - missing-intent refusal.
 
-## Validation
+## Final exact-head validation
 
-Latest completed implementation validation before final documentation:
-
+- PR: #32;
+- final PR head: `55e958a8c30f45ed9a3f5b35f2b15cfe109972d6`;
 - workflow: `Stage 5 Reasoning CI`;
-- head before Skill-contract synchronization: `bbd422e776ed4f7a81da870c04f1c61644426135`;
-- run: `29980031798`;
+- workflow run: `29980429897`;
 - runtime: Python 3.12 on Ubuntu;
-- conclusion: success.
-
-The Skill-contract synchronization run `29980172568` also passed the same installation, Schema, focused, repository, and CLI checks.
+- conclusion: success;
+- squash merge commit: `00d835b7680bdbcbc1c2384647d7f47603585657`.
 
 Successful checks:
 
@@ -82,8 +82,6 @@ Successful checks:
 4. all 28 Stage 5 focused tests;
 5. complete repository regression;
 6. installed and bundled CLI smoke checks.
-
-The final immutable PR head must pass the same read-only workflow before merge.
 
 ## Gate result
 
