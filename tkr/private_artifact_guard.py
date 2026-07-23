@@ -45,7 +45,10 @@ PRIVATE_CORPUS_SUFFIXES = (".txt", ".zip")
 
 
 def _normalise(path: str | Path) -> PurePosixPath:
-    text = str(path).replace("\\", "/").lstrip("./")
+    text = str(path).replace("\\", "/")
+    while text.startswith("./"):
+        text = text[2:]
+    text = text.lstrip("/")
     return PurePosixPath(text)
 
 
