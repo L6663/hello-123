@@ -2,7 +2,9 @@
 
 ## Decision
 
-Stage 4 engineering validation: **PASSED — approved for integration into `develop/v6-literary-engine`**.
+Stage 4 engineering validation and integration: **PASSED**.
+
+PR #31 was squash merged into `develop/v6-literary-engine` as commit `51887ce5fcd985a7ff42394ef902b144e04ede01`.
 
 This decision covers the Focused Character Engine only. It is not final project acceptance, a release candidate, a production release, a final capability score, or repository freeze approval.
 
@@ -53,17 +55,24 @@ The Stage 4 focused suite contains **19 tests** covering:
 - placeholder deep-query refusal;
 - review-required graph query refusal.
 
-## Final validation record
+## Final exact-head validation
 
-The implementation and documentation are complete. The branch must pass the same read-only workflow at its final immutable head immediately before merge.
-
-Final validated runtime matrix:
-
+- PR: #31;
+- final PR head: `c737bb2d1625da2d356bcee39e3135070272bab0`;
 - workflow: `Stage 4 Character CI`;
+- workflow run: `29978838494`;
 - runtime: Python 3.12 on Ubuntu;
-- checks: installation, compilation, Stage 4 Schema loading, all 19 focused tests, complete repository regression, and installed/bundled CLI smoke checks.
+- conclusion: success;
+- squash merge commit: `51887ce5fcd985a7ff42394ef902b144e04ede01`.
 
-The exact final head and run ID are recorded in the PR and `PROJECT_STATUS.yaml` after the last read-only run.
+Successful checks:
+
+1. package installation;
+2. Python compilation;
+3. Stage 4 JSON Schema loading;
+4. all 19 Stage 4 focused tests;
+5. complete repository regression;
+6. installed and bundled CLI smoke checks.
 
 ## Gate result
 
