@@ -1,4 +1,4 @@
-name: Stage 5 Reasoning CI
+name: Stage 6 Notion CI
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: stage5-reasoning-${{ github.event.pull_request.number || github.ref }}
+  group: stage6-notion-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   verify:
-    name: Stage 5 CI
+    name: Stage 6 CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -34,50 +34,10 @@ jobs:
         run: python -m pip install .
 
       - name: Compile
-        run: |
-          python -m py_compile \
-            scripts/tkr.py \
-            tkr/reasoning_engine.py \
-            tkr/reasoning_project.py \
-            tkr/reasoning_cli.py
+        run: python -m py_compile tkr/notion_engine.py
 
-      - name: Validate Stage 5 schemas
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          names = [
-              "reasoning-node.schema.json",
-              "reasoning-edge.schema.json",
-              "reasoning-finding.schema.json",
-              "reasoning-annotation.schema.json",
-              "reasoning-project-report.schema.json",
-              "reasoning-project-verification.schema.json",
-              "layered-answer-packet.schema.json",
-          ]
-          for name in names:
-              payload = json.loads((Path("schemas") / name).read_text(encoding="utf-8"))
-              assert payload["$schema"].endswith("2020-12/schema")
-              assert payload["type"] == "object"
-          PY
-
-      - name: Stage 5 tests
-        run: |
-          python -m unittest \
-            tests.test_reasoning_engine \
-            tests.test_reasoning_project -v
+      - name: Stage 6 tests
+        run: python -m unittest tests.test_notion_engine -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
-
-      - name: CLI smoke check
-        run: |
-          tkr-reason --help >/dev/null
-          tkr-reason build --help >/dev/null
-          tkr-reason verify --help >/dev/null
-          tkr-reason query --help >/dev/null
-          python scripts/tkr.py reason --help >/dev/null
-          python scripts/tkr.py reason-build --help >/dev/null
-          python scripts/tkr.py reason-verify --help >/dev/null
-          python scripts/tkr.py reason-query --help >/dev/null
