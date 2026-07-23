@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
@@ -24,27 +24,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          fetch-depth: 0
-
-      - name: Apply staged source corrections
-        id: staged_fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f .stage2/chapter-project-fixes.patch ]; then
-            git apply --check --recount --verbose .stage2/chapter-project-fixes.patch
-            git apply --recount --verbose .stage2/chapter-project-fixes.patch
-            python -m py_compile tkr/chapter_project.py
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add tkr/chapter_project.py
-            git rm .stage2/chapter-project-fixes.patch
-            rmdir .stage2 2>/dev/null || true
-            git commit -m "fix(stage2): correct chapter project SQL and report schema"
-            git push origin "HEAD:${{ github.head_ref }}"
-          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -59,6 +38,7 @@ jobs:
           python -m py_compile \
             scripts/tkr.py \
             tkr/chapter_engine.py \
+            tkr/chapter_ordering.py \
             tkr/chapter_project.py \
             tkr/chapter_cli.py
 
@@ -86,7 +66,9 @@ jobs:
         run: |
           python -m unittest \
             tests.test_chapter_engine \
-            tests.test_chapter_project -v
+            tests.test_chapter_ordering \
+            tests.test_chapter_project \
+            tests.test_chapter_cli -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
