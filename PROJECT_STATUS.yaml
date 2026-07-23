@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v15
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T10:16:00Z
+updated_at_utc: 2026-07-23T10:21:00Z
 
 historical_release:
   version: 5.9.0
@@ -38,7 +38,7 @@ v6_development:
     - Stage 6-R1 Notion Knowledge System
     - Stage 7 Literary Regression Benchmark
   current_stage: Stage 8 Final Productization and Acceptance
-  current_stage_status: code_validation_passed_final_status_ci_pending
+  current_stage_status: exact_head_ci_passed_integration_pending
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
     display_name: Stage 8 Productization CI
@@ -109,9 +109,9 @@ integrations:
     code_validation_head: e5857d0cb294a385385cedf22141a44fe8bf3240
     code_validation_workflow_run_id: 29997880685
     code_validation_workflow_status: passed
-    final_validated_head: pending
-    final_workflow_run_id: pending
-    final_workflow_status: pending
+    final_validated_head: 9cd535d64cd23e0804bfeda6caf3b94daf224a89
+    final_workflow_run_id: 29998124893
+    final_workflow_status: passed
     squash_merge_commit: pending
 
 stage_6:
@@ -184,7 +184,7 @@ stage_7:
 
 stage_8:
   name: Final Productization and Acceptance
-  status: code_validation_passed_final_status_ci_pending
+  status: exact_head_ci_passed_integration_pending
   objective: productize_v6_and_create_a_hash_bound_explicitly_approved_final_acceptance_path
   pull_request: 35
   product_version: 6.0.0rc1
@@ -259,7 +259,7 @@ stage_8:
     public_schema_contracts: passed
     reproducible_wheel_gate: passed
     code_validation_ci: passed
-    final_exact_head_ci: pending
+    final_exact_head_ci: passed
 
 entity_policy:
   core_characters: deep_model
@@ -298,4 +298,4 @@ may_accept_project: false
 may_release: false
 may_freeze: false
 
-next_action: pass_final_stage_8_status_head_ci_then_integrate_engineering_without_claiming_real_private_acceptance
+next_action: merge_pull_request_35_to_integrate_stage_8_engineering_without_claiming_real_private_acceptance
