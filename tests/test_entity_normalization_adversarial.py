@@ -350,16 +350,28 @@ class EntityNormalizationAdversarialTests(unittest.TestCase):
         self.assertTrue(bundle.report["may_build_review_index"])
         self.assertFalse(bundle.report["may_publish_canonical"])
 
-    def test_subjectless_permissions_in_different_sources_do_not_conflict(self):
+    def test_subjectless_permissions_are_not_accepted_for_normalization(self):
         first = "可以删除。"
-        second = "不可以删除。"
-        source = first + second
-        a = UnitSpan("u1", 0, len(first), "a")
-        b = UnitSpan("u1", a.end, len(source), "b")
-        positive = self.record(source, first, a, claim_type="permission", subject="", object="删除", polarity=True)
-        negative = self.record(source, second, b, claim_type="permission", subject="", object="删除", polarity=False, start=b.start)
-        bundle = normalize_entities([positive, negative], source, [a, b])
-        self.assertFalse(any(item.conflict_type.startswith("PERMISSION_POLARITY") for item in bundle.conflicts))
+        candidate = ClaimCandidate(
+            claim_type="permission",
+            subject="",
+            object="删除",
+            polarity=True,
+            source_id="a",
+            unit_id="u1",
+            evidence_start=0,
+            evidence_end=len(first),
+            evidence_text=first,
+        )
+        result = validate_claim(
+            candidate,
+            first,
+            unit_span=UnitSpan("u1", 0, len(first), "a"),
+            require_unit=True,
+        )
+        self.assertEqual(result.status, "review")
+        self.assertFalse(result.may_index)
+        self.assertIn("PERMISSION_SUBJECT_REQUIRED", result.reason_codes)
 
     def test_thousand_claim_scale_smoke(self):
         count = 1000

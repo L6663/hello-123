@@ -381,6 +381,7 @@ def _anchor(
     *,
     role: str,
     supplied_hash_key: str | None = None,
+    findings: Sequence[Mapping[str, object]] = (),
 ) -> EvidenceAnchor:
     start = _integer(row, "evidence_start", role)
     end = _integer(row, "evidence_end", role)
@@ -409,7 +410,7 @@ def _anchor(
         evidence_hash,
         chapter.content_sha256,
         role,
-        chapter.contamination_status,
+        _contamination_status(start, end, findings),
     )
 
 
@@ -419,6 +420,7 @@ def _import_base_records(
     mention_rows: Sequence[Mapping[str, object]],
     entity_rows: Sequence[Mapping[str, object]],
     fact_rows: Sequence[Mapping[str, object]],
+    anomaly_rows: Sequence[Mapping[str, object]],
 ) -> tuple[list[EvidenceAnchor], list[LiteraryEntity], list[KnowledgeAssertion], dict[str, str]]:
     anchors: dict[str, EvidenceAnchor] = {}
     mention_anchor_by_id: dict[str, str] = {}
@@ -427,7 +429,7 @@ def _import_base_records(
         chapter = chapter_lookup.get(unit_id_value)
         if chapter is None:
             raise LiteraryEngineError("mention references an unknown chapter Unit")
-        anchor = _anchor(source_text, row, chapter, role="entity_mention")
+        anchor = _anchor(source_text, row, chapter, role="entity_mention", findings=anomaly_rows)
         anchors.setdefault(anchor.anchor_id, anchor)
         mention_anchor_by_id[_text(row, "mention_id", "mention")] = anchor.anchor_id
 
@@ -438,7 +440,14 @@ def _import_base_records(
         chapter = chapter_lookup.get(unit_id_value)
         if chapter is None:
             raise LiteraryEngineError("fact references an unknown chapter Unit")
-        anchor = _anchor(source_text, row, chapter, role="direct_fact", supplied_hash_key="evidence_sha256")
+        anchor = _anchor(
+            source_text,
+            row,
+            chapter,
+            role="direct_fact",
+            supplied_hash_key="evidence_sha256",
+            findings=anomaly_rows,
+        )
         if anchor.source_status != "clean":
             raise LiteraryEngineError("accepted fact overlaps non-clean source material")
         anchors.setdefault(anchor.anchor_id, anchor)
@@ -1087,7 +1096,7 @@ def build_literary_engine(
 
     chapters, chapter_lookup = _chapters(source_text, unit_rows, heading_rows, anomaly_rows)
     anchors, entities, assertions, _ = _import_base_records(
-        source_text, chapter_lookup, mention_rows, entity_rows, fact_rows
+        source_text, chapter_lookup, mention_rows, entity_rows, fact_rows, anomaly_rows
     )
     annotations, annotation_sha = _load_annotations(Path(annotations_path) if annotations_path is not None else None)
     chapters, anchors, entities, assertions, relationships, events, revisions = _merge_annotations(

@@ -595,6 +595,16 @@ def _permission_pattern(candidate: ClaimCandidate, markers: Sequence[str]) -> re
 def _validate_permission(candidate: ClaimCandidate, evidence: str) -> ClaimValidationResult:
     if not candidate.object:
         return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("PERMISSION_ACTION_REQUIRED",))
+    if not candidate.subject:
+        # Subjectless permission/prohibition text is unsafe to canonicalize.
+        # It is often elliptical dialogue, a response particle, or a copular
+        # false positive such as "可以是". Keep it for review without indexing.
+        return _finish(
+            candidate,
+            evidence,
+            status=_STATUS_REVIEW,
+            reasons=("PERMISSION_SUBJECT_REQUIRED",),
+        )
     positive, modal_positive = _partition_modal(
         _positive_permission_matches(
             _permission_pattern(candidate, _POSITIVE_PERMISSION_MARKERS), evidence

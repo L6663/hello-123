@@ -152,7 +152,7 @@ class ClaimValidationTests(unittest.TestCase):
         )
         self.assertEqual(result.status, "rejected")
 
-    def test_positive_permission_rejects_negative_evidence(self):
+    def test_subjectless_permission_routes_to_review_before_polarity_evaluation(self):
         result = self.validate(
             "不可以删除。",
             claim_type="permission",
@@ -160,8 +160,9 @@ class ClaimValidationTests(unittest.TestCase):
             object="删除",
             polarity=True,
         )
-        self.assertEqual(result.status, "rejected")
-        self.assertIn("PERMISSION_POLARITY_MISMATCH", result.reason_codes)
+        self.assertEqual(result.status, "review")
+        self.assertFalse(result.may_index)
+        self.assertIn("PERMISSION_SUBJECT_REQUIRED", result.reason_codes)
 
     def test_negative_permission_is_accepted(self):
         result = self.validate(
