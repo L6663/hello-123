@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-knowledge-reader-core"
 version = "6.0.0-alpha1"
-description = "Auditable long-text ingestion, chapter-addressable literary knowledge, epistemic-tier separation, strict evidence QA, and recoverable builds"
+description = "Auditable long-text ingestion, source-bound Evidence Engine, chapter-addressable literary knowledge, epistemic-tier separation, strict evidence QA, and recoverable builds"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Text Knowledge Reader project"}]
@@ -69,6 +69,8 @@ include = ["tkr*"]
   "schemas/literary-entity.schema.json",
   "schemas/literary-relationship.schema.json",
   "schemas/literary-event.schema.json",
+  "schemas/evidence-unit.schema.json",
+  "schemas/evidence-coverage.schema.json",
 ]
 "share/text-knowledge-reader/profiles" = [
   "profiles/balanced.json",
@@ -84,4 +86,5 @@ include = ["tkr*"]
   "docs/SECURITY.md",
   "docs/MIGRATION_STAGE5.md",
   "docs/STAGE7_LITERARY_ENGINE.md",
+  "docs/STAGE1_EVIDENCE_ENGINE.md",
 ]
