@@ -2,9 +2,9 @@
 
 ## Status
 
-`remediated_final_exact_head_ci_pending`
+`completed_and_integrated`
 
-Stage 6-R1 repairs the P0 defects found during the whole-project audit. This record is not final private-corpus acceptance, release approval, or freeze authorization.
+Stage 6-R1 repaired the P0 defects found during the whole-project audit and was squash merged through PR #33. This result is engineering integration only; it is not final private-corpus acceptance, release approval, or freeze authorization.
 
 ## Delivered remediation
 
@@ -17,7 +17,8 @@ Stage 6-R1 repairs the P0 defects found during the whole-project audit. This rec
 - bundled `python scripts/tkr.py notion ...` commands are available;
 - Stage 6 schemas, project tests, R1 adversarial tests, full repository regression, and CLI smoke checks are included in the concise workflow;
 - tracked Python bytecode was removed from the development line;
-- remote deletion remains forbidden and archive actions remain review-only candidates.
+- remote deletion remains forbidden and archive actions remain review-only candidates;
+- stable Skill product contract sections remain compatible with Doctor and Audit.
 
 ## Focused R1 regression
 
@@ -28,23 +29,34 @@ The R1 suite covers:
 3. two real SQLite page foreign keys on the relation table;
 4. field-level SQLite drift detection even when container hashes are recomputed.
 
-## Validation before final candidate freeze
+## Final exact-head validation
 
-Head `928272a7cfa099bd94c58905b8978df48cf32aec` passed workflow run `29988760640`:
+Final PR head:
+
+`31ec0223fc0a64cb389a5ee737a2bcd60c4e5bb3`
+
+Workflow run:
+
+`29990180725`
+
+The run passed:
 
 - package installation;
-- Stage 6 module and bundled entry-point compilation;
-- nine Stage 6 Schema load checks;
-- Notion engine, Notion Project, and Stage 6-R1 focused tests;
+- bundled entry-point and Stage 6 module compilation;
+- all nine Stage 6 Schema checks;
+- Notion engine, Notion Project, and Stage 6-R1 adversarial tests;
 - complete repository regression;
 - installed and bundled CLI smoke checks.
 
-The later compatibility head also passed the complete workflow after restoring the stable Skill contract section markers required by the product-layout audit.
+## Integration
 
-## Final candidate freeze
+- Pull request: `#33`
+- Merge method: squash
+- Squash merge commit: `07f10cf8552c730c29afd01197108441e126e3f3`
+- Integration branch: `develop/v6-literary-engine`
 
-The Stage 6-R1 candidate tree now uses the concise read-only workflow with no routine artifact upload. No runtime, Schema, package, Skill, test, or documentation files may change after this record until final exact-head CI completes.
+## Remaining authority boundary
 
-## Remaining integration gate
+No real Notion API write, database creation, page upsert, relation application, remote readback verification, irreversible deletion, v6 final scoring, Release Candidate creation, release approval, or repository freeze was performed by Stage 6.
 
-This final candidate head must pass the same exact-head workflow before PR #33 is marked ready and squash merged.
+The next major stage is **Stage 7: Literary Regression Benchmark**.
