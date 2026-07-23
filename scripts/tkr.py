@@ -11,6 +11,7 @@ if str(SKILL_ROOT) not in sys.path:
 
 from tkr.chapter_cli import main as chapter_main  # noqa: E402
 from tkr.evidence_cli import main as evidence_main  # noqa: E402
+from tkr.event_cli import main as event_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
 from tkr.skill_cli import main as skill_main  # noqa: E402
@@ -32,6 +33,11 @@ CHAPTER_ALIASES = {
     "chapter-verify": "verify",
     "chapter-query": "query",
 }
+EVENT_ALIASES = {
+    "event-build": "build",
+    "event-verify": "verify",
+    "event-query": "query",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -44,21 +50,21 @@ def main(argv: list[str] | None = None) -> int:
             "  literary build | literary verify | literary query | literary export-notion\n"
             "  evidence build | evidence verify\n"
             "  chapter build | chapter verify | chapter query\n"
+            "  event build | event verify | event query\n"
             "  literary-build | literary-verify | literary-query | literary-export-notion\n"
             "  evidence-build | evidence-verify\n"
-            "  chapter-build | chapter-verify | chapter-query\n\n"
+            "  chapter-build | chapter-verify | chapter-query\n"
+            "  event-build | event-verify | event-query\n\n"
             "Examples:\n"
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
             "  python scripts/tkr.py verify project\n"
             "  python scripts/tkr.py query project '陆川击败了谁？'\n"
             "  python scripts/tkr.py literary build project --outdir literary\n"
-            "  python scripts/tkr.py literary query literary '陆川首次出场在哪一章？'\n"
             "  python scripts/tkr.py evidence build project literary --outdir evidence-project\n"
-            "  python scripts/tkr.py evidence verify project literary evidence-project\n"
             "  python scripts/tkr.py chapter build project-a project-b --outdir chapter-project\n"
-            "  python scripts/tkr.py chapter verify chapter-project --source-project project-a --source-project project-b\n"
-            "  python scripts/tkr.py chapter query chapter-project --source-project project-a --source-project project-b --address 2 18\n"
+            "  python scripts/tkr.py event build chapter-project events.jsonl --source-project project-a --source-project project-b --literary-project literary --outdir event-project\n"
+            "  python scripts/tkr.py event query event-project chapter-project events.jsonl --source-project project-a --source-project project-b --literary-project literary --name '联盟瓦解'\n"
             "  python scripts/tkr.py literary export-notion literary --outdir notion-package"
         )
         return 0
@@ -88,6 +94,12 @@ def main(argv: list[str] | None = None) -> int:
         return chapter_main(args[1:])
     if command in CHAPTER_ALIASES:
         return chapter_main([CHAPTER_ALIASES[command], *args[1:]])
+    if command == "event":
+        if len(args) == 1:
+            return event_main(["--help"])
+        return event_main(args[1:])
+    if command in EVENT_ALIASES:
+        return event_main([EVENT_ALIASES[command], *args[1:]])
     raise SystemExit(f"unknown command: {command}")
 
 

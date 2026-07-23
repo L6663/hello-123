@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v6
+schema_version: tkr-project-status-v7
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T02:17:00Z
+updated_at_utc: 2026-07-23T02:43:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,19 +27,22 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
+  active_branch: feature/v6-stage3-event-causality-engine
+  active_pull_request: 30
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
-  next_stage: Stage 3 Event Causality Engine
-  current_stage_status: stage_2_completed_and_integrated
+  current_stage: Stage 3 Event Causality Engine
+  stage_document: docs/STAGE3_EVENT_CAUSALITY_ENGINE.md
+  stage_result_document: docs/STAGE3_EVENT_CAUSALITY_ENGINE_RESULT.md
+  current_stage_status: validated_ready_for_final_exact_head
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
   substage_release_allowed: false
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
-    display_name: Stage 2 Chapter CI
+    display_name: Stage 3 Event CI
     mode: concise_pull_request_and_manual_only
     jobs: 1
     python_versions: ["3.12"]
@@ -59,11 +62,17 @@ v6_development:
     final_workflow_run_id: 29973788342
     final_workflow_status: passed
     squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
+  stage_3_validation:
+    focused_test_count: 16
+    latest_passed_head: 5f9b1b9f5cbe1a6f568bd6f372adf2972c32d187
+    latest_passed_workflow_run_id: 29974960981
+    latest_passed_workflow_status: passed
+    final_exact_head_check: pending
     checks:
       - package_installation
       - module_compilation
-      - stage_2_schema_loading
-      - stage_2_focused_tests
+      - stage_3_schema_loading
+      - stage_3_focused_tests
       - full_repository_regression
       - installed_and_bundled_CLI_smoke
   reused_integrated_foundation:
@@ -101,60 +110,16 @@ stage_1:
     JSONL_and_SQLite_identifiers_match: passed
     clean_text_coverage_is_measured: passed
     repeated_builds_are_logically_identical: passed
-    notion_export_preserves_A_B_C_separation: passed_via_integrated_projection
     focused_and_full_repository_regression: passed
 
 stage_2:
   name: Chapter Structure Engine
   status: completed_and_integrated
-  objective: unify_verified_source_projects_into_a_source_bound_chapter_catalog_without_mutating_physical_order
   pull_request: 29
   focused_test_count: 17
   final_pr_head: 564e9282632390ccb39987be4964d903009c7394
   final_workflow_run_id: 29973788342
   squash_merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
-  internal_slices:
-    - id: 2.1
-      name: Canonical_Chapter_Model
-      status: completed
-    - id: 2.2
-      name: Parent_Volume_Recovery
-      status: completed
-    - id: 2.3
-      name: Physical_and_Canonical_Order_Separation
-      status: completed
-    - id: 2.4
-      name: Cross_Source_Order_Audit
-      status: completed
-    - id: 2.5
-      name: Chapter_Project_SQLite_Verifier_and_Query
-      status: completed
-    - id: 2.6
-      name: Regression_and_Stage_Integration
-      status: completed
-  outputs:
-    - tkr/chapter_engine.py
-    - tkr/chapter_ordering.py
-    - tkr/chapter_project.py
-    - tkr/chapter_cli.py
-    - schemas/chapter-source-binding.schema.json
-    - schemas/canonical-chapter.schema.json
-    - schemas/chapter-finding.schema.json
-    - schemas/canonical-order.schema.json
-    - schemas/chapter-project-report.schema.json
-    - schemas/chapter-project-verification.schema.json
-    - tests/test_chapter_engine.py
-    - tests/test_chapter_ordering.py
-    - tests/test_chapter_project.py
-    - tests/test_chapter_cli.py
-  artifacts:
-    - source-bindings.jsonl
-    - chapters.jsonl
-    - canonical-order.jsonl
-    - chapter-findings.jsonl
-    - chapter.sqlite
-    - chapter-project-report.json
-    - artifact-manifest.json
   mandatory_gates:
     source_spans_and_hashes_recompute: passed
     parent_volume_mappings_are_auditable: passed
@@ -167,10 +132,69 @@ stage_2:
     repeated_builds_are_deterministic: passed
     absent_addresses_refuse: passed
     focused_and_full_repository_regression: passed
+
+stage_3:
+  name: Event Causality Engine
+  status: validated_ready_for_merge
+  objective: model_only_material_events_and_supported_causal_chains_with_A_B_C_and_temporal_separation
+  pull_request: 30
+  focused_test_count: 16
+  internal_slices:
+    - id: 3.1
+      name: Focused_Canonical_Event_Model
+      status: completed
+    - id: 3.2
+      name: A_B_C_Event_Components
+      status: completed
+    - id: 3.3
+      name: Temporal_Causal_Edges
+      status: completed
+    - id: 3.4
+      name: Event_Project_SQLite_and_Verifier
+      status: completed
+    - id: 3.5
+      name: Evidence_Linked_Path_Queries
+      status: completed
+    - id: 3.6
+      name: Regression_and_Stage_Integration
+      status: passed_pending_final_exact_head
+  outputs:
+    - tkr/event_engine.py
+    - tkr/event_project.py
+    - tkr/event_cli.py
+    - schemas/causal-event.schema.json
+    - schemas/event-component.schema.json
+    - schemas/event-causal-edge.schema.json
+    - schemas/event-annotation.schema.json
+    - schemas/event-project-report.schema.json
+    - schemas/event-project-verification.schema.json
+    - tests/test_event_engine.py
+    - tests/test_event_project.py
+  artifacts:
+    - events.jsonl
+    - event-components.jsonl
+    - event-causal-edges.jsonl
+    - event-findings.jsonl
+    - event.sqlite
+    - event-project-report.json
+    - artifact-manifest.json
+  mandatory_gates:
+    active_events_are_chapter_and_evidence_bound: passed
+    active_edges_have_verified_endpoints_and_support: passed
+    A_B_C_components_and_edges_do_not_leak: passed
+    temporal_direction_is_valid: passed
+    cycles_and_unsupported_references_are_explicit: passed
+    review_required_graphs_refuse_causal_answers: passed
+    query_paths_return_edge_and_evidence_support: passed
+    JSONL_and_SQLite_identifiers_match: passed
+    report_counts_and_hashes_recompute: passed
+    repeated_builds_are_deterministic: passed
+    unsupported_paths_refuse: passed
+    focused_and_full_repository_regression: passed
   stage_validation_performed: true
   stage_validation_status: passed
   stage_merge_approved_by_user_continuation: true
-  stage_merged: true
+  stage_merged: false
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -201,4 +225,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: create_stage_3_event_causality_branch_and_pull_request
+next_action: run_final_exact_head_CI_then_squash_merge_pull_request_30
