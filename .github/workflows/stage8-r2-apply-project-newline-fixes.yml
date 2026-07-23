@@ -1,0 +1,168 @@
+name: Stage 8-R2 Apply Project Newline Fixes
+
+on:
+  pull_request:
+    branches:
+      - develop/v6-literary-engine
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reviewed-fixes:
+    if: github.event.pull_request.head.ref == 'feature/v6-stage8-r2-execution-bundle' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply exact-newline source binding fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          for name in ('tkr/chapter_project.py', 'tkr/evidence_project.py'):
+              path = Path(name)
+              text = path.read_text(encoding='utf-8')
+              old = '        source_text = source_path.read_text(encoding="utf-8")\n'
+              new = (
+                  '        # Preserve stored CRLF/LF bytes after strict UTF-8 decoding.\n'
+                  '        # Universal-newline translation would invalidate source hashes and offsets.\n'
+                  '        with source_path.open("r", encoding="utf-8", newline="") as handle:\n'
+                  '            source_text = handle.read()\n'
+              )
+              if old in text:
+                  path.write_text(text.replace(old, new, 1), encoding='utf-8')
+              elif new not in text:
+                  raise SystemExit(f'{name} no longer matches reviewed patch target')
+
+          Path('tests/test_exact_source_newlines.py').write_text(r'''from __future__ import annotations
+
+from hashlib import sha256
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+
+from tkr.chapter_project import _source_input
+from tkr.evidence_project import _input_records
+
+
+def _write_json(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+
+
+def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
+def _verified() -> SimpleNamespace:
+    return SimpleNamespace(valid=True, reason_codes=())
+
+
+class ExactSourceNewlineTests(unittest.TestCase):
+    def test_chapter_project_preserves_crlf_source_binding(self) -> None:
+        with TemporaryDirectory() as directory:
+            project = Path(directory) / "source"
+            text = "第一章 开始\r\n正文。\r\n"
+            digest = sha256(text.encode("utf-8")).hexdigest()
+            source_path = project / "source" / "normalized-source.txt"
+            source_path.parent.mkdir(parents=True)
+            source_path.write_bytes(text.encode("utf-8"))
+            _write_json(
+                project / "project-report.json",
+                {
+                    "project_id": "kpr_crlf_chapter",
+                    "source_id": "src_crlf_chapter",
+                    "source_filename": "fixture.txt",
+                    "normalized_source_sha256": digest,
+                },
+            )
+            _write_jsonl(project / "stage2-structure" / "unit-index.jsonl", [{}])
+            _write_jsonl(project / "stage2-structure" / "heading-candidates.jsonl", [])
+            _write_jsonl(project / "stage1-anomaly" / "anomaly-candidates.jsonl", [])
+            with patch("tkr.chapter_project.verify_secure_knowledge_project", return_value=_verified()):
+                loaded, _ = _source_input(project, 0)
+            self.assertEqual(loaded.source_text, text)
+            self.assertEqual(sha256(loaded.source_text.encode("utf-8")).hexdigest(), digest)
+
+    def test_evidence_project_preserves_crlf_source_binding(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_project = root / "source-project"
+            literary_project = root / "literary-project"
+            text = "第一章 开始\r\n正文。\r\n"
+            digest = sha256(text.encode("utf-8")).hexdigest()
+            source_path = source_project / "source" / "normalized-source.txt"
+            source_path.parent.mkdir(parents=True)
+            source_path.write_bytes(text.encode("utf-8"))
+            _write_json(
+                source_project / "project-report.json",
+                {
+                    "source_id": "src_crlf_evidence",
+                    "normalized_source_sha256": digest,
+                },
+            )
+            _write_json(
+                literary_project / "literary-report.json",
+                {
+                    "source_id": "src_crlf_evidence",
+                    "source_sha256": digest,
+                },
+            )
+            _write_jsonl(literary_project / "chapters.jsonl", [])
+            _write_jsonl(literary_project / "evidence-anchors.jsonl", [])
+            _write_jsonl(literary_project / "assertions.jsonl", [])
+            with (
+                patch("tkr.evidence_project.verify_secure_knowledge_project", return_value=_verified()),
+                patch("tkr.evidence_project.verify_literary_engine", return_value=_verified()),
+            ):
+                _, _, loaded, chapters, anchors, assertions = _input_records(
+                    source_project, literary_project
+                )
+            self.assertEqual(loaded, text)
+            self.assertEqual(sha256(loaded.encode("utf-8")).hexdigest(), digest)
+            self.assertEqual(chapters, [])
+            self.assertEqual(anchors, [])
+            self.assertEqual(assertions, [])
+
+
+if __name__ == "__main__":
+    unittest.main()
+''', encoding='utf-8')
+          PY
+
+      - name: Validate focused and full regressions
+        run: |
+          python -m py_compile tkr/chapter_project.py tkr/evidence_project.py tests/test_exact_source_newlines.py
+          python -m unittest tests.test_exact_source_newlines tests.test_chapter_project tests.test_evidence_project -v
+          python -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Commit reviewed fixes to pull-request branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tkr/chapter_project.py tkr/evidence_project.py tests/test_exact_source_newlines.py
+          if git diff --cached --quiet; then
+            echo 'Reviewed exact-newline fixes already present.'
+            exit 0
+          fi
+          git commit -m 'fix: preserve project source newline bindings'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
