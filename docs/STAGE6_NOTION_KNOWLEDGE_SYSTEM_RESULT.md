@@ -28,7 +28,7 @@ The R1 suite covers:
 3. two real SQLite page foreign keys on the relation table;
 4. field-level SQLite drift detection even when container hashes are recomputed.
 
-## Validation before documentation freeze
+## Validation before final candidate freeze
 
 Head `928272a7cfa099bd94c58905b8978df48cf32aec` passed workflow run `29988760640`:
 
@@ -39,6 +39,12 @@ Head `928272a7cfa099bd94c58905b8978df48cf32aec` passed workflow run `29988760640
 - complete repository regression;
 - installed and bundled CLI smoke checks.
 
+The later compatibility head also passed the complete workflow after restoring the stable Skill contract section markers required by the product-layout audit.
+
+## Final candidate freeze
+
+The Stage 6-R1 candidate tree now uses the concise read-only workflow with no routine artifact upload. No runtime, Schema, package, Skill, test, or documentation files may change after this record until final exact-head CI completes.
+
 ## Remaining integration gate
 
-The documentation-and-status head must pass the same final exact-head workflow before PR #33 is marked ready and squash merged.
+This final candidate head must pass the same exact-head workflow before PR #33 is marked ready and squash merged.
