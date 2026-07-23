@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
@@ -24,23 +24,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
-          fetch-depth: 0
-
-      - name: Apply staged Skill reasoning contract
-        if: ${{ hashFiles('.stage5/apply_skill_stage5_contract.py') != '' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python .stage5/apply_skill_stage5_contract.py
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add SKILL.md
-          git rm .stage5/apply_skill_stage5_contract.py
-          rmdir .stage5 2>/dev/null || true
-          git commit -m "docs(stage5): integrate Reasoning Project into Skill contract"
-          git push origin "HEAD:${{ github.head_ref }}"
 
       - uses: actions/setup-python@v5
         with:
