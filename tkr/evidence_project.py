@@ -289,7 +289,10 @@ def _input_records(
     if source_path.is_symlink() or not source_path.is_file():
         raise EvidenceProjectError("normalized source is not a safe regular file")
     try:
-        source_text = source_path.read_text(encoding="utf-8")
+        # Preserve stored CRLF/LF bytes after strict UTF-8 decoding.
+        # Universal-newline translation would invalidate source hashes and offsets.
+        with source_path.open("r", encoding="utf-8", newline="") as handle:
+            source_text = handle.read()
     except (OSError, UnicodeError) as exc:
         raise EvidenceProjectError(
             f"normalized source cannot be read strictly: {exc}"
