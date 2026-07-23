@@ -1,6 +1,6 @@
-schema_version: tkr-project-status-v10
+schema_version: tkr-project-status-v11
 repository: L6663/hello-123
-updated_at_utc: 2026-07-23T04:45:00Z
+updated_at_utc: 2026-07-23T04:51:00Z
 
 historical_release:
   version: 5.9.0
@@ -27,20 +27,17 @@ v6_development:
   status: active_development
   mode: focused_high_reliability_literary_knowledge_engine
   integration_base_branch: develop/v6-literary-engine
-  active_branch: feature/v6-stage5-layered-reasoning-engine
-  active_pull_request: 32
+  current_branch: develop/v6-literary-engine
   completed_stages:
     - Stage 1 Evidence Engine
     - Stage 2 Chapter Structure Engine
     - Stage 3 Event Causality Engine
     - Stage 4 Focused Character Engine
-  current_stage: Stage 5 Layered Reasoning Engine
-  current_stage_status: validated_ready_for_final_exact_head
-  stage_document: docs/STAGE5_LAYERED_REASONING_ENGINE.md
-  stage_result_document: docs/STAGE5_LAYERED_REASONING_ENGINE_RESULT.md
+    - Stage 5 Layered Reasoning Engine
+  next_stage: Stage 6 Notion Knowledge System
+  current_stage_status: stage_5_completed_and_integrated
   github_sync_policy: one_branch_and_pull_request_per_major_stage
   delivery_policy: merge_and_report_by_complete_major_stage
-  substage_release_allowed: false
   workflows_enabled: true
   workflow_policy:
     file: .github/workflows/stage1-evidence.yml
@@ -75,20 +72,13 @@ v6_development:
       final_pr_head: c737bb2d1625da2d356bcee39e3135070272bab0
       final_workflow_run_id: 29978838494
       squash_merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
-  stage_5_validation:
-    pull_request: 32
-    focused_test_count: 28
-    latest_passed_head: 55bf45149181b4d8c4a2a8e8ef00dd58c1aa59d7
-    latest_passed_workflow_run_id: 29980172568
-    latest_passed_workflow_status: passed
-    final_exact_head_check: pending
-    checks:
-      - package_installation
-      - module_compilation
-      - stage_5_schema_loading
-      - stage_5_focused_tests
-      - full_repository_regression
-      - installed_and_bundled_CLI_smoke
+    stage_5:
+      pull_request: 32
+      focused_test_count: 28
+      final_pr_head: 55e958a8c30f45ed9a3f5b35f2b15cfe109972d6
+      final_workflow_run_id: 29980429897
+      final_workflow_status: passed
+      squash_merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
   private_corpus_used: false
   real_corpus_acceptance_deferred: true
   project_acceptance_performed: false
@@ -173,29 +163,19 @@ stage_4:
 
 stage_5:
   name: Layered Reasoning Engine
-  status: validated_ready_for_merge
+  status: completed_and_integrated
   objective: preserve_fact_synthesis_interpretation_and_counterfactual_boundaries_with_exact_provenance
   pull_request: 32
   focused_test_count: 28
-  internal_slices:
-    - id: 5.1
-      name: A_B_C_H_Reasoning_Contracts
-      status: completed
-    - id: 5.2
-      name: Independent_Support_and_Upstream_Lineage
-      status: completed
-    - id: 5.3
-      name: Conflict_Cycle_and_Review_Findings
-      status: completed
-    - id: 5.4
-      name: Section_Separated_Answer_Packets
-      status: completed
-    - id: 5.5
-      name: Reasoning_Project_SQLite_Verifier_and_Query
-      status: completed
-    - id: 5.6
-      name: Regression_and_Stage_Integration
-      status: passed_pending_final_exact_head
+  final_pr_head: 55e958a8c30f45ed9a3f5b35f2b15cfe109972d6
+  final_workflow_run_id: 29980429897
+  squash_merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
+  query_modes:
+    - fact_only
+    - fact_and_synthesis
+    - analysis
+    - counterfactual
+    - provenance
   outputs:
     - tkr/reasoning_engine.py
     - tkr/reasoning_project.py
@@ -216,12 +196,6 @@ stage_5:
     - reasoning.sqlite
     - reasoning-project-report.json
     - artifact-manifest.json
-  query_modes:
-    - fact_only
-    - fact_and_synthesis
-    - analysis
-    - counterfactual
-    - provenance
   mandatory_gates:
     A_items_resolve_to_exact_upstream_bound_evidence: passed
     B_items_have_two_independent_A_branches: passed
@@ -238,7 +212,7 @@ stage_5:
   stage_validation_performed: true
   stage_validation_status: passed
   stage_merge_approved_by_user_continuation: true
-  stage_merged: false
+  stage_merged: true
 
 replanned_major_stages:
   - Stage 1: Evidence Engine
@@ -270,4 +244,4 @@ final_acceptance_rule:
   final_acceptance_requires_private_blind_evaluation: true
   final_release_requires_explicit_user_approval: true
 
-next_action: run_final_exact_head_CI_then_squash_merge_pull_request_32
+next_action: create_stage_6_notion_knowledge_system_branch_and_pull_request
