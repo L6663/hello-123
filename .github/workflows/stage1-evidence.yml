@@ -41,7 +41,10 @@ jobs:
             tkr/reasoning_cli.py
 
       - name: Stage 5 tests
-        run: python -m unittest tests.test_reasoning_engine -v
+        run: |
+          python -m unittest \
+            tests.test_reasoning_engine \
+            tests.test_reasoning_project -v
 
       - name: Repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
