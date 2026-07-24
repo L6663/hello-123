@@ -1,0 +1,63 @@
+schema_version: tkr-stage8-r4-public-status-v1
+repository: L6663/hello-123
+integration_branch: develop/v6-literary-engine
+stage: Stage 8 Final Private Blind Acceptance
+status: private_intake_locked_simulation_passed_external_gold_and_roles_pending
+
+final_private_intake:
+  corpus_zip_sha256: be0899cb697e7726991be4026f1ddf71f61bb7b925bd87dd2bb63de38b5b8622
+  exact_bytes_received: true
+  raw_identity_recomputed: true
+  raw_identity_locked: true
+  owner_untouched_attestation_recorded: true
+  structural_anomalies_accepted_as_source_properties: true
+  source_bytes_modified: false
+  used_for_product_remediation: false
+  used_for_simulation: false
+  private_runtime_outside_repository: true
+
+non_authoritative_simulation:
+  completed: true
+  source_commit: afc4eb732dfc749662697d3e472cce0689239ae9
+  execution_bundle_sha256: 6f8381f4df7bd224e47e7e066986df1e891d264a7b5942b4e44ac2e01bfce39b
+  wheel_sha256: ba270e9571cc7eb36af66df899a6e94b673fd1d189038a578acfbef30aa574a3
+  focused_acceptance_tests_passed: 57
+  full_repository_tests_passed: 609
+  skill_audit_findings: 0
+  skill_doctor_checks_passed: 7
+  skill_doctor_checks_total: 7
+  private_artifact_guard_findings: 0
+  authoritative: false
+
+formal_gate:
+  blind_roles_attested: false
+  gold_locked: false
+  gold_hidden_from_answer_system: unverified
+  answer_system_run_started: false
+  observations_generated: false
+  stage_7_release_report_generated: false
+  private_blind_attestation_generated: false
+
+required_external_evidence:
+  gold_custodian: pending
+  evaluator: pending
+  independent_reviewer_1: pending
+  independent_reviewer_2: pending
+  role_separation_attestation: pending
+  gold_lock_receipt: pending
+  release_profile_case_statistics: pending
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_candidate: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: receive_independent_role_attestation_and_pre_observation_gold_lock_receipt
