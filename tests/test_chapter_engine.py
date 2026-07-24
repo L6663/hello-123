@@ -362,3 +362,141 @@ class ChapterEngineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class CrossSourceVolumeContextTests(unittest.TestCase):
+    def test_volume_context_carries_across_sources_and_does_not_move_backward(self) -> None:
+        first = _standalone_volume_source()
+        text = "第3章 续章\n正文。\n第1卷，正文误判。\n仍是正文。\n第4章 再续\n正文。\n"
+        starts = [0, text.index("第1卷"), text.index("第4章")]
+        units = (
+            _unit(text, unit_id="unit_follow_3", unit_type="chapter", ordinal=3,
+                  start=starts[0], end=starts[1], heading_end=text.index("\n", starts[0]),
+                  body_start=text.index("\n", starts[0]) + 1, parent=None,
+                  heading_id="hdg_follow_3", title="续章", start_line=1, end_line=2),
+            _unit(text, unit_id="unit_bad_volume", unit_type="volume", ordinal=1,
+                  start=starts[1], end=starts[2], heading_end=text.index("\n", starts[1]),
+                  body_start=text.index("\n", starts[1]) + 1, parent=None,
+                  heading_id="hdg_bad_volume", title="正文误判", start_line=3, end_line=4,
+                  review_status="review"),
+            _unit(text, unit_id="unit_follow_4", unit_type="chapter", ordinal=4,
+                  start=starts[2], end=len(text), heading_end=text.index("\n", starts[2]),
+                  body_start=text.index("\n", starts[2]) + 1, parent=None,
+                  heading_id="hdg_follow_4", title="再续", start_line=5, end_line=6),
+        )
+        headings = (
+            _heading(text, heading_id="hdg_follow_3", start=starts[0], end=text.index("\n", starts[0]),
+                     unit_type="chapter", ordinal=3, title="续章"),
+            _heading(text, heading_id="hdg_bad_volume", start=starts[1], end=text.index("\n", starts[1]),
+                     unit_type="volume", ordinal=1, title="正文误判"),
+            _heading(text, heading_id="hdg_follow_4", start=starts[2], end=text.index("\n", starts[2]),
+                     unit_type="chapter", ordinal=4, title="再续"),
+        )
+        second = ChapterSourceInput(
+            "project_follow", "source_follow", "follow.txt", _source_sha(text), 1,
+            text, units, headings,
+        )
+        catalog = build_chapter_catalog([first, second])
+        follow = [item for item in catalog.chapters if item.project_id == "project_follow"]
+        self.assertEqual([item.volume_ordinal for item in follow], [2, 2])
+        self.assertEqual([item.chapter_ordinal for item in follow], [3, 4])
+
+
+class BackwardAcceptedParentVolumeTests(unittest.TestCase):
+    def test_mid_source_backward_parent_volume_does_not_override_context(self) -> None:
+        first = _standalone_volume_source()
+        text = "第3章 续章\n正文。\n第1卷 误嵌卷\n第4章 再续\n正文。\n"
+        bad_volume_start = text.index("第1卷")
+        follow_start = text.index("第4章")
+        units = (
+            _unit(
+                text,
+                unit_id="unit_follow_3",
+                unit_type="chapter",
+                ordinal=3,
+                start=0,
+                end=bad_volume_start,
+                heading_end=text.index("\n"),
+                body_start=text.index("\n") + 1,
+                parent=None,
+                heading_id="hdg_follow_3",
+                title="续章",
+                start_line=1,
+                end_line=2,
+            ),
+            _unit(
+                text,
+                unit_id="unit_embedded_volume",
+                unit_type="volume",
+                ordinal=1,
+                start=bad_volume_start,
+                end=len(text),
+                heading_end=text.index("\n", bad_volume_start),
+                body_start=text.index("\n", bad_volume_start) + 1,
+                parent=None,
+                heading_id="hdg_embedded_volume",
+                title="误嵌卷",
+                start_line=3,
+                end_line=5,
+            ),
+            _unit(
+                text,
+                unit_id="unit_follow_parented",
+                unit_type="chapter",
+                ordinal=4,
+                start=follow_start,
+                end=len(text),
+                heading_end=text.index("\n", follow_start),
+                body_start=text.index("\n", follow_start) + 1,
+                parent="unit_embedded_volume",
+                heading_id="hdg_follow_parented",
+                title="再续",
+                start_line=4,
+                end_line=5,
+            ),
+        )
+        headings = (
+            _heading(
+                text,
+                heading_id="hdg_follow_3",
+                start=0,
+                end=text.index("\n"),
+                unit_type="chapter",
+                ordinal=3,
+                title="续章",
+            ),
+            _heading(
+                text,
+                heading_id="hdg_embedded_volume",
+                start=bad_volume_start,
+                end=text.index("\n", bad_volume_start),
+                unit_type="volume",
+                ordinal=1,
+                title="误嵌卷",
+            ),
+            _heading(
+                text,
+                heading_id="hdg_follow_parented",
+                start=follow_start,
+                end=text.index("\n", follow_start),
+                unit_type="chapter",
+                ordinal=4,
+                title="再续",
+            ),
+        )
+        second = ChapterSourceInput(
+            "project_backward_parent",
+            "source_backward_parent",
+            "backward-parent.txt",
+            _source_sha(text),
+            1,
+            text,
+            units,
+            headings,
+        )
+        catalog = build_chapter_catalog([first, second])
+        follow = [
+            item for item in catalog.chapters
+            if item.project_id == "project_backward_parent"
+        ]
+        self.assertEqual([item.volume_ordinal for item in follow], [2, 2])
+        self.assertEqual(follow[1].volume_basis, "preceding_volume_context")

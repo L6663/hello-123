@@ -87,14 +87,21 @@ class ExactSourceNewlineTests(unittest.TestCase):
                 patch("tkr.evidence_project.verify_secure_knowledge_project", return_value=_verified()),
                 patch("tkr.evidence_project.verify_literary_engine", return_value=_verified()),
             ):
-                _, _, loaded, chapters, anchors, assertions = _input_records(
-                    source_project, literary_project
-                )
+                (
+                    _,
+                    _,
+                    loaded,
+                    chapters,
+                    anchors,
+                    assertions,
+                    anomaly_findings,
+                ) = _input_records(source_project, literary_project)
             self.assertEqual(loaded, text)
             self.assertEqual(sha256(loaded.encode("utf-8")).hexdigest(), digest)
             self.assertEqual(chapters, [])
             self.assertEqual(anchors, [])
             self.assertEqual(assertions, [])
+            self.assertIsNone(anomaly_findings)
 
 
 if __name__ == "__main__":

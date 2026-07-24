@@ -203,3 +203,28 @@ class StructureTests(unittest.TestCase):
             self.assertTrue(any(not h.accepted_as_boundary for h in r.headings))
 
 if __name__=='__main__': unittest.main()
+
+class NumberedSectionChapterConventionTests(unittest.TestCase):
+    def test_dominant_numbered_sections_become_chapters_and_compact_acts_do_not_split(self):
+        with tempfile.TemporaryDirectory() as d:
+            lines = ["第一卷：测试卷\n"]
+            for index in range(1, 26):
+                lines.append(f"第{index}节：标题{index}\n")
+                lines.append("正文。\n")
+                if index == 10:
+                    lines.append("第二幕梦境继续。\n")
+                    lines.append("这仍然属于正文。\n")
+            p = Path(d) / "corpus.txt"
+            p.write_text("".join(lines), encoding="utf-8", newline="")
+            report = inspect_source_structure(p)
+            narrative = [unit for unit in report.units if unit.unit_type != "volume"]
+            self.assertEqual(len(narrative), 25)
+            self.assertEqual({unit.unit_type for unit in narrative}, {"chapter"})
+            self.assertEqual([unit.ordinal for unit in narrative], list(range(1, 26)))
+            self.assertIn("NUMBERED_SECTION_CHAPTER_CONVENTION_APPLIED", report.warnings)
+            compact = [
+                heading for heading in report.headings
+                if "source_convention=rejected_compact_numbered_boundary" in heading.signals
+            ]
+            self.assertEqual(len(compact), 1)
+            self.assertFalse(compact[0].accepted_as_boundary)

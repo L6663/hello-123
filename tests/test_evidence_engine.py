@@ -240,3 +240,130 @@ class EvidenceEngineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PreciseSourceSpanBlockingTests(unittest.TestCase):
+    def test_short_web_footer_is_excluded_without_blocking_the_chapter(self) -> None:
+        heading = "第一章 精确隔离\n"
+        body = "正文第一句。\n未完待续\n正文第二句。\n"
+        source = heading + body
+        source_hash = sha256(source.encode("utf-8")).hexdigest()
+        content_hash = sha256(source.encode("utf-8")).hexdigest()
+        chapter = ChapterRecord(
+            CHAPTER_SCHEMA_VERSION,
+            chapter_id(source_hash, "precise", 0, content_hash),
+            "src_precise",
+            source_hash,
+            "precise",
+            "chapter",
+            0,
+            1,
+            1,
+            heading.strip(),
+            heading.strip(),
+            "精确隔离",
+            0,
+            len(source),
+            len(heading),
+            len(source),
+            content_hash,
+            "high",
+            "accepted_candidate",
+            "contaminated",
+        )
+        blocked_start = source.index("未完待续")
+        findings = (
+            {
+                "category": "contamination_candidate",
+                "severity": "medium",
+                "start_char": blocked_start,
+                "end_char": blocked_start + len("未完待续"),
+            },
+        )
+
+        result = extract_evidence_units(
+            source,
+            (chapter,),
+            target_chars=12,
+            max_chars=24,
+            blocked_source_spans=findings,
+        )
+
+        self.assertTrue(result.coverage.complete)
+        self.assertEqual(result.coverage.eligible_chapter_count, 1)
+        self.assertEqual(result.coverage.blocked_chapter_count, 0)
+        self.assertEqual(len(result.coverage.blocked_spans), 1)
+        self.assertEqual(result.coverage.blocked_spans[0].reason, "blocked_source_span")
+        self.assertNotIn("未完待续", "".join(item.text for item in result.units))
+        self.assertTrue(
+            all(
+                not (item.start_char < blocked_start + 4 and blocked_start < item.end_char)
+                for item in result.units
+            )
+        )
+        expected = "".join(
+            character
+            for index, character in enumerate(source[len(heading):], start=len(heading))
+            if not character.isspace()
+            and not blocked_start <= index < blocked_start + len("未完待续")
+        )
+        actual = "".join(
+            character
+            for item in result.units
+            for character in item.text
+            if not character.isspace()
+        )
+        self.assertEqual(actual, expected)
+        verification = verify_evidence_units(
+            source,
+            (chapter,),
+            result.units,
+            blocked_source_spans=findings,
+        )
+        self.assertTrue(verification.valid, verification.reason_codes)
+
+    def test_exact_span_covering_all_content_blocks_the_chapter(self) -> None:
+        heading = "第一章 全阻断\n"
+        body = "未完待续"
+        source = heading + body
+        source_hash = sha256(source.encode("utf-8")).hexdigest()
+        content_hash = sha256(source.encode("utf-8")).hexdigest()
+        chapter = ChapterRecord(
+            CHAPTER_SCHEMA_VERSION,
+            chapter_id(source_hash, "fully-blocked", 0, content_hash),
+            "src_fully_blocked",
+            source_hash,
+            "fully-blocked",
+            "chapter",
+            0,
+            1,
+            1,
+            heading.strip(),
+            heading.strip(),
+            "全阻断",
+            0,
+            len(source),
+            len(heading),
+            len(source),
+            content_hash,
+            "high",
+            "accepted_candidate",
+            "contaminated",
+        )
+        findings = (
+            {
+                "category": "contamination_candidate",
+                "severity": "medium",
+                "start_char": len(heading),
+                "end_char": len(source),
+            },
+        )
+        result = extract_evidence_units(
+            source,
+            (chapter,),
+            blocked_source_spans=findings,
+        )
+        self.assertEqual(result.units, ())
+        self.assertEqual(result.coverage.eligible_chapter_count, 0)
+        self.assertEqual(result.coverage.blocked_chapter_count, 1)
+        self.assertTrue(result.coverage.complete)
