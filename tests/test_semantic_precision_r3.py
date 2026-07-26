@@ -78,3 +78,98 @@ class SemanticPrecisionR3Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class SemanticPrecisionR5AdversarialTests(SemanticPrecisionR3Tests):
+    def test_alias_substring_collisions_are_rejected(self):
+        for text in (
+            "二位在北原名声遐迩。",
+            "两个杀招分别名为度年如月、度年如日。",
+            "巨阳仙僵又称赞一声。",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "alias"), [])
+
+    def test_alias_full_marker_keeps_exact_object(self):
+        rows = self.accepted("吸髓石又称之为魔石。", "alias")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "吸髓石")
+        self.assertEqual(rows[0].object, "魔石")
+
+    def test_location_marker_inside_verb_is_rejected(self):
+        self.assertEqual(self.accepted("他游刃有余地处理各方面的关系。", "located_in"), [])
+
+    def test_modal_and_clause_relation_subjects_are_rejected(self):
+        samples = (
+            "我一定要击败他。",
+            "意味着方源要战胜尊者。",
+            "从正面击溃她的这股势。",
+            "我知道真正有希望战胜这头落星犬的人只有方源。",
+            "再一举击溃房家。",
+        )
+        for text in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "defeats"), [])
+
+    def test_post_marker_negation_never_indexes(self):
+        for text in ("任何失败都击败不了他。", "你是战胜不了天庭的。"):
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "defeats"), [])
+
+    def test_permission_substring_and_function_actors_are_rejected(self):
+        samples = (
+            "高位者也自有权谋和手段。",
+            "铁家少主这个身份，都不允许方源杀掉她。",
+            "只有晋升蛊仙，才允许祭拜生母。",
+            "甚至只允许我族内部通婚。",
+        )
+        for text in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "permission"), [])
+
+    def test_exact_named_permission_with_full_right_marker(self):
+        rows = self.accepted("族长有权利查看秘卷。", "permission")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "族长")
+        self.assertEqual(rows[0].object, "查看秘卷")
+
+    def test_approximate_and_ambiguous_counts_are_rejected(self):
+        for text in (
+            "他的竞争对手一共有二十几人。",
+            "龙人分身身上共有三千多块骨骼。",
+            "这次总共五块半元石。",
+            "他又花费总共八万三的元石。",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "count"), [])
+
+    def test_clause_like_count_subjects_are_rejected(self):
+        for text in (
+            "顿时皱起眉头：一共四位蛊仙。",
+            "让方源一共有三个目标地点。",
+            "失笑一声：一共五万块元石。",
+            "现在一共三十六道漩涡。",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "count"), [])
+
+class SemanticPrecisionR5RealCorpusBoundaryTests(SemanticPrecisionR3Tests):
+    def test_person_name_ending_zheng_is_not_truncated(self):
+        rows = self.accepted("方正连续击败漠北。", "defeats")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "方正")
+
+    def test_since_prefix_preserves_named_actor(self):
+        rows = self.accepted("自从明皓击溃陆畏因之后，已经过去数天。", "defeats")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "明皓")
+
+    def test_historical_original_location_is_not_published_as_current(self):
+        self.assertEqual(self.accepted("倪家原本位于南疆，后来迁往他处。", "located_in"), [])
+
+    def test_locally_named_demonstrative_entity_is_normalized(self):
+        rows = self.accepted("这皮草福地位于南疆中部。", "located_in")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "皮草福地")
+        rows = self.accepted("这拍卖大会禁止暗换密室。", "permission")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0].subject, "拍卖大会")

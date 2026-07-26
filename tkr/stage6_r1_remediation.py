@@ -13,8 +13,69 @@ from typing import Final
 from . import anomaly_detection as _anomaly
 from . import claim_validation as _claim
 from . import heading_detection as _heading
+from . import engineering as _engineering
 
 REMEDIATION_VERSION: Final = "tkr-final-remediation-v1"
+
+_VALIDATE_CLAIM_R5_SOURCE = r'''
+def validate_claim(
+    candidate: ClaimCandidate,
+    source_text: str,
+    *,
+    unit_span: UnitSpan | None = None,
+    require_unit: bool = False,
+) -> ClaimValidationResult:
+    """Validate one candidate against its exact source span and optional Unit."""
+
+    if not isinstance(source_text, str):
+        raise TypeError("source_text must be a string")
+    if candidate.evidence_start < 0 or candidate.evidence_end <= candidate.evidence_start:
+        return _finish(candidate, "", status=_STATUS_REJECTED, reasons=("EVIDENCE_SPAN_INVALID",))
+    if candidate.evidence_end > len(source_text):
+        return _finish(candidate, "", status=_STATUS_REJECTED, reasons=("EVIDENCE_SPAN_OUT_OF_RANGE",))
+
+    evidence = source_text[candidate.evidence_start : candidate.evidence_end]
+    if candidate.evidence_text is not None and candidate.evidence_text != evidence:
+        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("EVIDENCE_TEXT_MISMATCH",))
+    if require_unit and unit_span is None:
+        return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("UNIT_NOT_FOUND",))
+    if unit_span is not None:
+        if (unit_span.source_id, unit_span.unit_id) != (candidate.source_id, candidate.unit_id):
+            return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("UNIT_IDENTITY_MISMATCH",))
+        if not unit_span.start <= candidate.evidence_start < candidate.evidence_end <= unit_span.end:
+            return _finish(candidate, evidence, status=_STATUS_REJECTED, reasons=("EVIDENCE_OUTSIDE_UNIT",))
+
+    if candidate.claim_type not in SUPPORTED_CLAIM_TYPES:
+        return _finish(candidate, evidence, status=_STATUS_REVIEW, reasons=("UNSUPPORTED_CLAIM_TYPE",))
+    if candidate.claim_type == "alias":
+        return _validate_alias(candidate, evidence)
+    if candidate.claim_type == "defeats":
+        if not candidate.polarity:
+            return _finish(
+                candidate, evidence, status=_STATUS_REJECTED,
+                reasons=("NEGATED_DEFEAT_NOT_INDEXABLE",),
+            )
+        return _validate_directional(
+            candidate,
+            evidence,
+            markers=_DEFEAT_MARKERS,
+            accepted_reason="EXACT_TYPED_DEFEAT_MATCH",
+        )
+    if candidate.claim_type == "located_in":
+        return _validate_directional(
+            candidate,
+            evidence,
+            markers=_LOCATION_MARKERS,
+            accepted_reason="EXACT_TYPED_LOCATION_MATCH",
+        )
+    if candidate.claim_type == "permission":
+        return _validate_permission(candidate, evidence)
+    if candidate.claim_type == "count":
+        return _validate_count(candidate, evidence)
+    if candidate.claim_type == "date":
+        return _validate_date(candidate, evidence)
+    raise AssertionError("unreachable claim type")
+'''
 
 _APPLIED = False
 _ORIGINAL_HEADING_DETECTOR = _heading.detect_heading
@@ -257,6 +318,7 @@ def _validate_count(candidate, evidence: str):
     return _claim._finish(candidate, evidence, status=_claim._STATUS_REJECTED, reasons=(reason,))
 
 
+
 def apply_stage6_r1_remediation() -> None:
     global _APPLIED
     if _APPLIED:
@@ -265,7 +327,26 @@ def apply_stage6_r1_remediation() -> None:
     _anomaly.ANOMALY_DETECTOR_VERSION = "5.9.0-phase9.4-final"
     _heading.detect_heading = _detect_heading
     _claim._validate_count = _validate_count
-    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v2-r3"
+    exec(compile(_VALIDATE_CLAIM_R5_SOURCE, "<stage8-r5-claim-validation>", "exec"), _claim.__dict__)
+    from . import semantic_extraction as _semantic_extraction
+    _semantic_extraction.validate_claim = _claim.validate_claim
+    _claim._CLAIM_BAD_SUFFIXES = tuple(item for item in _claim._CLAIM_BAD_SUFFIXES if item != "因")
+    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v2-r5"
+    from . import entity_normalization as _entity_normalization
+    _entity_normalization.VALIDATOR_VERSION = _claim.VALIDATOR_VERSION
+    _engineering.ENGINEERING_VERSION = "6.0.0rc1-r5"
+
+    from .stage8_r5_structure_patch import apply_stage8_r5_structure_patch
+    from .stage8_r5_evidence_core_patch import apply_stage8_r5_evidence_core_patch
+    from .stage8_r5_evidence_verify_patch import apply_stage8_r5_evidence_verify_patch
+    from .stage8_r5_evidence_project_patch import apply_stage8_r5_evidence_project_patch
+    from .stage8_r5_query_patch import apply_stage8_r5_query_patch
+
+    apply_stage8_r5_structure_patch()
+    apply_stage8_r5_evidence_core_patch()
+    apply_stage8_r5_evidence_verify_patch()
+    apply_stage8_r5_evidence_project_patch()
+    apply_stage8_r5_query_patch()
     _APPLIED = True
 
 

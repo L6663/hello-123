@@ -13,7 +13,7 @@ KNOWLEDGE_MANIFEST_SCHEMA_VERSION: Final = "tkr-knowledge-manifest-v1"
 KNOWLEDGE_VERIFICATION_SCHEMA_VERSION: Final = "tkr-knowledge-verification-v1"
 KNOWLEDGE_ANSWER_SCHEMA_VERSION: Final = "tkr-knowledge-answer-v1"
 KNOWLEDGE_ANSWER_VERIFICATION_SCHEMA_VERSION: Final = "tkr-knowledge-answer-verification-v1"
-KNOWLEDGE_SYSTEM_VERSION: Final = "6.0.0rc1-r3"
+KNOWLEDGE_SYSTEM_VERSION: Final = "6.0.0rc1-r5"
 
 
 class KnowledgeProjectError(ValueError):

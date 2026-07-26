@@ -1,0 +1,81 @@
+schema_version: tkr-stage8-r5-public-status-v2
+repository: L6663/hello-123
+integration_branch: develop/v6-literary-engine
+stage: Stage 8-R5 Long-form Literary Corpus Compatibility
+status: engineering_ready_for_internal_real_testing_formal_blind_acceptance_requires_new_corpus
+
+product_runtime:
+  product_version: 6.0.0rc1-r5
+  knowledge_system_version: 6.0.0rc1-r5
+  semantic_extractor_version: 6.0.0rc1-r5
+  claim_validator_version: tkr-claim-validator-v2-r5
+  structure_detector_version: 6.0.0rc1-r4
+  chapter_engine_version: tkr-chapter-engine-v2
+  evidence_engine_version: tkr-evidence-engine-v2
+  predicate_query_parser_version: tkr-predicate-query-v2
+  literary_query_parser_version: tkr-literary-query-parser-v2
+
+real_engineering_validation:
+  private_source_text_published: false
+  private_runtime_published: false
+  source_project_count: 7
+  structural_unit_count: 2349
+  canonical_chapter_count: 2336
+  chapter_numbering_coverage: 1.0
+  deterministic_candidate_count: 252
+  deterministic_fact_count: 66
+  literary_assertion_count: 66
+  literary_evidence_anchor_count: 170
+  evidence_eligible_chapter_count: 2203
+  evidence_blocked_chapter_count: 146
+  evidence_unit_count: 12182
+  evidence_coverage_minimum: 1.0
+  base_projects_verified: true
+  literary_projects_verified: true
+  evidence_projects_verified: true
+  chapter_project_verified: true
+
+quality_gates:
+  implementation_validated_commit: eaaecd62388fbeb56bcea672072d70047728de68
+  repository_tests_passed: 651
+  repository_subtests_passed: 84
+  python_3_10: passed
+  python_3_11: passed
+  python_3_12: passed
+  reproducible_wheel: passed
+  clean_wheel_install: passed
+  skill_audit_findings: 0
+  skill_doctor_checks: 7
+  natural_count_query_passed: true
+  literary_directional_fact_query_passed: true
+  unsupported_open_query_refusal_passed: true
+  productization_run_id: 30189601853
+  private_artifact_guard_run_id: 30189601838
+  execution_bundle_run_id: 30189601851
+
+corpus_classification:
+  used_for_engineering_validation: true
+  used_for_product_remediation: true
+  eligible_for_untouched_final_blind_acceptance: false
+
+internal_test_boundary:
+  engineering_ready: true
+  public_execution_bundle_available: true
+  formal_private_blind_acceptance_required_for_internal_testing: false
+
+formal_authority:
+  gold_locked: false
+  independent_roles_attested: false
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_candidate: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: merge_r5_and_begin_user_internal_real_testing_or_supply_new_untouched_corpus_for_formal_blind_acceptance

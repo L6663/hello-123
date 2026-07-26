@@ -1,0 +1,74 @@
+schema_version: tkr-stage8-r5-reconstruction-manifest-v2
+repository: L6663/hello-123
+pull_request: 44
+base_branch: develop/v6-literary-engine
+head_branch: feature/v6-stage8-r5-real-corpus-compatibility
+status: implementation_complete_exact_ci_passed_merge_pending
+
+privacy_boundary:
+  private_corpus_text_present: false
+  private_file_inventory_present: false
+  gold_present: false
+  observations_present: false
+  reviewer_packets_present: false
+  public_reconstruction_only: true
+
+implementation:
+  validated_commit: eaaecd62388fbeb56bcea672072d70047728de68
+  architecture: deterministic_startup_remediation_modules
+  restored_surfaces:
+    - tkr/semantic_rules.py
+    - tkr/stage6_r1_remediation.py
+    - tkr/stage8_r5_structure_patch.py
+    - tkr/stage8_r5_evidence_core_patch.py
+    - tkr/stage8_r5_evidence_verify_patch.py
+    - tkr/stage8_r5_evidence_project_patch.py
+    - tkr/stage8_r5_query_patch.py
+    - tests/test_r5_query_compatibility.py
+  repository_tests_passed: 651
+  repository_subtests_passed: 84
+
+ci_evidence:
+  productization_run_id: 30189601853
+  productization: passed
+  python_3_10_full_repository_regression: passed
+  python_3_11_full_repository_regression: passed
+  python_3_12_full_repository_regression: passed
+  clean_wheel_install: passed
+  source_and_installed_skill_audit_doctor: passed
+  cli_contracts: passed
+  reproducible_wheel: passed
+  private_artifact_guard_run_id: 30189601838
+  private_artifact_guard: passed
+  execution_bundle_run_id: 30189601851
+  execution_bundle: passed
+
+corpus_classification:
+  used_for_engineering_validation: true
+  used_for_product_remediation: true
+  eligible_for_untouched_final_blind_acceptance: false
+
+merge_gate:
+  implementation_complete: true
+  all_python_full_regressions_passed: true
+  clean_wheel_install_passed: true
+  skill_audit_zero_findings: true
+  skill_doctor_passed: true
+  private_artifact_guard_passed: true
+  execution_bundle_passed: true
+  merge_allowed: true
+  merged: false
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: rerun_exact_head_ci_then_merge_pr_44_and_publish_public_internal_test_bundle
