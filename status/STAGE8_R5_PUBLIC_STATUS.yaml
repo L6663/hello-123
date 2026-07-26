@@ -1,8 +1,8 @@
-schema_version: tkr-stage8-r5-public-status-v1
+schema_version: tkr-stage8-r5-public-status-v2
 repository: L6663/hello-123
 integration_branch: develop/v6-literary-engine
 stage: Stage 8-R5 Long-form Literary Corpus Compatibility
-status: engineering_real_corpus_chain_passed_formal_blind_acceptance_requires_new_corpus
+status: engineering_ready_for_internal_real_testing_formal_blind_acceptance_requires_new_corpus
 
 product_runtime:
   product_version: 6.0.0rc1-r5
@@ -36,16 +36,32 @@ real_engineering_validation:
   chapter_project_verified: true
 
 quality_gates:
+  implementation_validated_commit: eaaecd62388fbeb56bcea672072d70047728de68
   repository_tests_passed: 651
   repository_subtests_passed: 84
+  python_3_10: passed
+  python_3_11: passed
+  python_3_12: passed
+  reproducible_wheel: passed
+  clean_wheel_install: passed
+  skill_audit_findings: 0
+  skill_doctor_checks: 7
   natural_count_query_passed: true
   literary_directional_fact_query_passed: true
   unsupported_open_query_refusal_passed: true
+  productization_run_id: 30189601853
+  private_artifact_guard_run_id: 30189601838
+  execution_bundle_run_id: 30189601851
 
 corpus_classification:
   used_for_engineering_validation: true
   used_for_product_remediation: true
   eligible_for_untouched_final_blind_acceptance: false
+
+internal_test_boundary:
+  engineering_ready: true
+  public_execution_bundle_available: true
+  formal_private_blind_acceptance_required_for_internal_testing: false
 
 formal_authority:
   gold_locked: false
@@ -62,4 +78,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: integrate_r5_then_use_as_internal_release_candidate_or_supply_new_untouched_corpus_for_formal_blind_acceptance
+next_action: merge_r5_and_begin_user_internal_real_testing_or_supply_new_untouched_corpus_for_formal_blind_acceptance

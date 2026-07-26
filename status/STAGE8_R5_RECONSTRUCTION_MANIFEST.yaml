@@ -1,10 +1,9 @@
-schema_version: tkr-stage8-r5-reconstruction-manifest-v1
+schema_version: tkr-stage8-r5-reconstruction-manifest-v2
 repository: L6663/hello-123
 pull_request: 44
 base_branch: develop/v6-literary-engine
 head_branch: feature/v6-stage8-r5-real-corpus-compatibility
-head_sha_before_manifest: 3782c872a279424f26fd146c9aa9ded4eac85903
-status: public_contract_restored_core_implementation_pending
+status: implementation_complete_exact_ci_passed_merge_pending
 
 privacy_boundary:
   private_corpus_text_present: false
@@ -14,76 +13,57 @@ privacy_boundary:
   reviewer_packets_present: false
   public_reconstruction_only: true
 
-restored_public_contract:
-  documentation:
-    - docs/STAGE8_R5_REAL_CORPUS_COMPATIBILITY.md
-    - status/STAGE8_R5_PUBLIC_STATUS.yaml
-  regression_tests:
-    - tests/test_chapter_engine.py
-    - tests/test_evidence_engine.py
-    - tests/test_exact_source_newlines.py
-    - tests/test_r3_runtime_identity.py
-    - tests/test_semantic_precision_r3.py
-    - tests/test_structure_detection.py
-  model_and_text_surfaces:
-    - tkr/knowledge_models.py
-    - tkr/semantic_models.py
-    - tkr/semantic_text.py
-    - tkr/structure_models.py
+implementation:
+  validated_commit: eaaecd62388fbeb56bcea672072d70047728de68
+  architecture: deterministic_startup_remediation_modules
+  restored_surfaces:
+    - tkr/semantic_rules.py
+    - tkr/stage6_r1_remediation.py
+    - tkr/stage8_r5_structure_patch.py
+    - tkr/stage8_r5_evidence_core_patch.py
+    - tkr/stage8_r5_evidence_verify_patch.py
+    - tkr/stage8_r5_evidence_project_patch.py
+    - tkr/stage8_r5_query_patch.py
+    - tests/test_r5_query_compatibility.py
+  repository_tests_passed: 651
+  repository_subtests_passed: 84
 
 ci_evidence:
-  productization_run_id: 30132638681
+  productization_run_id: 30189601853
+  productization: passed
+  python_3_10_full_repository_regression: passed
+  python_3_11_full_repository_regression: passed
+  python_3_12_full_repository_regression: passed
+  clean_wheel_install: passed
+  source_and_installed_skill_audit_doctor: passed
+  cli_contracts: passed
   reproducible_wheel: passed
-  python_3_10_compile_and_focused_tests: passed
-  python_3_11_compile_and_focused_tests: passed
-  python_3_12_compile_and_focused_tests: passed
-  python_3_10_full_repository_regression: failed
-  python_3_11_full_repository_regression: failed
-  python_3_12_full_repository_regression: failed
-  private_artifact_guard_run_id: 30132638685
+  private_artifact_guard_run_id: 30189601838
   private_artifact_guard: passed
-  execution_bundle_run_id: 30132638687
+  execution_bundle_run_id: 30189601851
   execution_bundle: passed
 
-recovered_object_check:
-  inspected_tree_sha: 1a8e4b6c57e7a021714a22da9bc0374d9c938081
-  inspection_commit_sha: f041d14a90f26d339c9e8aacdf47d93a28f7cbd3
-  differs_from_current_pr_head: false
-  hidden_core_implementation_recoverable: false
-
-implementation_surfaces_pending:
-  - path: tkr/structure_detection.py
-    contract: dominant_numbered_section_promotion_and_false_boundary_rejection
-  - path: tkr/chapter_engine.py
-    contract: cross_source_volume_context_and_mid_source_backward_volume_rejection
-  - path: tkr/evidence_engine.py
-    contract: exact_contamination_span_subtraction_with_non_body_and_review_fail_closed
-  - path: tkr/semantic_rules.py
-    contract: precision_first_fact_extraction_for_negation_future_condition_alias_location_count_and_permission
-  - path: tkr/claim_validation.py
-    contract: r5_claim_validation_identity_and_non_indexable_negated_audit_records
-  - path: tkr/stage6_r1_remediation.py
-    contract: do_not_overwrite_r5_runtime_identity_with_r3_compatibility_values
-  - path: tkr/predicate_queries.py
-    contract: natural_typed_count_queries
-  - path: tkr/literary_queries.py
-    contract: directional_tier_a_victory_queries_with_exact_evidence_and_contested_fail_closed
-  - path: tkr/__init__.py
-    contract: startup_runtime_identity_must_remain_r5
+corpus_classification:
+  used_for_engineering_validation: true
+  used_for_product_remediation: true
+  eligible_for_untouched_final_blind_acceptance: false
 
 merge_gate:
-  draft_must_remain_open: true
-  all_python_full_regressions_required: true
-  clean_wheel_install_required: true
-  skill_audit_zero_findings_required: true
-  skill_doctor_required: true
-  private_artifact_guard_required: true
-  execution_bundle_required: true
-  merge_allowed_now: false
+  implementation_complete: true
+  all_python_full_regressions_passed: true
+  clean_wheel_install_passed: true
+  skill_audit_zero_findings: true
+  skill_doctor_passed: true
+  private_artifact_guard_passed: true
+  execution_bundle_passed: true
+  merge_allowed: true
+  merged: false
 
 formal_authority:
   private_blind_acceptance_performed: false
   technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
   project_acceptance_performed: false
   release_approved: false
   freeze_approved: false
@@ -91,4 +71,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: restore_pending_public_implementation_surfaces_against_regression_contract_then_rerun_all_ci
+next_action: rerun_exact_head_ci_then_merge_pr_44_and_publish_public_internal_test_bundle
