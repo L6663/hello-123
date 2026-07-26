@@ -1,8 +1,14 @@
-schema_version: tkr-stage8-r5-public-status-v2
+schema_version: tkr-stage8-r5-public-status-v3
 repository: L6663/hello-123
 integration_branch: develop/v6-literary-engine
-stage: Stage 8-R5 Long-form Literary Corpus Compatibility
-status: engineering_ready_for_internal_real_testing_formal_blind_acceptance_requires_new_corpus
+stage: Stage 8-R5 Internal Real Testing
+status: integrated_engineering_ready_for_internal_real_testing_formal_blind_acceptance_requires_new_corpus
+
+integration:
+  pull_request: 44
+  validated_head: 7b4c51cba69369f6f0c242142770d06b60b593b7
+  squash_merge_commit: bcd00859e760b246aa174c165f650b93a2b65239
+  merged: true
 
 product_runtime:
   product_version: 6.0.0rc1-r5
@@ -36,7 +42,6 @@ real_engineering_validation:
   chapter_project_verified: true
 
 quality_gates:
-  implementation_validated_commit: eaaecd62388fbeb56bcea672072d70047728de68
   repository_tests_passed: 651
   repository_subtests_passed: 84
   python_3_10: passed
@@ -45,13 +50,10 @@ quality_gates:
   reproducible_wheel: passed
   clean_wheel_install: passed
   skill_audit_findings: 0
-  skill_doctor_checks: 7
-  natural_count_query_passed: true
-  literary_directional_fact_query_passed: true
-  unsupported_open_query_refusal_passed: true
-  productization_run_id: 30189601853
-  private_artifact_guard_run_id: 30189601838
-  execution_bundle_run_id: 30189601851
+  skill_doctor_checks_passed: 7
+  productization_run_id: 30189685741
+  private_artifact_guard_run_id: 30189685744
+  execution_bundle_run_id: 30189685736
 
 corpus_classification:
   used_for_engineering_validation: true
@@ -78,4 +80,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: merge_r5_and_begin_user_internal_real_testing_or_supply_new_untouched_corpus_for_formal_blind_acceptance
+next_action: begin_user_internal_real_testing_or_supply_new_untouched_corpus_for_formal_blind_acceptance
