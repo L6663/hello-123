@@ -1,0 +1,90 @@
+schema_version: tkr-stage8-r7-integration-manifest-v1
+repository: L6663/hello-123
+base_branch: develop/v6-literary-engine
+integration_branch: feature/v6-stage8-r7-learning-integration
+stage: Stage 8-R7 Learning Capability Integration
+status: public_integration_manifest_created_implementation_not_yet_integrated
+
+current_repository_baseline:
+  version: 6.0.0rc1-r5
+  project_status_schema: tkr-project-status-v20
+  stewardship_issue: 37
+  internal_real_testing_ready: true
+  formal_private_blind_acceptance_performed: false
+
+local_r7_candidate_evidence:
+  product_version: 6.0.0rc1-r7
+  controlled_learning_simulation_average_score: 9.53
+  controlled_learning_simulation_minimum_dimension_score: 9.2
+  controlled_learning_simulation_all_dimensions_at_least_9_0: true
+  repository_tests_passed: 692
+  repository_test_failures: 0
+  skill_audit_findings: 0
+  skill_doctor_checks_passed: 7
+  schema_count: 84
+  reproducible_wheel_sha256: dca502bff7cd778967cdf7c657a07f06ab14a152ec50188cb714ba83c5bbb91d
+  exact_github_ci_completed: false
+  github_implementation_integrated: false
+
+r7_target_scope:
+  - stable book_id and corpus_id identity
+  - same-book cross-file entity consolidation
+  - strict cross-book same-name isolation
+  - volume heading exclusion from chapter learning cards
+  - fragment-entity review isolation
+  - expanded learning queries with summaries events motives causality foreshadowing and mainline
+  - per-book world model for characters locations factions abilities items species concepts rules relationships and events
+  - complete chapter source packet privacy boundary
+  - evidence-bound Tier-B and Tier-C learning observation integration
+  - learning-first large-corpus reporting policy
+  - original-story generation boundary
+
+public_repository_allowlist:
+  - source code
+  - synthetic tests
+  - public schemas
+  - public documentation
+  - aggregate non-identifying metrics
+  - public-safe CI manifests
+
+public_repository_denylist:
+  - private corpus bytes
+  - private corpus filenames or inventory when identifying
+  - chapter-source-packets generated from private corpora
+  - private model-learning observations
+  - Gold questions answers rubrics or scoring details
+  - reviewer packets or private adjudication artifacts
+  - blind observations
+  - private execution state directories
+  - private query result payloads containing source text
+
+required_exact_ci_before_merge:
+  productization_python_versions: ["3.10", "3.11", "3.12"]
+  full_repository_regression_per_python: true
+  reproducible_byte_identical_wheel: true
+  clean_wheel_install_per_python: true
+  installed_skill_audit_zero_findings: true
+  installed_skill_doctor_passed: true
+  private_artifact_guard_passed: true
+  stage8_execution_bundle_passed: true
+  installed_cli_learning_contract_passed: true
+
+merge_policy:
+  draft_must_remain_open_until_exact_ci_passes: true
+  implementation_files_must_be_reviewed_against_manifest: true
+  private_artifacts_must_not_be_present: true
+  merge_allowed_now: false
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: restore_public_r7_implementation_and_synthetic_tests_to_this_branch_then_run_exact_github_ci
