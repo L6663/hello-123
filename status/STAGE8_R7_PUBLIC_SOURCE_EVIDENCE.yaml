@@ -1,0 +1,73 @@
+schema_version: tkr-stage8-r7-public-source-evidence-v1
+repository: L6663/hello-123
+base_branch: develop/v6-literary-engine
+integration_branch: feature/v6-stage8-r7-learning-integration
+stage: Stage 8-R7 Learning Capability Integration
+status: local_public_source_candidate_inventoried_exact_github_implementation_ci_pending
+
+source_candidate:
+  archive_name: Text-Knowledge-Reader-R7-source-package.zip
+  archive_sha256: 13d68d5c1aab97418b3f5f686ea8d256081fb1faa1c90071e9e777242e998fbd
+  extracted_file_count: 290
+  extracted_size_bytes: 2608264
+  source_candidate_is_formal_acceptance_evidence: false
+  source_candidate_is_github_ci_evidence: false
+
+key_public_files:
+  README.md: 97bb7f009d89abbabd989464b6d4020f6ad83563f108efc604b755e162dedf86
+  SKILL.md: f225fc66da59995fa8079b33b84c6fa80e142161d9fce26aa8e1c4d97256a0f0
+  pyproject.toml: ac1fad06bf37a63e823060839b026d16896a6672d3018356407c5a641aaf43c2
+  scripts/tkr.py: 555b2c6978f560af3dec06015edcb756857025882d0b3c2512c5f03aeaad6a39
+  tkr/learning_cli.py: 0de3c273a8dca274eabca59192106ecbf504898c1dc04a91cac5103ade6456d9
+  tkr/learning_engine.py: 6d7bc957fe165f08a33fdfed51ce4a978db4e67d34df343e74466204ca7d185a
+  tests/test_learning_cli.py: 9a4c75718cf558e15e95457bcb8ca66890be522399dc33e281c2dc2c6ee40081
+  tests/test_learning_engine.py: d3b10f691d2dd1a84b78ca2fc49d4205a21e405c3a56740e7ccbf6b4081bdc1b
+  tests/test_learning_r7_capabilities.py: fe0a6c135b77cd66c8286a28b77f9ce3c1d7c2a468e8f376d9256a279ee6146e
+  schemas/learning-project-report.schema.json: 276c547fe07c57343512feece8dc6f17a339002ef60ef77298f12610fb74682e
+  schemas/learning-query-packet.schema.json: e7f31f9c9a396022f21c3610b9f5f5cc9015d54fac0c075d5d8e848b4d6f2bee
+  schemas/model-learning-observation.schema.json: d6554d3f3a16886379f8b8a36afbbe9c7eccb5ebd029a6b41ff66c32965a8c67
+  docs/STAGE8_R6_LEARNING_PANORAMA.md: 9b7fb8cc0d83aadc2718aa9399e6066d9dd6f68bc8cea0e59c60e9ac3ba00921
+  docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md: b3b4639c3b072a41536fab16d6db7d67679ecebde5376b2795a974f092e7b76a
+  status/STAGE8_R7_PUBLIC_STATUS.yaml: 86a68be95994daf0be1f527d994659e5ae9187472e34d184a69c5667792f5f68
+
+privacy_review:
+  private_novel_title_literal_scan_matches: 0
+  private_corpus_bytes_present: false
+  private_corpus_inventory_present: false
+  private_chapter_source_packets_present: false
+  private_model_observations_present: false
+  gold_payload_present: false
+  blind_observations_present: false
+  reviewer_packets_present: false
+  note: filenames containing private, gold, or observation refer only to public-safe schemas, guards, documentation, or synthetic tests
+
+required_before_merge:
+  restore_key_public_files_to_branch: true
+  review_diff_against_public_allowlist_and_denylist: true
+  productization_python_3_10_3_11_3_12: true
+  full_repository_regression_per_python: true
+  reproducible_byte_identical_wheel: true
+  clean_wheel_install_per_python: true
+  installed_learning_cli_contract: true
+  skill_audit_zero_findings: true
+  skill_doctor_passed: true
+  private_artifact_guard_passed: true
+  stage8_execution_bundle_passed: true
+
+merge_policy:
+  pr_must_remain_draft: true
+  merge_allowed_now: false
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: restore_public_r7_source_files_and_synthetic_tests_then_run_exact_ci_on_the_resulting_head
