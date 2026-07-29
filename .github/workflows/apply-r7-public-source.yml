@@ -1,0 +1,131 @@
+name: Apply R7 Public Source
+
+on:
+  push:
+    branches:
+      - feature/v6-stage8-r7-learning-integration
+    paths:
+      - '.r7-public-patch.part00'
+      - '.r7-public-patch.part01'
+      - '.r7-public-patch.part02a'
+      - '.r7-public-patch.part02b'
+      - '.r7-public-patch.part03a'
+      - '.r7-public-patch.part03b'
+      - '.github/workflows/apply-r7-public-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reassemble and verify public patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            .r7-public-patch.part00 \
+            .r7-public-patch.part01 \
+            .r7-public-patch.part02a \
+            .r7-public-patch.part02b \
+            .r7-public-patch.part03a \
+            .r7-public-patch.part03b \
+            > /tmp/r7-public.patch.xz
+          echo '5689b0546dff337b4d2904e79f966f181e30e29f346c2c62783e6198e934fd26  /tmp/r7-public.patch.xz' | sha256sum -c -
+          xz -dc /tmp/r7-public.patch.xz > /tmp/r7-public.patch
+          echo 'c1b80e36248a8fdbdc3ee8b2232de93e3b79b778ff63d328b3da71a6dec1ae27  /tmp/r7-public.patch' | sha256sum -c -
+          git apply --check /tmp/r7-public.patch
+          git apply /tmp/r7-public.patch
+
+      - name: Enforce public-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only HEAD)"
+          printf '%s\n' "$changed"
+          if printf '%s\n' "$changed" | grep -E '(^|/)(chapter-source-packets\.jsonl|model-learning-observations\.jsonl|private.*\.(txt|zip|jsonl)|gold.*\.(json|jsonl|txt)|blind.*observations)' ; then
+            echo 'Forbidden private runtime artifact path detected.' >&2
+            exit 1
+          fi
+          if grep -RIlE '蛊真人|步剑庭|逆天邪神|万古神帝' \
+              README.md SKILL.md PROJECT_STATUS.yaml docs schemas scripts status tests tkr pyproject.toml \
+              | grep . ; then
+            echo 'Private novel-title literal detected.' >&2
+            exit 1
+          fi
+
+      - name: Reconcile public integration manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          updates = {
+              Path('status/STAGE8_R7_INTEGRATION_MANIFEST.yaml'): [
+                  ('status: public_integration_manifest_created_implementation_not_yet_integrated',
+                   'status: public_r7_implementation_restored_exact_github_ci_pending'),
+                  ('github_implementation_integrated: false',
+                   'github_implementation_integrated: true'),
+                  ('next_action: restore_public_r7_implementation_and_synthetic_tests_to_this_branch_then_run_exact_github_ci',
+                   'next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass'),
+              ],
+              Path('status/STAGE8_R7_PUBLIC_SOURCE_EVIDENCE.yaml'): [
+                  ('status: local_public_source_candidate_inventoried_exact_github_implementation_ci_pending',
+                   'status: public_r7_source_restored_exact_github_ci_pending'),
+                  ('restore_key_public_files_to_branch: true',
+                   'restore_key_public_files_to_branch: false'),
+                  ('next_action: restore_public_r7_source_files_and_synthetic_tests_then_run_exact_ci_on_the_resulting_head',
+                   'next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass'),
+              ],
+          }
+          for path, replacements in updates.items():
+              text = path.read_text(encoding='utf-8')
+              for old, new in replacements:
+                  if old not in text:
+                      raise SystemExit(f'missing expected manifest text in {path}: {old}')
+                  text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Focused public R7 verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m compileall -q tkr scripts tests
+          python -m unittest \
+            tests.test_learning_cli \
+            tests.test_learning_engine \
+            tests.test_learning_r7_capabilities \
+            tests.test_stage8_r6_encoding_contract
+
+      - name: Commit restored public implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .r7-public-patch.part00 \
+            .r7-public-patch.part01 \
+            .r7-public-patch.part02a \
+            .r7-public-patch.part02b \
+            .r7-public-patch.part03a \
+            .r7-public-patch.part03b \
+            .github/workflows/apply-r7-public-source.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'restore R7 public implementation and synthetic tests'
+          git push origin HEAD:${GITHUB_REF_NAME}
