@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_r7_identity_hardened_source_validated_merge_pending
+status: public_r7_identity_hardened_source_integrated_status_reconciliation_pending
 
 source_candidate:
   archive_name: Text-Knowledge-Reader-R7-source-package.zip
@@ -29,8 +29,8 @@ key_public_files:
   schemas/learning-query-packet.schema.json: e7f31f9c9a396022f21c3610b9f5f5cc9015d54fac0c075d5d8e848b4d6f2bee
   schemas/model-learning-observation.schema.json: d6554d3f3a16886379f8b8a36afbbe9c7eccb5ebd029a6b41ff66c32965a8c67
   docs/STAGE8_R6_LEARNING_PANORAMA.md: 9b7fb8cc0d83aadc2718aa9399e6066d9dd6f68bc8cea0e59c60e9ac3ba00921
-  docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md: 45a9d07a4fe4e6151e7121e15e58c21d35008c79ff47c1b1023da90bbea2eeb6
-  status/STAGE8_R7_PUBLIC_STATUS.yaml: 8d5869527f2f1b2453dee8e7a38fa10d2d0ac68285100ea2fa4ae3d90619515f
+  docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md: 44239478b27ba6cc9c852d3e9dc4befe1936ba4e5edc7bc15458e48e91881ae5
+  status/STAGE8_R7_PUBLIC_STATUS.yaml: d64749578c2a70515a9787323bbd98ad14ab3fc2d1834e054280142888985360
 
 privacy_review:
   changed_r7_files_private_title_literal_matches: 0
@@ -54,9 +54,10 @@ merge_policy:
   source_restoration_complete: true
   public_diff_review_complete: true
   private_artifacts_present: false
-  current_status_reconciliation_head_requires_required_ci: true
-  merge_allowed_when_current_head_required_ci_passes: true
-  merge_allowed_now: false
+  implementation_pr_46_merged: true
+  implementation_merge_commit: 9618c7e0476e643b8ba03ed1b29327d9d468f1c6
+  public_status_reconciliation_requires_ci: true
+  public_status_reconciliation_merge_allowed_when_ci_passes: true
 
 formal_authority:
   private_blind_acceptance_performed: false
@@ -70,4 +71,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: run_required_ci_on_status_reconciliation_head_then_merge_pr_46_if_all_checks_pass
+next_action: merge_public_status_reconciliation_after_required_ci_passes
