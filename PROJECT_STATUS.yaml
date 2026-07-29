@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v20
 repository: L6663/hello-123
-updated_at_utc: '2026-07-27T10:00:00Z'
+updated_at_utc: '2026-07-29T08:35:00Z'
 historical_release:
   version: 5.9.0
   stable_branch: main
@@ -12,13 +12,13 @@ historical_release:
   historical_release_mutated: false
 v6_development:
   version: 6.0.0rc1-r7
-  status: r7_local_learning_optimization_passed_internal_simulation_ready_github_integration_pending
+  status: r7_public_implementation_restored_exact_ci_passed_merge_pending
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
-  current_branch: local-r7-candidate
+  current_branch: feature/v6-stage8-r7-learning-integration
   stewardship_issue: 37
   current_stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
-  current_stage_status: local_implementation_and_controlled_simulation_passed
+  current_stage_status: public_implementation_restored_exact_ci_passed_merge_pending
   completed_and_integrated_stages:
   - Stage 1 Evidence Engine
   - Stage 2 Chapter Structure Engine
@@ -67,6 +67,12 @@ v6_development:
     statement_expanding_query_passed: true
     learning_project_verified: true
     github_integration_pending: true
+    github_public_implementation_restored: true
+    github_implementation_validated_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+    github_productization_run_id: 30422194043
+    github_private_artifact_guard_run_id: 30422193997
+    github_execution_bundle_run_id: 30422194000
+    github_exact_ci_passed: true
 integrations:
   stage_1:
     pull_request: 28
@@ -133,6 +139,24 @@ integrations:
     evidence_blocked_chapter_count: 146
     evidence_coverage_minimum: 1.0
     internal_real_testing_ready: true
+  stage_8_r7:
+    pull_request: 46
+    validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+    productization_run_id: 30422194043
+    private_artifact_guard_run_id: 30422193997
+    execution_bundle_run_id: 30422194000
+    python_3_10_status: passed
+    python_3_11_status: passed
+    python_3_12_status: passed
+    repository_tests_passed: 692
+    reproducible_wheel_status: passed
+    clean_wheel_install_status: passed
+    installed_learning_cli_contract: passed
+    skill_audit_findings: 0
+    skill_doctor_checks_passed: 7
+    private_artifact_guard_status: passed
+    execution_bundle_status: passed
+    merge_pending_final_status_head_ci: true
 stage_6:
   name: Notion Knowledge System
   status: completed_and_integrated
@@ -152,7 +176,7 @@ stage_7:
     average_compensation_allowed: false
 stage_8:
   name: Stage 8 Final Productization and Acceptance
-  status: r7_local_candidate_internal_simulation_ready_formal_private_acceptance_pending
+  status: r7_public_candidate_exact_ci_passed_merge_pending_formal_private_acceptance_pending
   product_version: 6.0.0rc1-r7
   technical_candidate_contract:
     stage_7_release_benchmark_required: true
@@ -239,5 +263,4 @@ freeze_approved: false
 may_accept_project: false
 may_release: false
 may_freeze: false
-next_action: use_r7_internal_simulation_bundle_or_integrate_public_safe_r7_candidate_via_exact_github_ci;
-  formal_acceptance_still_requires_new_untouched_corpus_and_independent_roles
+next_action: run_required_ci_on_status_reconciliation_head_then_merge_pr_46; formal_acceptance_still_requires_new_untouched_corpus_and_independent_roles

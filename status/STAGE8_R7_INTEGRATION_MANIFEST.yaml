@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_r7_implementation_restored_exact_github_ci_pending
+status: public_r7_implementation_restored_exact_implementation_ci_passed_merge_pending
 
 current_repository_baseline:
   version: 6.0.0rc1-r5
@@ -12,19 +12,30 @@ current_repository_baseline:
   internal_real_testing_ready: true
   formal_private_blind_acceptance_performed: false
 
-local_r7_candidate_evidence:
+r7_public_implementation:
   product_version: 6.0.0rc1-r7
-  controlled_learning_simulation_average_score: 9.53
-  controlled_learning_simulation_minimum_dimension_score: 9.2
-  controlled_learning_simulation_all_dimensions_at_least_9_0: true
+  github_implementation_integrated_in_pr: true
+  validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+  changed_file_count: 35
   repository_tests_passed: 692
-  repository_test_failures: 0
+  schema_count: 84
   skill_audit_findings: 0
   skill_doctor_checks_passed: 7
-  schema_count: 84
-  reproducible_wheel_sha256: dca502bff7cd778967cdf7c657a07f06ab14a152ec50188cb714ba83c5bbb91d
-  exact_github_ci_completed: false
-  github_implementation_integrated: true
+
+validated_exact_ci:
+  productization_run_id: 30422194043
+  private_artifact_guard_run_id: 30422193997
+  execution_bundle_run_id: 30422194000
+  python_3_10_full_regression: passed
+  python_3_11_full_regression: passed
+  python_3_12_full_regression: passed
+  reproducible_byte_identical_wheel: passed
+  clean_wheel_install: passed
+  installed_skill_audit_zero_findings: passed
+  installed_skill_doctor: passed
+  installed_cli_learning_contract: passed
+  private_artifact_guard: passed
+  stage8_execution_bundle: passed
 
 r7_target_scope:
   - stable book_id and corpus_id identity
@@ -49,7 +60,7 @@ public_repository_allowlist:
 
 public_repository_denylist:
   - private corpus bytes
-  - private corpus filenames or inventory when identifying
+  - identifying private corpus inventories
   - chapter-source-packets generated from private corpora
   - private model-learning observations
   - Gold questions answers rubrics or scoring details
@@ -58,21 +69,12 @@ public_repository_denylist:
   - private execution state directories
   - private query result payloads containing source text
 
-required_exact_ci_before_merge:
-  productization_python_versions: ["3.10", "3.11", "3.12"]
-  full_repository_regression_per_python: true
-  reproducible_byte_identical_wheel: true
-  clean_wheel_install_per_python: true
-  installed_skill_audit_zero_findings: true
-  installed_skill_doctor_passed: true
-  private_artifact_guard_passed: true
-  stage8_execution_bundle_passed: true
-  installed_cli_learning_contract_passed: true
-
 merge_policy:
-  draft_must_remain_open_until_exact_ci_passes: true
-  implementation_files_must_be_reviewed_against_manifest: true
-  private_artifacts_must_not_be_present: true
+  implementation_files_reviewed_against_manifest: true
+  private_artifacts_present: false
+  exact_ci_passed_on_implementation_head: true
+  required_ci_must_pass_on_current_status_reconciliation_head: true
+  merge_allowed_when_current_head_required_ci_passes: true
   merge_allowed_now: false
 
 formal_authority:
@@ -87,4 +89,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass
+next_action: run_required_ci_on_this_status_reconciliation_head_then_merge_pr_46_if_all_checks_pass

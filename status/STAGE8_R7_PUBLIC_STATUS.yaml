@@ -2,7 +2,7 @@ schema_version: tkr-stage8-r7-public-status-v1
 repository: L6663/hello-123
 integration_branch: develop/v6-literary-engine
 stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
-status: local_r7_implementation_and_controlled_simulation_passed_github_integration_pending
+status: public_r7_implementation_restored_exact_implementation_ci_passed_merge_pending
 product_runtime:
   package_version: 6.0.0rc1-r7
   product_version: 6.0.0rc1-r7
@@ -48,6 +48,13 @@ local_quality_gates:
   skill_audit_findings: 0
   skill_doctor_checks_passed: 7
   github_ci_pending: true
+  github_implementation_restored: true
+  validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+  productization_run_id: 30422194043
+  private_artifact_guard_run_id: 30422193997
+  execution_bundle_run_id: 30422194000
+  exact_implementation_ci_passed: true
+  status_reconciliation_head_ci_required: true
 privacy_boundary:
   private_corpus_text_in_repository: false
   private_learning_source_packets_in_repository: false
@@ -65,4 +72,4 @@ formal_authority:
   may_accept_project: false
   may_release: false
   may_freeze: false
-next_action: package_r7_for_internal_simulation_and_optionally_integrate_public_safe_code_through_exact_github_ci
+next_action: merge_pr_46_after_required_ci_passes_on_the_status_reconciliation_head

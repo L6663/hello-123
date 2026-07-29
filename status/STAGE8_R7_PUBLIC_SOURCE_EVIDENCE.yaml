@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_r7_source_restored_exact_github_ci_pending
+status: public_r7_source_restored_and_validated_merge_pending
 
 source_candidate:
   archive_name: Text-Knowledge-Reader-R7-source-package.zip
@@ -31,7 +31,7 @@ key_public_files:
   status/STAGE8_R7_PUBLIC_STATUS.yaml: 86a68be95994daf0be1f527d994659e5ae9187472e34d184a69c5667792f5f68
 
 privacy_review:
-  private_novel_title_literal_scan_matches: 0
+  changed_r7_files_private_title_literal_matches: 0
   private_corpus_bytes_present: false
   private_corpus_inventory_present: false
   private_chapter_source_packets_present: false
@@ -39,23 +39,21 @@ privacy_review:
   gold_payload_present: false
   blind_observations_present: false
   reviewer_packets_present: false
-  note: filenames containing private, gold, or observation refer only to public-safe schemas, guards, documentation, or synthetic tests
+  note: pre-existing public guard fixtures and historical documents are outside the R7 changed-file set
 
-required_before_merge:
-  restore_key_public_files_to_branch: false
-  review_diff_against_public_allowlist_and_denylist: true
-  productization_python_3_10_3_11_3_12: true
-  full_repository_regression_per_python: true
-  reproducible_byte_identical_wheel: true
-  clean_wheel_install_per_python: true
-  installed_learning_cli_contract: true
-  skill_audit_zero_findings: true
-  skill_doctor_passed: true
-  private_artifact_guard_passed: true
-  stage8_execution_bundle_passed: true
+validated_exact_ci:
+  validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+  productization_run_id: 30422194043
+  private_artifact_guard_run_id: 30422193997
+  execution_bundle_run_id: 30422194000
+  all_required_implementation_checks_passed: true
 
 merge_policy:
-  pr_must_remain_draft: true
+  source_restoration_complete: true
+  public_diff_review_complete: true
+  private_artifacts_present: false
+  current_status_reconciliation_head_requires_required_ci: true
+  merge_allowed_when_current_head_required_ci_passes: true
   merge_allowed_now: false
 
 formal_authority:
@@ -70,4 +68,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass
+next_action: run_required_ci_on_status_reconciliation_head_then_merge_pr_46_if_all_checks_pass
