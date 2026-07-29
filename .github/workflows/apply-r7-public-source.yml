@@ -129,3 +129,5 @@ jobs:
           git add -A
           git commit -m 'restore R7 public implementation and synthetic tests'
           git push origin HEAD:${GITHUB_REF_NAME}
+
+# Triggered through the Contents API so GitHub emits a standard push event.
