@@ -49,8 +49,14 @@ jobs:
           echo '5689b0546dff337b4d2904e79f966f181e30e29f346c2c62783e6198e934fd26  /tmp/r7-public.patch.xz' | sha256sum -c -
           xz -dc /tmp/r7-public.patch.xz > /tmp/r7-public.patch
           echo 'c1b80e36248a8fdbdc3ee8b2232de93e3b79b778ff63d328b3da71a6dec1ae27  /tmp/r7-public.patch' | sha256sum -c -
-          git apply --check /tmp/r7-public.patch
-          git apply /tmp/r7-public.patch
+          git apply --check \
+            --exclude='text_knowledge_reader_core.egg-info/SOURCES.txt' \
+            --exclude='text_knowledge_reader_core.egg-info/entry_points.txt' \
+            /tmp/r7-public.patch
+          git apply \
+            --exclude='text_knowledge_reader_core.egg-info/SOURCES.txt' \
+            --exclude='text_knowledge_reader_core.egg-info/entry_points.txt' \
+            /tmp/r7-public.patch
 
       - name: Enforce public-only boundary
         shell: bash
