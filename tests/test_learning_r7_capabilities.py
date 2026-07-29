@@ -143,6 +143,94 @@ class LearningR7CapabilityTests(unittest.TestCase):
             summary = query_learning_project(learning, "这本书学到了什么？")
             self.assertTrue(summary["items"][0]["chapter_summaries"])
 
+    def test_shared_generic_alias_does_not_merge_distinct_characters(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            base_a, lit_a = self._build_source(
+                root,
+                "别名录_上卷.txt",
+                "第一章\n张青又称师父。张青击败赵甲。\n",
+            )
+            base_b, lit_b = self._build_source(
+                root,
+                "别名录_下卷.txt",
+                "第二章\n李岳又称师父。李岳击败钱乙。\n",
+            )
+            learning = root / "learning"
+            build_learning_project(
+                [lit_a, lit_b],
+                learning,
+                source_projects=[base_a, base_b],
+                book_ids=["alias-book", "alias-book"],
+                book_titles=["别名录", "别名录"],
+            )
+            profiles = [json.loads(line) for line in (learning / "entity-learning-profiles.jsonl").read_text(encoding="utf-8").splitlines()]
+            people = {
+                row["canonical_name"]: row
+                for row in profiles
+                if row.get("profile_status") == "accepted" and row.get("canonical_name") in {"张青", "李岳"}
+            }
+            self.assertEqual(set(people), {"张青", "李岳"})
+            self.assertEqual(people["张青"]["consolidated_profile_count"], 1)
+            self.assertEqual(people["李岳"]["consolidated_profile_count"], 1)
+            ambiguous = query_learning_project(learning, "别名录中的师父学到了什么？")
+            self.assertEqual(ambiguous["status"], "refused_ambiguous_entity_scope")
+            self.assertEqual(
+                {row["canonical_name"] for row in ambiguous["items"][0]["available_entities"]},
+                {"张青", "李岳"},
+            )
+
+    def test_unique_alias_bridges_to_canonical_identity_and_is_queryable(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            base_a, lit_a = self._build_source(
+                root,
+                "灰灯录_上卷.txt",
+                "第一章\n顾川又称灰灯。顾川位于雾港。\n",
+            )
+            base_b, lit_b = self._build_source(
+                root,
+                "灰灯录_下卷.txt",
+                "第二章\n灰灯击败裴照。\n",
+            )
+            learning = root / "learning"
+            build_learning_project(
+                [lit_a, lit_b],
+                learning,
+                source_projects=[base_a, base_b],
+                book_ids=["gray-lamp", "gray-lamp"],
+                book_titles=["灰灯录", "灰灯录"],
+            )
+            profiles = [json.loads(line) for line in (learning / "entity-learning-profiles.jsonl").read_text(encoding="utf-8").splitlines()]
+            merged = [
+                row for row in profiles
+                if row.get("profile_status") == "accepted"
+                and {row.get("canonical_name"), *row.get("aliases", [])} >= {"顾川", "灰灯"}
+            ]
+            self.assertEqual(len(merged), 1)
+            self.assertEqual(merged[0]["consolidated_profile_count"], 2)
+            alias_query = query_learning_project(learning, "灰灯录中的灰灯学到了什么？")
+            self.assertEqual(alias_query["status"], "answered")
+            self.assertEqual(alias_query["answer_type"], "entity_learning")
+            self.assertEqual(len(alias_query["items"]), 1)
+            self.assertIn(alias_query["items"][0]["profile"]["canonical_name"], {"顾川", "灰灯"})
+
+    def test_long_entity_name_suppresses_short_substring_match(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            base, literary = self._build_source(
+                root,
+                "长名录.txt",
+                "第一章\n张三位于东城。张三丰位于西城。\n",
+            )
+            learning = root / "learning"
+            build_learning_project([literary], learning, source_projects=[base])
+            result = query_learning_project(learning, "张三丰学到了什么？")
+            self.assertEqual(result["status"], "answered")
+            self.assertEqual(result["answer_type"], "entity_learning")
+            self.assertEqual(len(result["items"]), 1)
+            self.assertEqual(result["items"][0]["profile"]["canonical_name"], "张三丰")
+
 
 if __name__ == "__main__":
     unittest.main()

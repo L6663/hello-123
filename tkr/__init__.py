@@ -32,3 +32,12 @@ from .stage6_notion_r1 import apply_stage6_notion_r1 as _apply_stage6_notion_r1
 
 _apply_stage6_notion_r1()
 del _apply_stage6_notion_r1
+
+# Stage 8-R7 identity hardening prevents generic/shared aliases from merging
+# unrelated same-book characters and makes alias queries ambiguity-safe.
+from .stage8_r7_identity_hardening import (
+    apply_stage8_r7_identity_hardening as _apply_stage8_r7_identity_hardening,
+)
+
+_apply_stage8_r7_identity_hardening()
+del _apply_stage8_r7_identity_hardening
