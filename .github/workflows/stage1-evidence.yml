@@ -45,6 +45,8 @@ jobs:
             tkr/final_acceptance.py \
             tkr/final_acceptance_cli.py \
             tkr/literary_benchmark.py \
+            tkr/learning_engine.py \
+            tkr/learning_cli.py \
             tkr/skill_audit.py
 
       - name: Validate public schemas
@@ -58,6 +60,9 @@ jobs:
               "literary-benchmark-observation.schema.json",
               "literary-benchmark-report.schema.json",
               "literary-benchmark-verification.schema.json",
+              "learning-project-report.schema.json",
+              "learning-query-packet.schema.json",
+              "model-learning-observation.schema.json",
               "private-blind-attestation.schema.json",
               "package-acceptance-v2.schema.json",
               "engineering-validation.schema.json",
@@ -73,8 +78,15 @@ jobs:
               assert payload["type"] == "object"
           PY
 
-      - name: Stage 8 focused regressions
-        run: python -m unittest tests.test_final_acceptance -v
+      - name: Stage 8 and R7 focused regressions
+        run: |
+          python -m unittest \
+            tests.test_final_acceptance \
+            tests.test_learning_cli \
+            tests.test_learning_engine \
+            tests.test_learning_r7_capabilities \
+            tests.test_stage8_r6_encoding_contract \
+            -v
 
       - name: Complete repository regression
         run: python -m unittest discover -s tests -p 'test_*.py'
@@ -101,7 +113,7 @@ jobs:
           .venv-wheel/bin/python -m pip install dist/*.whl
           .venv-wheel/bin/python - <<'PY'
           import tkr
-          assert tkr.__version__ == "6.0.0rc1"
+          assert tkr.__version__ == "6.0.0rc1-r7"
           PY
 
       - name: Installed Skill audit and command contract
@@ -110,6 +122,7 @@ jobs:
           .venv-wheel/bin/tkr-skill doctor --output skill-doctor-installed.json
           .venv-wheel/bin/tkr-project --help >/dev/null
           .venv-wheel/bin/tkr-literary --help >/dev/null
+          .venv-wheel/bin/tkr-learning --help >/dev/null
           .venv-wheel/bin/tkr-evidence --help >/dev/null
           .venv-wheel/bin/tkr-chapter --help >/dev/null
           .venv-wheel/bin/tkr-event --help >/dev/null
@@ -135,6 +148,7 @@ jobs:
 
       - name: Bundled Skill command contract
         run: |
+          python scripts/tkr.py learning --help >/dev/null
           python scripts/tkr.py acceptance --help >/dev/null
           python scripts/tkr.py acceptance-prepare --help >/dev/null
           python scripts/tkr.py acceptance-verify --help >/dev/null
@@ -173,7 +187,7 @@ jobs:
           cmp --silent "$WHEEL_A" "$WHEEL_B"
           sha256sum "$WHEEL_A" "$WHEEL_B"
 
-      - name: Require packaged Stage 8 assets
+      - name: Require packaged Stage 8 and R7 assets
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -188,7 +202,12 @@ jobs:
               "share/text-knowledge-reader/PROJECT_STATUS.yaml",
               "share/text-knowledge-reader/schemas/final-acceptance-candidate.schema.json",
               "share/text-knowledge-reader/schemas/private-blind-attestation.schema.json",
+              "share/text-knowledge-reader/schemas/learning-project-report.schema.json",
+              "share/text-knowledge-reader/schemas/learning-query-packet.schema.json",
+              "share/text-knowledge-reader/schemas/model-learning-observation.schema.json",
               "share/text-knowledge-reader/docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md",
+              "share/text-knowledge-reader/docs/STAGE8_R6_LEARNING_PANORAMA.md",
+              "share/text-knowledge-reader/docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md",
           }
           missing = sorted(
               suffix for suffix in required_suffixes
