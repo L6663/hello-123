@@ -25,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tkr-skill",
         description=(
-            "Inspect the complete Text Knowledge Reader 6.0.0rc1 Skill product. "
+            "Inspect the complete Text Knowledge Reader 6.0.0rc1-r7 Skill product. "
             "These checks are technical evidence and do not perform private "
             "blind acceptance, public release, or repository freeze."
         ),

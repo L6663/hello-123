@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/learning-query-packet.schema.json",
+  "title": "Text Knowledge Reader Learning Query Packet",
+  "type": "object",
+  "required": [
+    "schema_version", "status", "answer_type", "question", "items", "limitations",
+    "project_acceptance_performed", "may_accept_project", "may_release", "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {"const": "tkr-learning-query-packet-v1"},
+    "status": {"enum": ["answered", "refused_unsupported"]},
+    "answer_type": {"type": "string"},
+    "question": {"type": "string"},
+    "items": {"type": "array"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "project_acceptance_performed": {"const": false},
+    "may_accept_project": {"const": false},
+    "may_release": {"const": false},
+    "may_freeze": {"const": false}
+  },
+  "additionalProperties": false
+}

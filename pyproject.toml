@@ -25,6 +25,7 @@ tkr-semantic-extract = "tkr.semantic_cli:main"
 tkr-project = "tkr.project_cli:main"
 tkr-skill = "tkr.skill_cli:main"
 tkr-literary = "tkr.literary_cli:main"
+tkr-learning = "tkr.learning_cli:main"
 tkr-evidence = "tkr.evidence_cli:main"
 tkr-chapter = "tkr.chapter_cli:main"
 tkr-event = "tkr.event_cli:main"
@@ -77,6 +78,9 @@ include = ["tkr*"]
   "schemas/literary-entity.schema.json",
   "schemas/literary-relationship.schema.json",
   "schemas/literary-event.schema.json",
+  "schemas/learning-project-report.schema.json",
+  "schemas/learning-query-packet.schema.json",
+  "schemas/model-learning-observation.schema.json",
   "schemas/evidence-unit.schema.json",
   "schemas/evidence-coverage.schema.json",
   "schemas/claim-evidence-edge.schema.json",
@@ -157,5 +161,7 @@ include = ["tkr*"]
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM.md",
   "docs/STAGE6_NOTION_KNOWLEDGE_SYSTEM_RESULT.md",
   "docs/STAGE7_LITERARY_REGRESSION_BENCHMARK.md",
+  "docs/STAGE8_R6_LEARNING_PANORAMA.md",
+  "docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md",
   "docs/STAGE8_FINAL_PRODUCTIZATION_ACCEPTANCE.md",
 ]

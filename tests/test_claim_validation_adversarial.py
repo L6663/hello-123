@@ -139,3 +139,39 @@ class ClaimValidationAdversarialTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ClaimValidationR6ReportedFailureTests(ClaimValidationAdversarialTests):
+    def test_ability_or_intent_defeat_routes_to_review(self):
+        for evidence in (
+            "张三有能力击败李四。",
+            "张三足以战胜李四。",
+            "张三试图击溃李四。",
+            "张三希望打败李四。",
+        ):
+            with self.subTest(evidence=evidence):
+                result = self.validate(
+                    evidence,
+                    claim_type="defeats",
+                    subject="张三",
+                    object="李四",
+                )
+                self.assertEqual(result.status, "review")
+
+    def test_permission_request_routes_to_review(self):
+        result = self.validate(
+            "张三请求族长允许张三进入内殿。",
+            claim_type="permission",
+            subject="族长",
+            object="张三进入内殿",
+            polarity=True,
+        )
+        self.assertEqual(result.status, "review")
+
+    def test_negative_naming_command_is_not_alias(self):
+        result = self.validate(
+            "不许再叫张三别名阿舟。",
+            claim_type="alias",
+            subject="张三",
+            object="阿舟",
+        )
+        self.assertNotEqual(result.status, "accepted")

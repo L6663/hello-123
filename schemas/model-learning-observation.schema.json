@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/model-learning-observation.schema.json",
+  "title": "Text Knowledge Reader Evidence-Bound Model Learning Observation",
+  "type": "object",
+  "required": [
+    "task_id",
+    "observation_type",
+    "epistemic_tier",
+    "statement",
+    "entity_ids",
+    "evidence_spans",
+    "evidence_anchor_ids",
+    "status",
+    "may_publish_directly"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observation_type": {
+      "enum": [
+        "explicit_event",
+        "character_state",
+        "relationship",
+        "motivation_candidate",
+        "causal_candidate",
+        "world_rule",
+        "foreshadowing_candidate",
+        "chapter_summary",
+        "book_mainline_candidate"
+      ]
+    },
+    "epistemic_tier": {
+      "enum": [
+        "B",
+        "C"
+      ]
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "entity_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "evidence_spans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "start_char",
+          "end_char",
+          "evidence_text"
+        ],
+        "properties": {
+          "start_char": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_char": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "evidence_text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence_anchor_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "status": {
+      "const": "proposed"
+    },
+    "may_publish_directly": {
+      "const": false
+    },
+    "learned_entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 24
+          },
+          "category": {
+            "enum": [
+              "character",
+              "place",
+              "faction",
+              "ability",
+              "item",
+              "species",
+              "concept",
+              "unknown"
+            ]
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 24
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

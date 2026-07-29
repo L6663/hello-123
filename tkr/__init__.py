@@ -1,6 +1,6 @@
 """Text Knowledge Reader release-candidate literary knowledge package."""
 
-__version__ = "6.0.0rc1"
+__version__ = "6.0.0rc1-r7"
 
 # Historical Stage 6-R1 deterministic correctness fixes remain active for the
 # v5.9 base runtime inherited by v6. They grant no acceptance, release-candidate,
@@ -32,3 +32,12 @@ from .stage6_notion_r1 import apply_stage6_notion_r1 as _apply_stage6_notion_r1
 
 _apply_stage6_notion_r1()
 del _apply_stage6_notion_r1
+
+# Stage 8-R7 identity hardening prevents generic/shared aliases from merging
+# unrelated same-book characters and makes alias queries ambiguity-safe.
+from .stage8_r7_identity_hardening import (
+    apply_stage8_r7_identity_hardening as _apply_stage8_r7_identity_hardening,
+)
+
+_apply_stage8_r7_identity_hardening()
+del _apply_stage8_r7_identity_hardening

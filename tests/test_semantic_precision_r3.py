@@ -173,3 +173,51 @@ class SemanticPrecisionR5RealCorpusBoundaryTests(SemanticPrecisionR3Tests):
         rows = self.accepted("这拍卖大会禁止暗换密室。", "permission")
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].subject, "拍卖大会")
+
+class SemanticPrecisionR6ReportedFailureTests(SemanticPrecisionR3Tests):
+    def test_ability_and_intent_are_not_published_as_victories(self):
+        samples = (
+            "陆川有能力击败韩岳。",
+            "陆川足以战胜韩岳。",
+            "陆川能够打败韩岳。",
+            "陆川试图击溃韩岳。",
+            "如果陆川出手，就能击败韩岳。",
+            "陆川或许可以战胜韩岳。",
+        )
+        for text in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "defeats"), [])
+
+    def test_permission_requests_are_not_published_as_grants(self):
+        samples = (
+            "陆川请求族长允许他进入内殿。",
+            "请允许陆川进入内殿。",
+            "陆川问是否允许进入内殿？",
+            "陆川希望族长准许他离开。",
+        )
+        for text in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "permission"), [])
+
+    def test_negative_naming_commands_are_not_alias_facts(self):
+        samples = (
+            "不许再叫陆川别名阿舟。",
+            "不要给陆川起别名黑剑。",
+            "禁止称陆川为叛徒。",
+        )
+        for text in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, "alias"), [])
+
+    def test_pronouns_and_function_words_are_not_relation_endpoints(self):
+        samples = (
+            ("我击败韩岳。", "defeats"),
+            ("我们战胜韩岳。", "defeats"),
+            ("她位于北境。", "located_in"),
+            ("则又称青帝。", "alias"),
+            ("和击败韩岳。", "defeats"),
+            ("在北位于南境。", "located_in"),
+        )
+        for text, claim_type in samples:
+            with self.subTest(text=text):
+                self.assertEqual(self.accepted(text, claim_type), [])

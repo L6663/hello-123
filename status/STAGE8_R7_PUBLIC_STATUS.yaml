@@ -1,0 +1,75 @@
+schema_version: tkr-stage8-r7-public-status-v1
+repository: L6663/hello-123
+integration_branch: develop/v6-literary-engine
+stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
+status: public_r7_implementation_restored_exact_implementation_ci_passed_merge_pending
+product_runtime:
+  package_version: 6.0.0rc1-r7
+  product_version: 6.0.0rc1-r7
+  engineering_version: 6.0.0rc1-r7
+  knowledge_system_version: 6.0.0rc1-r7
+  semantic_extractor_version: 6.0.0rc1-r7
+  claim_validator_version: tkr-claim-validator-v2-r7
+  learning_system_version: tkr-learning-panorama-v2-r7
+r7_completed_scope:
+  stable_book_identity: true
+  explicit_book_id_and_title_overrides: true
+  automatic_multi_volume_title_inference: true
+  same_book_entity_consolidation: true
+  cross_book_same_name_isolation: true
+  ambiguous_multi_book_query_refusal: true
+  volume_and_part_heading_exclusion: true
+  fragment_entity_review_isolation: true
+  source_ordered_merged_storylines: true
+  statement_expanding_learning_queries: true
+  book_scoped_world_models: true
+  observed_entity_candidate_integration: true
+controlled_simulation:
+  book_count: 2
+  source_project_count: 3
+  designed_main_book_chapter_count: 16
+  adversarial_other_book_chapter_count: 2
+  chapter_card_count: 18
+  complete_chapter_packet_count: 18
+  model_learning_task_count: 18
+  model_learning_observation_count: 44
+  learning_observation_type_count: 9
+  accepted_consolidated_entity_profile_count: 19
+  review_only_fragment_profile_count: 3
+  direct_relationship_count: 12
+  exact_assertion_count: 27
+  exact_evidence_anchor_count: 73
+  learning_project_verified: true
+  private_source_text_published: false
+local_quality_gates:
+  repository_tests_passed: 692
+  repository_test_failures: 0
+  schema_count: 84
+  skill_audit_findings: 0
+  skill_doctor_checks_passed: 7
+  github_ci_pending: true
+  github_implementation_restored: true
+  validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
+  productization_run_id: 30422194043
+  private_artifact_guard_run_id: 30422193997
+  execution_bundle_run_id: 30422194000
+  exact_implementation_ci_passed: true
+  status_reconciliation_head_ci_required: true
+privacy_boundary:
+  private_corpus_text_in_repository: false
+  private_learning_source_packets_in_repository: false
+  gold_in_repository: false
+  private_observations_in_repository: false
+  chapter_source_packets_may_upload_to_public_ci: false
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+next_action: merge_pr_46_after_required_ci_passes_on_the_status_reconciliation_head

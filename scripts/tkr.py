@@ -16,6 +16,7 @@ from tkr.event_cli import main as event_main  # noqa: E402
 from tkr.final_acceptance_cli import main as final_acceptance_main  # noqa: E402
 from tkr.literary_benchmark_cli import main as literary_benchmark_main  # noqa: E402
 from tkr.literary_cli import main as literary_main  # noqa: E402
+from tkr.learning_cli import main as learning_main  # noqa: E402
 from tkr.notion_cli import main as notion_main  # noqa: E402
 from tkr.project_cli import main as project_main  # noqa: E402
 from tkr.reasoning_cli import main as reasoning_main  # noqa: E402
@@ -29,6 +30,7 @@ LITERARY_ALIASES = {
     "literary-query": "query",
     "literary-export-notion": "export-notion",
 }
+LEARNING_ALIASES = {"learning-build": "build", "learning-verify": "verify", "learning-query": "query"}
 EVIDENCE_ALIASES = {"evidence-build": "build", "evidence-verify": "verify"}
 CHAPTER_ALIASES = {
     "chapter-build": "build",
@@ -84,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
             "  doctor | audit | profiles | show-profile\n"
             "  build | verify | query | verify-answer\n"
             "  literary build | literary verify | literary query | literary export-notion\n"
+            "  learning build | learning verify | learning query\n"
             "  evidence build | evidence verify\n"
             "  chapter build | chapter verify | chapter query\n"
             "  event build | event verify | event query\n"
@@ -92,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
             "  notion build | notion verify | notion plan\n"
             "  benchmark evaluate | benchmark verify\n"
             "  acceptance prepare | acceptance verify | acceptance seal | acceptance verify-seal\n"
-            "  aliases: literary-*, evidence-*, chapter-*, event-*, character-*, "
+            "  aliases: literary-*, learning-*, evidence-*, chapter-*, event-*, character-*, "
             "reason-*, notion-*, benchmark-*, acceptance-*\n\n"
             "Reasoning query modes:\n"
             "  fact_only | fact_and_synthesis | analysis | counterfactual | provenance\n\n"
@@ -100,6 +103,7 @@ def main(argv: list[str] | None = None) -> int:
             "  python scripts/tkr.py doctor\n"
             "  python scripts/tkr.py build corpus.txt --outdir project --profile balanced\n"
             "  python scripts/tkr.py literary build project --outdir literary\n"
+            "  python scripts/tkr.py learning build literary --outdir learning\n"
             "  python scripts/tkr.py chapter build project-a project-b --outdir chapter-project\n"
             "  python scripts/tkr.py reason --help\n"
             "  python scripts/tkr.py notion --help\n"
@@ -119,6 +123,10 @@ def main(argv: list[str] | None = None) -> int:
         return literary_main(["--help"] if len(args) == 1 else args[1:])
     if command in LITERARY_ALIASES:
         return literary_main([LITERARY_ALIASES[command], *args[1:]])
+    if command == "learning":
+        return learning_main(["--help"] if len(args) == 1 else args[1:])
+    if command in LEARNING_ALIASES:
+        return learning_main([LEARNING_ALIASES[command], *args[1:]])
     if command == "evidence":
         return evidence_main(["--help"] if len(args) == 1 else args[1:])
     if command in EVIDENCE_ALIASES:

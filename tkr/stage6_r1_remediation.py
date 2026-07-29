@@ -331,10 +331,10 @@ def apply_stage6_r1_remediation() -> None:
     from . import semantic_extraction as _semantic_extraction
     _semantic_extraction.validate_claim = _claim.validate_claim
     _claim._CLAIM_BAD_SUFFIXES = tuple(item for item in _claim._CLAIM_BAD_SUFFIXES if item != "因")
-    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v2-r5"
+    _claim.VALIDATOR_VERSION = "tkr-claim-validator-v2-r7"
     from . import entity_normalization as _entity_normalization
     _entity_normalization.VALIDATOR_VERSION = _claim.VALIDATOR_VERSION
-    _engineering.ENGINEERING_VERSION = "6.0.0rc1-r5"
+    _engineering.ENGINEERING_VERSION = "6.0.0rc1-r7"
 
     from .stage8_r5_structure_patch import apply_stage8_r5_structure_patch
     from .stage8_r5_evidence_core_patch import apply_stage8_r5_evidence_core_patch
