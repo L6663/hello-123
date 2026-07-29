@@ -1,0 +1,78 @@
+schema_version: tkr-stage8-r7-merged-status-v1
+repository: L6663/hello-123
+integration_branch: develop/v6-literary-engine
+stage: Stage 8-R7 Learning Identity, Scope, Reusable Results, and Alias Hardening
+status: public_engineering_integrated_internal_testing_ready
+
+integration:
+  pull_request: 46
+  final_validated_head: ca6e7aab73da2a68a4c632f16f37122e0c98d164
+  squash_merge_commit: 9618c7e0476e643b8ba03ed1b29327d9d468f1c6
+  changed_file_count: 36
+  product_version: 6.0.0rc1-r7
+
+validated_exact_ci:
+  productization_run_id: 30437203158
+  private_artifact_guard_run_id: 30437203917
+  execution_bundle_run_id: 30437203907
+  python_3_10_full_regression: passed
+  python_3_11_full_regression: passed
+  python_3_12_full_regression: passed
+  repository_tests_passed: 695
+  reproducible_byte_identical_wheel: passed
+  clean_wheel_install: passed
+  installed_learning_cli_contract: passed
+  skill_audit_findings: 0
+  skill_doctor_checks_passed: 7
+  private_artifact_guard: passed
+  stage8_execution_bundle: passed
+
+integrated_capabilities:
+  stable_book_and_corpus_identity: true
+  same_book_cross_file_entity_consolidation: true
+  cross_book_same_name_isolation: true
+  ambiguous_book_scope_refusal: true
+  shared_generic_alias_collision_prevention: true
+  unique_alias_bridge_and_query: true
+  nested_short_name_query_suppression: true
+  volume_heading_exclusion: true
+  fragment_entity_review_isolation: true
+  expanded_learning_queries: true
+  per_book_world_models: true
+  complete_chapter_learning_task_interface: true
+  evidence_bound_tier_b_c_observations: true
+  gb18030_raw_normalized_hash_contract: true
+  semantic_precision_hardening: true
+
+privacy_boundary:
+  private_corpus_bytes_in_repository: false
+  identifying_private_inventory_in_repository: false
+  private_chapter_source_packets_in_repository: false
+  private_model_observations_in_repository: false
+  gold_in_repository: false
+  blind_observations_in_repository: false
+  reviewer_packets_in_repository: false
+  private_artifact_uploads_to_actions_allowed: false
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+completion_boundary:
+  public_r7_engineering_integration_complete: true
+  internal_real_testing_ready: true
+  further_product_optimization_required_before_testing: false
+  formal_acceptance_blocked_on_external_inputs: true
+  required_external_inputs:
+    - new untouched final private corpus
+    - exact owner development-exclusion attestation
+    - independent role-separation attestation
+    - Gold hash and lock receipt created outside the answer system
