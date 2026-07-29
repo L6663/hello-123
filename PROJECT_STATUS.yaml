@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v20
 repository: L6663/hello-123
-updated_at_utc: '2026-07-29T08:35:00Z'
+updated_at_utc: '2026-07-29T08:53:01Z'
 historical_release:
   version: 5.9.0
   stable_branch: main
@@ -12,13 +12,13 @@ historical_release:
   historical_release_mutated: false
 v6_development:
   version: 6.0.0rc1-r7
-  status: r7_public_implementation_restored_exact_ci_passed_merge_pending
+  status: r7_identity_hardening_exact_ci_passed_merge_pending
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
   current_branch: feature/v6-stage8-r7-learning-integration
   stewardship_issue: 37
   current_stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
-  current_stage_status: public_implementation_restored_exact_ci_passed_merge_pending
+  current_stage_status: identity_hardening_exact_ci_passed_merge_pending
   completed_and_integrated_stages:
   - Stage 1 Evidence Engine
   - Stage 2 Chapter Structure Engine
@@ -51,7 +51,7 @@ v6_development:
   - Stage 8-R6 Learning Panorama and semantic reliability
   - Stage 8-R7 learning identity, scope, query, and world-model optimization
   r7_local_validation:
-    repository_tests_passed: 692
+    repository_tests_passed: 695
     schema_count: 84
     skill_audit_findings: 0
     skill_doctor_checks_passed: 7
@@ -63,15 +63,19 @@ v6_development:
     review_only_fragment_profile_count: 3
     same_book_entity_merge_passed: true
     cross_book_isolation_passed: true
+    generic_alias_collision_isolation_passed: true
+    unique_alias_canonical_bridge_passed: true
+    ambiguous_same_book_alias_query_refusal_passed: true
+    longest_name_query_precedence_passed: true
     volume_heading_exclusion_passed: true
     statement_expanding_query_passed: true
     learning_project_verified: true
     github_integration_pending: true
     github_public_implementation_restored: true
-    github_implementation_validated_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
-    github_productization_run_id: 30422194043
-    github_private_artifact_guard_run_id: 30422193997
-    github_execution_bundle_run_id: 30422194000
+    github_implementation_validated_head: ca6e7aab73da2a68a4c632f16f37122e0c98d164
+    github_productization_run_id: 30437203158
+    github_private_artifact_guard_run_id: 30437203917
+    github_execution_bundle_run_id: 30437203907
     github_exact_ci_passed: true
 integrations:
   stage_1:
@@ -82,7 +86,7 @@ integrations:
     merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
   stage_3:
     pull_request: 30
-    merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
+    merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224
   stage_4:
     pull_request: 31
     merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
@@ -141,14 +145,14 @@ integrations:
     internal_real_testing_ready: true
   stage_8_r7:
     pull_request: 46
-    validated_implementation_head: d5fbd1bb14c19bedf89baf74df677dbbcb62ff7d
-    productization_run_id: 30422194043
-    private_artifact_guard_run_id: 30422193997
-    execution_bundle_run_id: 30422194000
+    validated_implementation_head: ca6e7aab73da2a68a4c632f16f37122e0c98d164
+    productization_run_id: 30437203158
+    private_artifact_guard_run_id: 30437203917
+    execution_bundle_run_id: 30437203907
     python_3_10_status: passed
     python_3_11_status: passed
     python_3_12_status: passed
-    repository_tests_passed: 692
+    repository_tests_passed: 695
     reproducible_wheel_status: passed
     clean_wheel_install_status: passed
     installed_learning_cli_contract: passed
@@ -176,7 +180,7 @@ stage_7:
     average_compensation_allowed: false
 stage_8:
   name: Stage 8 Final Productization and Acceptance
-  status: r7_public_candidate_exact_ci_passed_merge_pending_formal_private_acceptance_pending
+  status: r7_identity_hardened_exact_ci_passed_merge_pending_formal_private_acceptance_pending
   product_version: 6.0.0rc1-r7
   technical_candidate_contract:
     stage_7_release_benchmark_required: true
