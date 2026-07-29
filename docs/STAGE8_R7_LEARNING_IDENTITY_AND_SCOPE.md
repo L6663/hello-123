@@ -66,6 +66,7 @@ The R7 controlled simulation reused the same original two-volume, sixteen-chapte
 - Skill Doctor: 7/7;
 - formal private blind acceptance: not performed;
 - technical Candidate, approval, release, and freeze authority: not created or granted.
+- R7/R7.1 public implementation merged into `develop` at `9618c7e0476e643b8ba03ed1b29327d9d468f1c6`.
 
 ## Boundary
 
