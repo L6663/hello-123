@@ -3,10 +3,10 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_r7_identity_hardening_integrated_status_reconciliation_pending
+status: public_r7_identity_hardening_integrated_internal_testing_ready
 
 current_repository_baseline:
-  version: 6.0.0rc1-r7
+  version: 6.0.0rc1-r5
   project_status_schema: tkr-project-status-v20
   stewardship_issue: 37
   internal_real_testing_ready: true
@@ -79,8 +79,9 @@ merge_policy:
   exact_ci_passed_on_implementation_head: true
   implementation_pr_46_merged: true
   implementation_merge_commit: 9618c7e0476e643b8ba03ed1b29327d9d468f1c6
-  status_reconciliation_pr_requires_ci: true
-  status_reconciliation_merge_allowed_when_ci_passes: true
+  public_status_reconciliation_pr: 50
+  public_status_reconciliation_merge_commit: 919a9ec79b88cb2f4fa8570d4b667a319ae09b22
+  public_status_reconciliation_complete: true
 
 formal_authority:
   private_blind_acceptance_performed: false
@@ -94,4 +95,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: merge_public_status_reconciliation_after_required_ci_passes
+next_action: formal_private_blind_acceptance_requires_new_untouched_corpus_independent_roles_and_gold_lock
