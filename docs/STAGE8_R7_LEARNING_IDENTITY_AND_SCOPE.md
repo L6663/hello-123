@@ -51,12 +51,16 @@ The R7 controlled simulation reused the same original two-volume, sixteen-chapte
 - same-book identities consolidated across volumes;
 - identical names across books isolated;
 - ambiguous unscoped entity queries refused;
+- generic titles and shared aliases no longer merge unrelated same-book characters;
+- unique aliases still bridge to canonical identities and are queryable;
+- ambiguous same-book alias queries are refused with candidate identities;
+- longer entity names take precedence over nested short-name substrings;
 - scoped chapter, entity, event, causality, motivation, foreshadowing, mainline, and world queries returned actual learned statements;
 - Learning Project verification passed.
 
 ## Quality evidence
 
-- repository tests: 692 passed;
+- repository tests: 695 passed;
 - schemas: 84;
 - Skill Audit: 0 findings;
 - Skill Doctor: 7/7;
