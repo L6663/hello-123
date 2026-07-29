@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_r7_identity_hardened_source_integrated_status_reconciliation_pending
+status: public_r7_identity_hardened_source_integrated_internal_testing_ready
 
 source_candidate:
   archive_name: Text-Knowledge-Reader-R7-source-package.zip
@@ -30,7 +30,7 @@ key_public_files:
   schemas/model-learning-observation.schema.json: d6554d3f3a16886379f8b8a36afbbe9c7eccb5ebd029a6b41ff66c32965a8c67
   docs/STAGE8_R6_LEARNING_PANORAMA.md: 9b7fb8cc0d83aadc2718aa9399e6066d9dd6f68bc8cea0e59c60e9ac3ba00921
   docs/STAGE8_R7_LEARNING_IDENTITY_AND_SCOPE.md: 44239478b27ba6cc9c852d3e9dc4befe1936ba4e5edc7bc15458e48e91881ae5
-  status/STAGE8_R7_PUBLIC_STATUS.yaml: d64749578c2a70515a9787323bbd98ad14ab3fc2d1834e054280142888985360
+  status/STAGE8_R7_PUBLIC_STATUS.yaml: b03a2fd8367905fbabd5a1eb1cf113fb15eb6c63a54e3262401ab38653bf9fed
 
 privacy_review:
   changed_r7_files_private_title_literal_matches: 0
@@ -56,8 +56,9 @@ merge_policy:
   private_artifacts_present: false
   implementation_pr_46_merged: true
   implementation_merge_commit: 9618c7e0476e643b8ba03ed1b29327d9d468f1c6
-  public_status_reconciliation_requires_ci: true
-  public_status_reconciliation_merge_allowed_when_ci_passes: true
+  public_status_reconciliation_pr: 50
+  public_status_reconciliation_merge_commit: 919a9ec79b88cb2f4fa8570d4b667a319ae09b22
+  public_status_reconciliation_complete: true
 
 formal_authority:
   private_blind_acceptance_performed: false
@@ -71,4 +72,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: merge_public_status_reconciliation_after_required_ci_passes
+next_action: formal_private_blind_acceptance_requires_new_untouched_corpus_independent_roles_and_gold_lock
