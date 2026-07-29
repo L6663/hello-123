@@ -1,6 +1,6 @@
 """Text Knowledge Reader release-candidate literary knowledge package."""
 
-__version__ = "6.0.0rc1"
+__version__ = "6.0.0rc1-r7"
 
 # Historical Stage 6-R1 deterministic correctness fixes remain active for the
 # v5.9 base runtime inherited by v6. They grant no acceptance, release-candidate,

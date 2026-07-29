@@ -8,14 +8,14 @@ from tkr.entity_normalization import NORMALIZER_VERSION
 from tkr.knowledge_models import KNOWLEDGE_SYSTEM_VERSION
 
 
-class R3RuntimeIdentityTests(unittest.TestCase):
-    def test_r3_runtime_versions_are_explicit(self) -> None:
-        self.assertEqual(KNOWLEDGE_SYSTEM_VERSION, "6.0.0rc1-r5")
-        self.assertEqual(ENGINEERING_VERSION, "6.0.0rc1-r5")
-        self.assertEqual(VALIDATOR_VERSION, "tkr-claim-validator-v2-r5")
+class R7RuntimeIdentityTests(unittest.TestCase):
+    def test_r7_runtime_versions_are_explicit(self) -> None:
+        self.assertEqual(KNOWLEDGE_SYSTEM_VERSION, "6.0.0rc1-r7")
+        self.assertEqual(ENGINEERING_VERSION, "6.0.0rc1-r7")
+        self.assertEqual(VALIDATOR_VERSION, "tkr-claim-validator-v2-r7")
         self.assertEqual(NORMALIZER_VERSION, "tkr-entity-normalizer-v3")
 
-    def test_build_key_is_bound_to_r3_runtime_identity(self) -> None:
+    def test_build_key_is_bound_to_r6_runtime_identity(self) -> None:
         profile = load_engineering_profile("balanced")
         key = build_key("a" * 64, profile)
         self.assertTrue(key.startswith("bld_"))

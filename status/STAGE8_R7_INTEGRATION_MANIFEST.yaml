@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: public_integration_manifest_created_implementation_not_yet_integrated
+status: public_r7_implementation_restored_exact_github_ci_pending
 
 current_repository_baseline:
   version: 6.0.0rc1-r5
@@ -24,7 +24,7 @@ local_r7_candidate_evidence:
   schema_count: 84
   reproducible_wheel_sha256: dca502bff7cd778967cdf7c657a07f06ab14a152ec50188cb714ba83c5bbb91d
   exact_github_ci_completed: false
-  github_implementation_integrated: false
+  github_implementation_integrated: true
 
 r7_target_scope:
   - stable book_id and corpus_id identity
@@ -87,4 +87,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: restore_public_r7_implementation_and_synthetic_tests_to_this_branch_then_run_exact_github_ci
+next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass

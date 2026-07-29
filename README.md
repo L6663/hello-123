@@ -5,9 +5,9 @@ Text Knowledge Reader is an auditable long-text literary knowledge system. It pr
 ## Current status
 
 ```yaml
-v6_version: 6.0.0rc1
+v6_version: 6.0.0rc1-r7
 v6_branch: develop/v6-literary-engine
-current_stage: Stage 8 Final Productization and Acceptance
+current_stage: Stage 8-R7 Learning Panorama and Internal Real Testing
 integrated_engineering_stages: 1_to_7
 stage_8_engineering: active
 private_blind_acceptance_performed: false
@@ -31,6 +31,7 @@ strict source bytes and SHA-256
 → anomaly, contamination, and paratext isolation
 → deterministic source-covering Units
 → canonical chapter catalog without rewriting physical order
+→ Learning Panorama: chapter cards, entities, relationships, events, storylines, world model, deep-learning tasks
 → exact Evidence Units and Claim→Evidence edges
 → material event and causal-path graph
 → focused character identities, states, relations, and arcs
@@ -94,6 +95,7 @@ The mutable lock, journal, and cache remain outside immutable project artifacts.
 
 ```text
 tkr-literary
+tkr-learning
 tkr-evidence
 tkr-chapter
 tkr-event
@@ -109,6 +111,44 @@ The directly uploadable Skill entry point is:
 ```bash
 python scripts/tkr.py --help
 ```
+
+
+## Stage 8-R7 — Learning Panorama
+
+R7 provides a mandatory learning-result layer for large-book tests. It produces chapter learning cards, accepted/review-only entity profiles, direct relationship and event ledgers, character storylines, a grouped world model, explicit gaps, and evidence-bound model-learning tasks.
+
+R7 adds stable book identity and scope. Multiple files or volumes from one book can share a `book_id` and consolidate the same character into one source-ordered profile, while identical names in different books remain isolated. Volume headings are not counted as narrative chapters. Learning queries return the learned statements themselves—summaries, events, states, motivations, causal candidates, foreshadowing, world rules, and mainline candidates—rather than only identifiers or counts.
+
+```bash
+tkr-learning build literary-a literary-b --source-project base-a --source-project base-b --outdir learning-project
+tkr-learning verify learning-project --literary-project literary-a --literary-project literary-b --source-project base-a --source-project base-b
+tkr-learning query learning-project "这本书学到了什么？"
+
+# After the model has processed the task ledger with exact chapter evidence:
+tkr-learning build literary-a literary-b \
+  --source-project base-a --source-project base-b \
+  --observations model-observations.jsonl \
+  --outdir learning-project --force
+```
+
+
+For multi-file or multi-volume books, pass the same book identity for every matching Literary input:
+
+```bash
+tkr-learning build literary-upper literary-lower literary-other \
+  --source-project base-upper --source-project base-lower --source-project base-other \
+  --book-id book-main --book-id book-main --book-id book-other \
+  --book-title "Main Book" --book-title "Main Book" --book-title "Other Book" \
+  --outdir learning-project
+
+tkr-learning query learning-project "What did the protagonist learn?" --book-id book-main
+```
+
+Without explicit IDs, R7 infers a stable title by removing common copy, volume, part, and numeric suffixes from source filenames. Explicit IDs remain the authoritative choice when filenames are ambiguous.
+
+The first build emits private complete-chapter packets and an evidence-bound task ledger. The second build integrates proposed Tier-B/C observations such as chapter summaries, explicit events, character states, relationship states, motivations, causal candidates, world rules, foreshadowing, and book-mainline candidates. These observations never receive automatic publication authority.
+
+The main test report must describe what was learned before discussing correctness. Web checks are secondary metadata/high-level validation and cannot replace uploaded evidence. Original-story generation defaults to new names and settings; source characters and cross-book mashups require an explicit request.
 
 ## Stage 1 — Evidence Engine
 

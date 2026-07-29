@@ -50,10 +50,32 @@ _BAD_OBJECT_PREFIXES = ("的", "了", "过的", "负", "不上", "不得不", "�
 _BAD_ACTION_EXACT = frozenset({"了", "啊", "哦", "好死", "其解", "大意", "形容"})
 _BAD_ACTION_SUFFIXES = ("吧", "吗", "呢", "啊", "哦", "了")
 
+_PRONOUN_OR_FUNCTION_ENDPOINTS = frozenset({
+    "我", "我们", "咱们", "你", "你们", "他", "他们", "她", "她们", "它", "它们",
+    "其", "此", "这", "那", "谁", "有人", "众人", "人们", "大家", "自己", "对方",
+    "则", "和", "与", "及", "并", "且", "或", "而", "在", "于", "从", "向", "往",
+})
+_BAD_ENDPOINT_PREFIXES = (
+    "在", "于", "从", "向", "往", "对", "与", "和", "及", "则", "而", "若", "如果",
+    "只要", "一旦", "假如", "倘若", "请", "请求", "恳请", "希望", "想要", "试图", "企图",
+)
+_DEFEAT_NONFACT_LEFT_RE = re.compile(
+    r"(?:有希望|希望|想要|打算|计划|准备|将要|即将|预计|可以|能够|能|足以|有能力|"
+    r"若|如果|只要|一旦|假如|倘若|或许|可能|也许|未必|试图|企图|欲|要)"
+    r"[^。！？!?；;，,]{0,16}$"
+)
+_PERMISSION_REQUEST_LEFT_RE = re.compile(
+    r"(?:请|请求|恳请|求你|希望|能否|是否|可否|让我|让我们|准我|允许我)"
+    r"[^。！？!?；;，,]{0,12}$"
+)
+_ALIAS_COMMAND_RE = re.compile(r"(?:不许|不准|禁止|不得|不要|别|莫).{0,12}(?:叫|称|喊|取名|起名|别名)")
+
 
 def _relation_term(value: str, *, object_side: bool = False) -> bool:
     token = value.strip()
-    if not token or len(token) > 16 or token in _FUNCTION_TERMS:
+    if not token or len(token) > 16 or token in _FUNCTION_TERMS or token in _PRONOUN_OR_FUNCTION_ENDPOINTS:
+        return False
+    if any(token.startswith(prefix) for prefix in _BAD_ENDPOINT_PREFIXES):
         return False
     if any(token.startswith(prefix) for prefix in _BAD_TERM_PREFIXES):
         return False
@@ -180,14 +202,18 @@ def _relation_context_allowed(text: str, start: int, end: int, claim_type: str, 
             return False
         if left.endswith("分") or right.startswith("赞"):
             return False
+        if _ALIAS_COMMAND_RE.search(text) or re.search(r"(?:别|不要|不许|不准|禁止|不得).{0,8}$", left):
+            return False
     if claim_type == "located_in":
         if marker == "地处" and right.startswith("理"):
             return False
         if left.endswith(("原本", "曾经", "此前")) or re.search(r"(?:后来|随后).{0,8}(?:迁|移|搬)", text[end:]):
             return False
     if claim_type == "defeats":
-        if re.search(r"(?:一定要|将要|即将|希望|有希望|意味着|想要|要)$", left):
-            return False
+        # Preserve future, modal, hypothetical, and attempted defeat mentions as
+        # auditable non-indexable candidates.  Discourse classification and claim
+        # validation own the decision to keep them out of canonical knowledge.
+        # Only hard-reject fragments that cannot provide a noun-like subject.
         if left.startswith(("从正面", "再一举", "我知道", "意味着")):
             return False
         if re.match(r"(?:不了|不得|不下|不能)", right):
@@ -230,7 +256,13 @@ def proposals(text: str) -> Iterator[dict[str, object]]:
         left_context = text[:start].strip()
         if marker == "有权" and action.startswith("利"):
             continue
-        if left_context.startswith(("只有", "甚至")) or "这个身份" in left_context or left_context.endswith(("才", "都")):
+        if (
+            left_context.startswith(("只有", "甚至"))
+            or "这个身份" in left_context
+            or left_context.endswith(("才", "都"))
+            or _PERMISSION_REQUEST_LEFT_RE.search(left_context)
+            or re.search(r"(?:请问|能否|是否|可否).{0,12}(?:允许|准许|获准|有权利)", text)
+        ):
             continue
         if _permission_terms(subject, action):
             yield dict(claim_type="permission", subject=subject, object=action, value=None, unit="", polarity=marker not in PERMIT_NEG, rule="DETERMINISTIC_PERMISSION_MARKER", trigger_start=start, trigger_end=end)

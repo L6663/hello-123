@@ -19,7 +19,7 @@ import unicodedata
 
 from .chunking import UnitSpan
 
-VALIDATOR_VERSION = "tkr-claim-validator-v2-r3"
+VALIDATOR_VERSION = "tkr-claim-validator-v2-r7"
 SUPPORTED_CLAIM_TYPES = frozenset(
     {"alias", "defeats", "located_in", "permission", "count", "date"}
 )
@@ -35,14 +35,15 @@ _RELATION_GAP = r"[^\n。！？!?；;，,:：]{0,24}?"
 _CLAUSE_BREAK_RE = re.compile(r"[\n。！？!?；;]+")
 _NEGATION_RE = re.compile(
     r"(?:并非|并未|不是|不曾|从未|不得|不能|不可以|不允许|禁止|"
-    r"未曾|未能|没有|无权|未|"
+    r"未曾|未能|没有|无权|不许|不准|不要|别|莫|未|"
     r"\bnot\b|\bnever\b|\bno\b|\bcannot\b|\bcan't\b|"
     r"\bmay not\b|\bmust not\b)",
     re.IGNORECASE,
 )
 _MODALITY_RE = re.compile(
     r"(?:据说|传闻|听说|或许|可能|似乎|也许|假如|如果|倘若|若是|"
-    r"声称|宣称|谎称|自称|预计|计划|准备|将要|即将|"
+    r"声称|宣称|谎称|自称|预计|计划|准备|将要|即将|希望|有希望|"
+    r"想要|打算|试图|企图|足以|有能力|能够|能否|是否|可否|请求|恳请|请允许|"
     r"\breportedly\b|\ballegedly\b|\bperhaps\b|\bmaybe\b|"
     r"\bif\b|\bclaimed\b|\bclaims\b|\bwill\b|\bwould\b)",
     re.IGNORECASE,

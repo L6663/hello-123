@@ -1,0 +1,92 @@
+schema_version: tkr-stage8-r6-public-status-v1
+repository: L6663/hello-123
+integration_branch: develop/v6-literary-engine
+stage: Stage 8-R6 Learning Panorama and Semantic Reliability
+status: implementation_candidate_local_validation_passed_exact_github_ci_pending
+
+product_runtime:
+  package_version: 6.0.0rc1
+  product_version: 6.0.0rc1-r6
+  engineering_version: 6.0.0rc1-r6
+  knowledge_system_version: 6.0.0rc1-r6
+  semantic_extractor_version: 6.0.0rc1-r6
+  claim_validator_version: tkr-claim-validator-v2-r6
+  learning_system_version: tkr-learning-panorama-v1-r6
+
+r6_completed_scope:
+  legacy_encoding_raw_normalized_hash_contract: implemented
+  gb18030_base_literary_evidence_chain: passed_on_synthetic_regression
+  future_modal_attempted_defeat_audit_without_indexing: implemented
+  permission_request_rejection: implemented
+  negative_alias_command_rejection: implemented
+  pronoun_and_function_entity_filtering: implemented
+  complete_chapter_source_packets: implemented
+  chapter_learning_cards: implemented
+  entity_learning_profiles: implemented
+  direct_relationship_and_event_ledgers: implemented
+  source_ordered_storylines: implemented
+  world_model_and_learning_gaps: implemented
+  evidence_bound_model_learning_tasks: implemented
+  evidence_bound_tier_b_c_observation_integration: implemented
+  original_story_generation_boundary: documented
+  learning_first_large_corpus_report_policy: documented
+
+local_quality_gates:
+  repository_tests_passed: 689
+  repository_test_failures: 0
+  skill_audit_findings: 0
+  skill_doctor_checks_passed: 7
+  schema_count: 84
+  exact_github_ci_pending: true
+
+private_development_regression_smoke:
+  source_project_count: 5
+  base_projects_verified: 5
+  literary_projects_verified: 5
+  chapter_card_count: 880
+  complete_chapter_packet_count: 880
+  accepted_entity_profile_count: 26
+  review_entity_profile_count: 1
+  direct_relationship_count: 10
+  direct_event_count: 0
+  storyline_count: 26
+  model_learning_task_count: 880
+  model_learning_observation_count: 0
+  exact_assertion_count: 21
+  exact_evidence_anchor_count: 52
+  learning_project_verified: true
+  private_source_text_published: false
+
+clean_install_legacy_encoding_smoke:
+  selected_encoding: gb18030
+  raw_and_normalized_hashes_distinct: true
+  base_verified: true
+  literary_verified: true
+  evidence_verified: true
+  learning_verified: true
+  complete_chapter_packet_count: 3
+  model_learning_task_count: 3
+  evidence_bound_model_observation_count: 1
+
+privacy_boundary:
+  private_corpus_text_in_repository: false
+  private_file_inventory_in_repository: false
+  private_learning_source_packets_in_repository: false
+  gold_in_repository: false
+  observations_from_private_corpora_in_repository: false
+  chapter_source_packets_may_upload_to_public_ci: false
+
+formal_authority:
+  private_blind_acceptance_performed: false
+  technical_acceptance_candidate_created: false
+  explicit_acceptance_approval_received: false
+  final_acceptance_seal_created: false
+  project_acceptance_performed: false
+  release_candidate: false
+  release_approved: false
+  freeze_approved: false
+  may_accept_project: false
+  may_release: false
+  may_freeze: false
+
+next_action: publish_public_r6_implementation_pr_run_exact_ci_then_integrate_and_issue_updated_internal_test_bundle

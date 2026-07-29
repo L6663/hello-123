@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tkr/learning-project-report.schema.json",
+  "title": "Text Knowledge Reader Learning Project Report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "learning_system_version",
+    "chapter_card_count",
+    "complete_chapter_packet_count",
+    "model_learning_observation_count",
+    "accepted_entity_profile_count",
+    "direct_relationship_count",
+    "direct_event_count",
+    "storyline_count",
+    "model_learning_task_count",
+    "logical_sha256",
+    "project_acceptance_performed",
+    "may_accept_project",
+    "may_release",
+    "may_freeze"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "tkr-learning-project-report-v1"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "learning_system_version": {
+      "type": "string"
+    },
+    "chapter_card_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "accepted_entity_profile_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "direct_relationship_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "direct_event_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "storyline_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "model_learning_task_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "logical_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "project_acceptance_performed": {
+      "const": false
+    },
+    "may_accept_project": {
+      "const": false
+    },
+    "may_release": {
+      "const": false
+    },
+    "may_freeze": {
+      "const": false
+    },
+    "complete_chapter_packet_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "model_learning_observation_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": true
+}

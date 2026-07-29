@@ -3,7 +3,7 @@ repository: L6663/hello-123
 base_branch: develop/v6-literary-engine
 integration_branch: feature/v6-stage8-r7-learning-integration
 stage: Stage 8-R7 Learning Capability Integration
-status: local_public_source_candidate_inventoried_exact_github_implementation_ci_pending
+status: public_r7_source_restored_exact_github_ci_pending
 
 source_candidate:
   archive_name: Text-Knowledge-Reader-R7-source-package.zip
@@ -42,7 +42,7 @@ privacy_review:
   note: filenames containing private, gold, or observation refer only to public-safe schemas, guards, documentation, or synthetic tests
 
 required_before_merge:
-  restore_key_public_files_to_branch: true
+  restore_key_public_files_to_branch: false
   review_diff_against_public_allowlist_and_denylist: true
   productization_python_3_10_3_11_3_12: true
   full_repository_regression_per_python: true
@@ -70,4 +70,4 @@ formal_authority:
   may_release: false
   may_freeze: false
 
-next_action: restore_public_r7_source_files_and_synthetic_tests_then_run_exact_ci_on_the_resulting_head
+next_action: run_exact_github_ci_review_public_diff_then_merge_if_all_gates_pass

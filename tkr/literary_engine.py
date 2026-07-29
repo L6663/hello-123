@@ -312,6 +312,8 @@ def _chapters(
     units: Sequence[Mapping[str, object]],
     headings: Sequence[Mapping[str, object]],
     anomalies: Sequence[Mapping[str, object]],
+    *,
+    normalized_source_sha256: str | None = None,
 ) -> tuple[list[ChapterRecord], dict[str, ChapterRecord]]:
     heading_by_id = {
         str(item["heading_id"]): item
@@ -325,7 +327,8 @@ def _chapters(
     ):
         unit_id_value = _text(row, "unit_id", "unit")
         source_id = _text(row, "source_id", "unit")
-        source_sha = _text(row, "source_sha256", "unit")
+        raw_source_sha = _text(row, "source_sha256", "unit")
+        source_sha = normalized_source_sha256 or raw_source_sha
         start = _integer(row, "start_char", "unit")
         end = _integer(row, "end_char", "unit")
         body_start = _integer(row, "body_start_char", "unit")
@@ -1094,7 +1097,10 @@ def build_literary_engine(
     if sha256(source_text.encode("utf-8")).hexdigest() != source_sha:
         raise LiteraryEngineError("normalized source hash differs from project report")
 
-    chapters, chapter_lookup = _chapters(source_text, unit_rows, heading_rows, anomaly_rows)
+    chapters, chapter_lookup = _chapters(
+        source_text, unit_rows, heading_rows, anomaly_rows,
+        normalized_source_sha256=source_sha,
+    )
     anchors, entities, assertions, _ = _import_base_records(
         source_text, chapter_lookup, mention_rows, entity_rows, fact_rows, anomaly_rows
     )

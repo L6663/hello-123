@@ -9,7 +9,7 @@ SEMANTIC_CANDIDATE_SCHEMA_VERSION: Final = "tkr-semantic-candidate-v1"
 SEMANTIC_FINDING_SCHEMA_VERSION: Final = "tkr-semantic-finding-v1"
 MODEL_EXTRACTION_TASK_SCHEMA_VERSION: Final = "tkr-model-extraction-task-v1"
 SEMANTIC_REPORT_SCHEMA_VERSION: Final = "tkr-semantic-report-v1"
-SEMANTIC_EXTRACTOR_VERSION: Final = "6.0.0rc1-r5"
+SEMANTIC_EXTRACTOR_VERSION: Final = "6.0.0rc1-r7"
 OFFSET_BASIS: Final = "decoded_text_without_external_bom"
 
 CLAIM_TYPES: Final = frozenset({"alias", "defeats", "located_in", "permission", "count", "date"})

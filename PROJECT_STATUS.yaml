@@ -1,7 +1,6 @@
 schema_version: tkr-project-status-v20
 repository: L6663/hello-123
-updated_at_utc: 2026-07-26T05:44:06Z
-
+updated_at_utc: '2026-07-27T10:00:00Z'
 historical_release:
   version: 5.9.0
   stable_branch: main
@@ -11,55 +10,100 @@ historical_release:
   engineering_acceptance: passed
   literary_goal_reassessment: insufficient_for_requested_literary_knowledge_engine
   historical_release_mutated: false
-
 v6_development:
-  version: 6.0.0rc1-r5
-  status: r5_integrated_ready_for_internal_real_testing_formal_blind_acceptance_requires_new_corpus
+  version: 6.0.0rc1-r7
+  status: r7_local_learning_optimization_passed_internal_simulation_ready_github_integration_pending
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
-  current_branch: develop/v6-literary-engine
+  current_branch: local-r7-candidate
   stewardship_issue: 37
-  current_stage: Stage 8-R5 Internal Real Testing
-  current_stage_status: engineering_integrated_internal_testing_ready
+  current_stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
+  current_stage_status: local_implementation_and_controlled_simulation_passed
   completed_and_integrated_stages:
-    - Stage 1 Evidence Engine
-    - Stage 2 Chapter Structure Engine
-    - Stage 3 Event Causality Engine
-    - Stage 4 Focused Character Engine
-    - Stage 5 Layered Reasoning Engine
-    - Stage 6-R1 Notion Knowledge System
-    - Stage 7 Literary Regression Benchmark
-    - Stage 8 Final Productization and Acceptance engineering framework
-    - Stage 8-R1 private acceptance operations guard
-    - Stage 8-R2 real-corpus execution and source-binding hardening
-    - Stage 8-R3 semantic precision and ambiguity blocking
-    - Stage 8-R4 private intake and simulation status reconciliation
-    - Stage 8-R5 long-form literary corpus compatibility hardening
+  - Stage 1 Evidence Engine
+  - Stage 2 Chapter Structure Engine
+  - Stage 3 Event Causality Engine
+  - Stage 4 Focused Character Engine
+  - Stage 5 Layered Reasoning Engine
+  - Stage 6-R1 Notion Knowledge System
+  - Stage 7 Literary Regression Benchmark
+  - Stage 8 Final Productization and Acceptance engineering framework
+  - Stage 8-R1 private acceptance operations guard
+  - Stage 8-R2 real-corpus execution and source-binding hardening
+  - Stage 8-R3 semantic precision and ambiguity blocking
+  - Stage 8-R4 private intake and simulation status reconciliation
+  - Stage 8-R5 long-form literary corpus compatibility hardening
   workflow_policy:
     productization: .github/workflows/stage1-evidence.yml
     private_artifact_guard: .github/workflows/private-artifact-guard.yml
     execution_bundle: .github/workflows/stage8-execution-bundle.yml
-    python_versions: ["3.10", "3.11", "3.12"]
+    python_versions:
+    - '3.10'
+    - '3.11'
+    - '3.12'
     full_repository_regression_per_python: true
     clean_wheel_install_per_python: true
     installed_skill_audit_and_doctor: true
     byte_identical_wheel_gate: true
     private_artifact_uploads_allowed: false
     release_or_freeze_workflows_enabled: false
-
+  local_candidate_stages:
+  - Stage 8-R6 Learning Panorama and semantic reliability
+  - Stage 8-R7 learning identity, scope, query, and world-model optimization
+  r7_local_validation:
+    repository_tests_passed: 692
+    schema_count: 84
+    skill_audit_findings: 0
+    skill_doctor_checks_passed: 7
+    controlled_simulation_book_count: 2
+    controlled_simulation_source_count: 3
+    chapter_card_count: 18
+    model_learning_observation_count: 44
+    accepted_consolidated_entity_profile_count: 19
+    review_only_fragment_profile_count: 3
+    same_book_entity_merge_passed: true
+    cross_book_isolation_passed: true
+    volume_heading_exclusion_passed: true
+    statement_expanding_query_passed: true
+    learning_project_verified: true
+    github_integration_pending: true
 integrations:
-  stage_1: {pull_request: 28, merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562}
-  stage_2: {pull_request: 29, merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f}
-  stage_3: {pull_request: 30, merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359}
-  stage_4: {pull_request: 31, merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01}
-  stage_5: {pull_request: 32, merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657}
-  stage_6: {pull_request: 33, merge_commit: 07f10cf8552c730c29afd01197108441e126e3f3}
-  stage_7: {pull_request: 34, merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224}
-  stage_8: {pull_request: 35, merge_commit: 2985b5ba5a07d0026b1b4608da54a5a67abe7e7c}
-  stage_8_r1: {pull_request: 38, merge_commit: a8005d04cb0cf75aaf5fb3dbc8c8230b3adab278}
-  stage_8_r2: {pull_request: 40, merge_commit: 91fd3fc97524e620cf1518202e2aa8e3d6569b52}
-  stage_8_r3: {pull_request: 41, merge_commit: 9e4e8e830ba05ba4a3693b6d427d30f85132f4e9}
-  stage_8_r4: {pull_request: 43, merge_commit: 089d4e406158daf64dfcb63eeae92d95d9842b34}
+  stage_1:
+    pull_request: 28
+    merge_commit: 9e7bac7837ceccf54b9b2e5bd8eac2c6748f5562
+  stage_2:
+    pull_request: 29
+    merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
+  stage_3:
+    pull_request: 30
+    merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
+  stage_4:
+    pull_request: 31
+    merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
+  stage_5:
+    pull_request: 32
+    merge_commit: 00d835b7680bdbcbc1c2384647d7f47603585657
+  stage_6:
+    pull_request: 33
+    merge_commit: 07f10cf8552c730c29afd01197108441e126e3f3
+  stage_7:
+    pull_request: 34
+    merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224
+  stage_8:
+    pull_request: 35
+    merge_commit: 2985b5ba5a07d0026b1b4608da54a5a67abe7e7c
+  stage_8_r1:
+    pull_request: 38
+    merge_commit: a8005d04cb0cf75aaf5fb3dbc8c8230b3adab278
+  stage_8_r2:
+    pull_request: 40
+    merge_commit: 91fd3fc97524e620cf1518202e2aa8e3d6569b52
+  stage_8_r3:
+    pull_request: 41
+    merge_commit: 9e4e8e830ba05ba4a3693b6d427d30f85132f4e9
+  stage_8_r4:
+    pull_request: 43
+    merge_commit: 089d4e406158daf64dfcb63eeae92d95d9842b34
   stage_8_r5:
     pull_request: 44
     validated_head: 7b4c51cba69369f6f0c242142770d06b60b593b7
@@ -89,13 +133,11 @@ integrations:
     evidence_blocked_chapter_count: 146
     evidence_coverage_minimum: 1.0
     internal_real_testing_ready: true
-
 stage_6:
   name: Notion Knowledge System
   status: completed_and_integrated
   epistemic_layers_may_mix: false
   automatic_remote_deletion_allowed: false
-
 stage_7:
   name: Literary Regression Benchmark
   status: completed_and_integrated
@@ -108,22 +150,23 @@ stage_7:
     minimum_correctness_score: 9.0
     minimum_safety_score: 9.0
     average_compensation_allowed: false
-
 stage_8:
   name: Stage 8 Final Productization and Acceptance
-  status: engineering_r5_integrated_internal_testing_ready_formal_private_acceptance_pending
-  product_version: 6.0.0rc1-r5
+  status: r7_local_candidate_internal_simulation_ready_formal_private_acceptance_pending
+  product_version: 6.0.0rc1-r7
   technical_candidate_contract:
     stage_7_release_benchmark_required: true
     private_blind_attestation_required: true
-    exact_python_matrix: ["3.10", "3.11", "3.12"]
+    exact_python_matrix:
+    - '3.10'
+    - '3.11'
+    - '3.12'
     at_least_two_byte_identical_wheels: true
     source_provenance_required: true
     zero_finding_skill_audit_required: true
     passing_skill_doctor_required: true
     exact_successful_engineering_commit_required: true
     requires_explicit_approval: true
-
 stage_8_r1:
   name: Real Private Blind Acceptance Operations
   status: r5_engineering_corpus_completed_formal_blind_acceptance_requires_new_untouched_corpus
@@ -162,13 +205,11 @@ stage_8_r1:
     acceptance_seal: pending
     separate_public_release_approval: pending
     separate_repository_freeze_approval: pending
-
 entity_policy:
   core_characters: deep_model
   important_characters: role_and_major_event_model
   minor_placeholders: minimal_or_chapter_only
   no_impact_mentions: no_canonical_entity_required
-
 final_acceptance_rule:
   all_core_domains_must_score_at_least_9_0: true
   average_compensation_allowed: false
@@ -181,7 +222,6 @@ final_acceptance_rule:
   explicit_product_acceptance_approval_required: true
   public_release_requires_separate_explicit_approval: true
   repository_freeze_requires_separate_explicit_approval: true
-
 development_regression_corpus_used_for_v6_remediation: true
 r5_engineering_corpus_used_for_v6_development: true
 r5_engineering_corpus_eligible_for_final_blind_acceptance: false
@@ -199,5 +239,5 @@ freeze_approved: false
 may_accept_project: false
 may_release: false
 may_freeze: false
-
-next_action: begin_internal_real_testing_or_supply_new_untouched_corpus_and_external_blind_roles_for_formal_acceptance
+next_action: use_r7_internal_simulation_bundle_or_integrate_public_safe_r7_candidate_via_exact_github_ci;
+  formal_acceptance_still_requires_new_untouched_corpus_and_independent_roles
