@@ -86,7 +86,7 @@ integrations:
     merge_commit: b09e6695a487fd12fa8285314914a93c7336d07f
   stage_3:
     pull_request: 30
-    merge_commit: 4bdc5a17cadd996b3290141cbd843448d9e57224
+    merge_commit: 9b2fd15972da1ba58f8d50f81b42ee7b7c708359
   stage_4:
     pull_request: 31
     merge_commit: 51887ce5fcd985a7ff42394ef902b144e04ede01
