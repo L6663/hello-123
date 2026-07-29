@@ -1,6 +1,6 @@
 schema_version: tkr-project-status-v20
 repository: L6663/hello-123
-updated_at_utc: '2026-07-29T08:53:01Z'
+updated_at_utc: '2026-07-29T08:55:38Z'
 historical_release:
   version: 5.9.0
   stable_branch: main
@@ -12,13 +12,13 @@ historical_release:
   historical_release_mutated: false
 v6_development:
   version: 6.0.0rc1-r7
-  status: r7_identity_hardening_exact_ci_passed_merge_pending
+  status: r7_identity_hardening_integrated_internal_testing_ready
   mode: focused_high_reliability_literary_knowledge_engine
   integration_branch: develop/v6-literary-engine
-  current_branch: feature/v6-stage8-r7-learning-integration
+  current_branch: develop/v6-literary-engine
   stewardship_issue: 37
   current_stage: Stage 8-R7 Learning Identity, Scope, and Reusable Results
-  current_stage_status: identity_hardening_exact_ci_passed_merge_pending
+  current_stage_status: identity_hardening_integrated_internal_testing_ready
   completed_and_integrated_stages:
   - Stage 1 Evidence Engine
   - Stage 2 Chapter Structure Engine
@@ -70,7 +70,7 @@ v6_development:
     volume_heading_exclusion_passed: true
     statement_expanding_query_passed: true
     learning_project_verified: true
-    github_integration_pending: true
+    github_integration_pending: false
     github_public_implementation_restored: true
     github_implementation_validated_head: ca6e7aab73da2a68a4c632f16f37122e0c98d164
     github_productization_run_id: 30437203158
@@ -160,7 +160,8 @@ integrations:
     skill_doctor_checks_passed: 7
     private_artifact_guard_status: passed
     execution_bundle_status: passed
-    merge_pending_final_status_head_ci: true
+    merge_commit: 9618c7e0476e643b8ba03ed1b29327d9d468f1c6
+    integrated_into_develop: true
 stage_6:
   name: Notion Knowledge System
   status: completed_and_integrated
@@ -180,7 +181,7 @@ stage_7:
     average_compensation_allowed: false
 stage_8:
   name: Stage 8 Final Productization and Acceptance
-  status: r7_identity_hardened_exact_ci_passed_merge_pending_formal_private_acceptance_pending
+  status: r7_identity_hardened_integrated_internal_testing_ready_formal_private_acceptance_pending
   product_version: 6.0.0rc1-r7
   technical_candidate_contract:
     stage_7_release_benchmark_required: true
@@ -267,4 +268,4 @@ freeze_approved: false
 may_accept_project: false
 may_release: false
 may_freeze: false
-next_action: run_required_ci_on_status_reconciliation_head_then_merge_pr_46; formal_acceptance_still_requires_new_untouched_corpus_and_independent_roles
+next_action: merge_public_status_reconciliation_after_required_ci; formal_acceptance_still_requires_new_untouched_corpus_and_independent_roles
